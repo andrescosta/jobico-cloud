@@ -52,6 +52,10 @@ k8s-download:
                        && wget -q --https-only -P downloads -i downloads_amd64.txt
 ## Cluster
 
+k8s-kubectl:
+	 cp ${WORK_DIR}/downloads/kubectl /usr/local/bin
+	 chmod +x /usr/local/bin/kubectl
+
 k8s-set-host-names: 
 	scripts/sethostnames.sh
 
@@ -64,13 +68,29 @@ k8s-hosts-name-local: k8s-hosts-name-gen
 k8s-hosts-name-remote: k8s-hosts-name-gen
 	scripts/scphostsfile.sh
 
+k8s-gen-ca:
+	cd ${WORK_DIR} && ../scripts/genca.sh
 
+k8s-gen-certs:
+	cd ${WORK_DIR} && ../scripts/gencerts.sh
 
+k8s-copy-certs:
+	cd ${WORK_DIR} && ../scripts/copycerts.sh
+k8s-copy-certs-server:
+	cd ${WORK_DIR} && ../scripts/copycertsserver.sh
+k8s-kubeconfigs:
+	cd ${WORK_DIR} && ../scripts/kubeconfigs.sh
+
+k8s-encryption-key:
+	cd ${WORK_DIR} && ../scripts/encryption-config.sh
+k8s-etcd:
+	cd ${WORK_DIR} && ../scripts/etcd.sh
+k8s-control-plane:
+	cd ${WORK_DIR} && ../scripts/controlplane.sh
 ## Jumpbox Setup
 
 jumpbox-kubectl: 
-	 scp ${WORK_DIR}/downloads/kubectl ${USER}@192.168.122.6:/usr/local/bin
-	 ssh ${USER}@192.168.122.6 "chmod +x /usr/local/bin/kubectl"
+	 scp ${WORK_DIR}/usr/local/bin/kubectl ${USER}@192.168.122.6:/usr/local/bin
 
 ## Deps
 
