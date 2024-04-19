@@ -1,16 +1,11 @@
 USER:=root
 DIR:=k8s
-WORK_DIR:=work
 
 .PHONY: vms-install vms-destroy vms-start dhcp
 
 #@ Cloud
 
 new: jumpbox-new server-new node-0-new node-1-new
-
-jumpbox-new:  
-	$(MAKE) -f Makefile.vm new-vm VM_IP=192.168.122.6 VM_NAME=jumpbox
-
 
 server-new:  
 	$(MAKE) -f Makefile.vm new-vm VM_IP=192.168.122.7 VM_NAME=server
@@ -24,8 +19,6 @@ node-1-new:
 
 destroy: jumpbox-del server-del node-0-del node-1-del
 
-jumpbox-del:  
-	$(MAKE) -f Makefile.vm destroy-vm VM_IP=192.168.122.6 VM_NAME=jumpbox
 server-del:  
 	$(MAKE) -f Makefile.vm destroy-vm VM_IP=192.168.122.7 VM_NAME=server
 node-0-del:
@@ -34,43 +27,34 @@ node-1-del:
 	$(MAKE) -f Makefile.vm destroy-vm VM_IP=192.168.122.9 VM_NAME=node-1
 
 
-## Get deps 
+## Set jumpbox
 
-k8s-deps: k8s-init k8s-git k8s-download 
+jumpbox-deps: jumpbox-git jumpbox-download jumpbox-machines jumpbox-kubectl
 
-k8s-init:
-	mkdir -p ${WORK_DIR}
+jumpbox-new:  
+	$(MAKE) -f Makefile.vm new-vm VM_IP=192.168.122.6 VM_NAME=jumpbox
 
-k8s-git:
-	cd ${WORK_DIR} && git clone --depth 1 https://github.com/kelseyhightower/kubernetes-the-hard-way.git \
-		       && mv kubernetes-the-hard-way ${DIR}
+jumpbox-del:  
+	$(MAKE) -f Makefile.vm destroy-vm VM_IP=192.168.122.6 VM_NAME=jumpbox
+jumpbox-git:
+	ssh ${USER}@192.168.122.6 "git clone --depth 1 https://github.com/kelseyhightower/kubernetes-the-hard-way.git ; mv kubernetes-the-hard-way ${DIR}"
 
-k8s-download:
-	cd ${WORK_DIR} && sed 's/arm64/amd64/' k8s/downloads.txt > downloads_amd64_1.txt \
-		       && sed 's/arm/amd64/' downloads_amd64_1.txt > downloads_amd64.txt \
-		       && mkdir -p downloads \
-                       && wget -q --https-only -P downloads -i downloads_amd64.txt
-## Cluster
+jumpbox-download:
+	ssh ${USER}@192.168.122.6 "sed 's/arm64/amd64/' ~/k8s/downloads.txt > ~/k8s/downloads_amd64_1.txt"
+	ssh ${USER}@192.168.122.6 "sed 's/arm/amd64/' ~/k8s/downloads_amd64_1.txt > ~/k8s/downloads_amd64.txt"
+	ssh ${USER}@192.168.122.6 "mkdir -p downloads; wget -q --https-only -P downloads -i ${DIR}/downloads_amd64.txt"
 
-k8s-set-host-names: 
-	scripts/sethostnames.sh
+jumpbox-scripts:
+	scp -r scripts ${USER}@192.168.122.6:~/
 
-k8s-hosts-name-gen: 
-	scripts/genhostsfile.sh
-
-k8s-hosts-name-local: k8s-hosts-name-gen
-	scripts/genandupdhostsfile.sh
-
-k8s-hosts-name-remote: k8s-hosts-name-gen
-	scripts/scphostsfile.sh
-
-
-
-## Jumpbox Setup
+jumpbox-machines:
+	scp machines.txt ${USER}@192.168.122.6:~/  
 
 jumpbox-kubectl: 
-	 scp ${WORK_DIR}/downloads/kubectl ${USER}@192.168.122.6:/usr/local/bin
-	 ssh ${USER}@192.168.122.6 "chmod +x /usr/local/bin/kubectl"
+	 ssh ${USER}@192.168.122.6 "chmod +x downloads/kubectl; cp downloads/kubectl /usr/local/bin/"
+
+init:
+	mkdir -p ${TMP}
 
 ## Deps
 
@@ -93,6 +77,5 @@ net:
 	virsh net-dumpxml default
 ssh:
 	ssh root@${VM_IP}
-debug:
-	scripts/debug.sh
+
 

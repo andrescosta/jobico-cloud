@@ -1,3 +1,9 @@
 debian-12.qcow2
 cloud-init.iso
 machines.txt
+downloads
+downloads_amd64_1.txt
+downloads_amd64.txt
+k8s
+hosts
+machines.txt
