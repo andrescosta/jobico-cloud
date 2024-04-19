@@ -1,0 +1,50 @@
+VM_NAME="template-debian-12"
+
+DESIRED_SIZE=20G
+
+jumpbox: deploy virt 
+
+deps: 
+	sudo apt update && sudo apt install cloud-utils whois -y
+
+deploy: debian-12.qcow2 resize cloud-init.cfg cloud-init.iso
+	sudo cp debian-12.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
+	sudo cp cloud-init.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
+
+debian-12.qcow2:
+	wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
+	mv -i debian-12-generic-amd64.qcow2 \
+  		debian-12.qcow2
+
+resize:
+	qemu-img resize \
+  		debian-12.qcow2 \
+  		${DESIRED_SIZE} 
+cloud-init.cfg cloud-init.iso: 
+	sudo cloud-localds cloud-init.iso cloud-init.cfg
+
+virt:
+	sudo virt-install \
+ 	 --name ${VM_NAME} \
+  	 --ram 2048 \
+         --vcpus=1 \
+         --cpu host \
+         --disk /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2,device=disk,bus=virtio \
+	 --hvm \
+  	 --disk /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso,device=cdrom \
+  	 --os-variant debian10 \
+  	 --virt-type kvm \
+  	 --graphics none \
+  	 --network network=default,model=virtio \
+  	 --import
+status:
+	cloud-init status
+
+destroy:
+	-virsh destroy ${VM_NAME} 
+	-virsh undefine ${VM_NAME} --remove-all-storage
+#sudo virt-install --name jumpbox --ram 2048 --vcpus=1 --cpu host --hvm --disk path=/var/lib/libvirt/images/jb-debian12-vm1,size=20 --cdrom /var/lib/libvirt/boot/debian-12.5.0-amd64-netinst.iso --graphic vnc
+dhcp:
+	virsh -q net-dhcp-leases default
+list: 
+	virsh list --all
