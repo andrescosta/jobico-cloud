@@ -67,19 +67,40 @@ k8s-hosts-name-local:
 
 k8s-hosts-name-remote: 
 	scripts/scphostsfile.sh
+## TLS
+
+tls: k8s-gen-ca k8s-gen-certs k8s-copy-certs k8s-copy-certs-server
 
 k8s-gen-ca:
 	cd ${WORK_DIR} && ../scripts/genca.sh
 
-k8s-gen-certs:
+k8s-gen-certs: k8s-gen-ca
 	cd ${WORK_DIR} && ../scripts/gencerts.sh
 
-k8s-copy-certs:
+k8s-copy-certs: k8s-gen-certs
 	cd ${WORK_DIR} && ../scripts/copycerts.sh
+
 k8s-copy-certs-server:
 	cd ${WORK_DIR} && ../scripts/copycertsserver.sh
-k8s-kubeconfigs:
-	cd ${WORK_DIR} && ../scripts/kubeconfigs.sh
+
+## Kubeconfig
+
+kubeconfig: tls k8s-kubeconfig-node k8s-kubeconfig-controller k8s-kubeconfig-proxy k8s-kubeconfig-scheduler
+ 
+k8s-kubeconfig-node:
+	cd ${WORK_DIR} && ../scripts/kubeconfig-node.sh
+k8s-kubeconfig-controller:
+	cd ${WORK_DIR} && ../scripts/kubeconfig-controler.sh
+k8s-kubeconfig-proxy:
+	cd ${WORK_DIR} && ../scripts/kubeconfig-proxy.sh
+k8s-kubeconfig-scheduler:
+	cd ${WORK_DIR} && ../scripts/kubeconfig-scheduler.sh
+k8s-kubeconfig-scp-nodes:
+	cd ${WORK_DIR} && ../scripts/kubeconfig-scp-node.sh
+k8s-kubeconfig-scp-admin:
+	cd ${WORK_DIR} && ../scripts/kubeconfig-scp-admin.sh
+
+##
 
 k8s-encryption-key:
 	cd ${WORK_DIR} && ../scripts/encryption-config.sh

@@ -9,7 +9,7 @@ curr_mac=$(shell virsh -q domifaddr ${VM_NAME} --source arp | awk '{print $$2}')
 new-vm: deploy mac virt 
 
 deploy: debian-12.qcow2 resize cloud-init.cfg cloud-init.iso
-	sudo cp debian-12.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
+	sudo cp debian-12.qcow2  /var/lib/libvirt/images/debian-12-${VM_NAME}.qcow2 
 	sudo cp cloud-init.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
 
 mac:
@@ -36,7 +36,7 @@ virt:
  		--ram 2048 \
  		--vcpus=1 \
  		--cpu host \
- 		--disk /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2,device=disk,bus=virtio \
+ 		--disk /var/lib/libvirt/images/debian-12-${VM_NAME}.qcow2,device=disk,bus=virtio \
  		--hvm \
  		--disk /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso,device=cdrom \
  		--os-variant debian10 \
