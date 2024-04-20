@@ -1,7 +1,0 @@
-
-foo=one
-var:=two
-test:
-	echo "Fool ${foo} and var ${var}"
-test2:
-	echo "Apa: Fool ${foo} and var ${var}"

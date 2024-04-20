@@ -1,1 +1,0 @@
-sudo virt-install --name jumpbox --ram 2048 --vcpus=1 --cpu host --hvm --disk path=/var/lib/libvirt/images/jb-debian12-vm1,size=20 --cdrom /var/lib/libvirt/boot/debian-12.5.0-amd64-netinst.iso --graphic vnc
