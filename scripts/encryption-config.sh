@@ -12,5 +12,4 @@ resources:
               secret: ${ENCRYPTION_KEY}
       - identity: {}
 EOF
-#envsubst < configs/encryption-config.yaml > encryption-config.yaml
 scp encryption-config.yaml root@server:~/

@@ -62,10 +62,10 @@ k8s-set-host-names:
 k8s-hosts-name-gen: 
 	scripts/genhostsfile.sh
 
-k8s-hosts-name-local: k8s-hosts-name-gen
+k8s-hosts-name-local: 
 	scripts/genandupdhostsfile.sh
 
-k8s-hosts-name-remote: k8s-hosts-name-gen
+k8s-hosts-name-remote: 
 	scripts/scphostsfile.sh
 
 k8s-gen-ca:
@@ -87,6 +87,12 @@ k8s-etcd:
 	cd ${WORK_DIR} && ../scripts/etcd.sh
 k8s-control-plane:
 	cd ${WORK_DIR} && ../scripts/controlplane.sh
+
+k8s-workers:
+	cd ${WORK_DIR} && ../scripts/workers.sh
+k8s-setkubeconfig:
+	cd ${WORD_DIR} && ../scripts/setkubeconfig.sh
+
 ## Jumpbox Setup
 
 jumpbox-kubectl: 
@@ -116,3 +122,4 @@ ssh:
 debug:
 	scripts/debug.sh
 
+scripts/kubeconfigs.sh
