@@ -91,7 +91,9 @@ k8s-control-plane:
 k8s-workers:
 	cd ${WORK_DIR} && ../scripts/workers.sh
 k8s-setkubeconfig:
-	cd ${WORD_DIR} && ../scripts/setkubeconfig.sh
+	cd ${WORK_DIR} && ../scripts/setkubeconfig.sh
+k8s-routes:
+	-scripts/routes.sh
 
 ## Jumpbox Setup
 
@@ -122,4 +124,3 @@ ssh:
 debug:
 	scripts/debug.sh
 
-scripts/kubeconfigs.sh
