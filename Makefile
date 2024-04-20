@@ -34,9 +34,9 @@ node-1-del:
 	$(MAKE) -f Makefile.vm destroy-vm VM_IP=192.168.122.9 VM_NAME=node-1
 
 
-## Get deps 
+## Local enviroment 
 
-k8s-deps: k8s-init k8s-git k8s-download 
+k8s-deps: k8s-init k8s-git k8s-download k8s-kubectl 
 
 k8s-init:
 	mkdir -p ${WORK_DIR}
@@ -50,11 +50,11 @@ k8s-download:
 		       && sed 's/arm/amd64/' downloads_amd64_1.txt > downloads_amd64.txt \
 		       && mkdir -p downloads \
                        && wget -q --https-only -P downloads -i downloads_amd64.txt
-## Cluster
-
 k8s-kubectl:
 	 cp ${WORK_DIR}/downloads/kubectl /usr/local/bin
 	 chmod +x /usr/local/bin/kubectl
+
+## Cluster
 
 k8s-set-host-names: 
 	scripts/sethostnames.sh
