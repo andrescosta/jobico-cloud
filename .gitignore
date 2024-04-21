@@ -81,3 +81,4 @@ node-1.kubeconfig
 service-accounts.crt
 service-accounts.csr
 service-accounts.key
+*.swp
