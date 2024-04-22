@@ -1,6 +1,6 @@
 readonly WORK_DIR="work"
 readonly DOWNLOADS_DIR="${WORK_DIR}/downloads"
-readonly EXTRAS_DIR="${WORK_DIR}/k8s"
+readonly EXTRAS_DIR="extras"
 readonly HOSTSFILE="${WORK_DIR}/hosts"
 readonly CA_CONF="${EXTRAS_DIR}/ca.conf" 
 readonly MAKE=make
@@ -20,12 +20,8 @@ jobico::kube::destroy_vms(){
 
 jobico::kube::deps(){
   if ! grep -q "deps" "${STATUS_FILE}"; then
-	  git clone --depth 1 https://github.com/kelseyhightower/kubernetes-the-hard-way.git ${EXTRAS_DIR}
-    #mv ${WORK_DIR}/kubernetes-the-hard-way ${EXTRAS_DIR}
-	  sed 's/arm64/amd64/' ${EXTRAS_DIR}/downloads.txt > ${WORK_DIR}/downloads_amd64_1.txt 
-    sed 's/arm/amd64/' ${WORK_DIR}/downloads_amd64_1.txt > ${WORK_DIR}/downloads_amd64.txt 
 	  mkdir -p ${DOWNLOADS_DIR}
-    wget -q --https-only -P  ${DOWNLOADS_DIR} -i ${WORK_DIR}/downloads_amd64.txt
+    wget -q --https-only -P  ${DOWNLOADS_DIR} -i ${DOWNLOADS_TBL}
     jobico::kube::set_done "deps"
   fi
 }
@@ -39,6 +35,7 @@ jobico::kube::init::locals(){
 jobico::kube::load_database(){
   cp machines.txt ${WORK_DIR}
   readonly MACHINES_DB="${WORK_DIR}/machines.txt"
+  readonly DOWNLOADS_TBL=${EXTRAS_DIR}/downloads_amd64.txt
   readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
   readonly COMPONENTS_TBL=(admin node-0 node-1 kube-proxy kube-scheduler kube-controller-manager kube-api-server service-accounts)
   readonly NODE_TBL=(node-0 node-1)
@@ -75,6 +72,7 @@ jobico::kube::cluster(){
   jobico::kube::generate
 }
 jobico::kube::generate(){
+  jobico::kube::wait_for_servers
   echo "Generating ..."
   #DNS
   if ! grep -q "host" ${STATUS_FILE}; then
@@ -152,7 +150,7 @@ jobico::kube::update_local_hostsfile(){
 jobico::kube::cluster::set_hostname(){
 	while read IP FQDN HOST SUBNET; do
 		CMD="sed -i 's/^127.0.0.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
-		ssh -n root@${IP} "$CMD"
+		ssh -o "StrictHostKeyChecking=no" user@hostname -n root@${IP} "$CMD"
 		ssh -n root@${IP} hostnamectl hostname ${HOST}	
 	done < ${JOBICO_CLUSTER_TBL}
 }
@@ -481,3 +479,33 @@ EOF
 ip route add $NODE_0_SUBNET via $NODE_0_IP
 EOF
 }
+
+jobico::kube::wait_for_servers() {
+  local servers=(server1 server2 server3)
+  local port=22
+  local timeout=60  # Timeout in seconds
+  local delay=5     # Delay between attempts in seconds
+  local elapsed_time=0
+
+  echo "Waiting for servers to start..."
+
+	while read IP FQDN HOST SUBNET; do
+    echo "Waiting for $IP to start listening on port $port..."
+    start_time=$(date +%s)
+    while ! nc -z "$IP" "$port" >/dev/null 2>&1; do
+      current_time=$(date +%s)
+      elapsed_time=$((current_time - start_time))
+      if [ "$elapsed_time" -ge "$timeout" ]; then
+        echo "Timeout exceeded for $IP"
+        break
+      fi
+
+      sleep "$delay"
+    done
+
+    if [ "$elapsed_time" -lt "$timeout" ]; then
+      echo "$IP is now listening on port $port"
+    fi
+  done < ${JOBICO_CLUSTER_TBL}
+}
+
