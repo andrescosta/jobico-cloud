@@ -56,8 +56,12 @@ jobico::kube::init(){
   touch ${STATUS_FILE}
 }
 jobico::kube::machines(){
-  jobico::kube::load_database 
-  jobico::kube::create_vms
+  jobico::kube::init
+  if ! grep -q "machines" ${STATUS_FILE}; then
+    jobico::kube::load_database 
+    jobico::kube::create_vms
+    jobico::kube::set_done "machines"
+  fi
 }
 jobico::kube::destroy_machines(){
   jobico::kube::load_database 
@@ -71,6 +75,7 @@ jobico::kube::cluster(){
   jobico::kube::generate
 }
 jobico::kube::generate(){
+  echo "Generating ..."
   #DNS
   if ! grep -q "host" ${STATUS_FILE}; then
     jobico::kube::gen_hostsfile
@@ -79,12 +84,12 @@ jobico::kube::generate(){
     jobico::kube::set_done "host"
   fi
   #TLS
-  if ! grep -q "ca" ${STATUS_FILE}; then
+  if ! grep -q "tls_certs" ${STATUS_FILE}; then
     jobico::kube::tls::gen_ca
     jobico::kube::tls::gen_certs
     jobico::kube::tls::deploy_certs_to_nodes
     jobico::kube::tls::deploy_certs_to_server
-    jobico::kube::set_done "ca"
+    jobico::kube::set_done "tls_certs"
   fi
   #Kubeconfig
   if ! grep -q "kubeconfig" ${STATUS_FILE}; then
@@ -102,9 +107,9 @@ jobico::kube::generate(){
     jobico::kube::set_done "encatrest"
   fi
   #Etcd 
-  if ! grep -q "etcd" ${STATUS_FILE}; then
+  if ! grep -q "etcddb" ${STATUS_FILE}; then
     jobico::kube::etcd::deploy_to_server
-    jobico::kube::set_done "etcd"
+    jobico::kube::set_done "etcddb"
   fi
   #Deployment
   if ! grep -q "deploy_server" ${STATUS_FILE}; then
@@ -117,7 +122,11 @@ jobico::kube::generate(){
     jobico::kube::set_done "deploy_nodes"
   fi
   # Routes
-  jobico::kube::cluster::add_routes
+  if ! grep -q "add_routes" ${STATUS_FILE}; then
+    jobico::kube::cluster::add_routes
+    jobico::kube::set_done "add_routes"
+  fi
+  echo "Cluster generated ..."
 }
 jobico::kube::set_done(){
   echo "|$1|" >> ${WORK_DIR}/jobico_status
@@ -150,7 +159,7 @@ jobico::kube::cluster::set_hostname(){
 
 jobico::kube::cluster::update_hostnames_file(){
 	while read IP FQDN HOST SUBNET; do
-		scp hosts root@${HOST}:~/
+		scp  ${HOSTSFILE} root@${HOST}:~/
 		ssh -n \
 		  root@${HOST} "cat hosts >> /etc/hosts"	
 	done < ${JOBICO_CLUSTER_TBL}

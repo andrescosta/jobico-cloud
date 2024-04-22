@@ -63,4 +63,5 @@ delete-mac:
 
 delete-key:
 	-ssh-keygen -f ~/.ssh/known_hosts -R ${VM_IP}
+	-ssh-keygen -f ~/.ssh/known_hosts -R ${VM_NAME}
 
