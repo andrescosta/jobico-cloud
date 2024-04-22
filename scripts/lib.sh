@@ -14,7 +14,7 @@ jobico::kube::create_vms(){
 
 jobico::kube::destroy_vms(){
 	while read IP FQDN HOST SUBNET; do
-    make -f Makefile.vm destroy-vm VM_IP={$IP} VM_NAME=${HOST}
+    make -f Makefile.vm destroy-vm VM_IP=${IP} VM_NAME=${HOST}
 	done < ${JOBICO_CLUSTER_TBL}
 }
 
@@ -30,8 +30,11 @@ jobico::kube::deps(){
   fi
 }
 jobico::kube::init::locals(){
-  sudo cp ${DOWNLOADS_DIR}/kubectl /usr/local/bin && \
-	sudo chmod +x /usr/local/bin/kubectl
+  if ! grep -q "locals" "${STATUS_FILE}"; then
+    sudo cp ${DOWNLOADS_DIR}/kubectl /usr/local/bin && \
+	  sudo chmod +x /usr/local/bin/kubectl
+    jobico::kube::set_done "locals"
+  fi
 }
 jobico::kube::load_database(){
   cp machines.txt ${WORK_DIR}
@@ -56,7 +59,10 @@ jobico::kube::machines(){
   jobico::kube::load_database 
   jobico::kube::create_vms
 }
-
+jobico::kube::destroy_machines(){
+  jobico::kube::load_database 
+  jobico::kube::destroy_vms
+}
 jobico::kube::cluster(){
   jobico::kube::init
   jobico::kube::load_database 

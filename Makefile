@@ -112,7 +112,7 @@ status:
 	cloud-init status
 
 dhcp:
-	virsh -q net-dhcp-leases default
+	@virsh -q net-dhcp-leases default
 
 list: 
 	virsh list --all
