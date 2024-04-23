@@ -33,7 +33,7 @@ jobico::kube::init::locals(){
   fi
 }
 jobico::kube::load_database(){
-  cp machines.txt ${WORK_DIR}
+  cp extras/machines.txt ${WORK_DIR}
   readonly MACHINES_DB="${WORK_DIR}/machines.txt"
   readonly DOWNLOADS_TBL=${EXTRAS_DIR}/downloads_amd64.txt
   readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
@@ -123,7 +123,7 @@ jobico::kube::generate(){
     jobico::kube::cluster::add_routes
     jobico::kube::set_done "add_routes"
   fi
-  echo "Cluster generated ..."
+  echo " The K8s Cluster was created  ..."
 }
 jobico::kube::set_done(){
   echo "|$1|" >> ${WORK_DIR}/jobico_status

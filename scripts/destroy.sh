@@ -9,4 +9,5 @@ source $script_path/lib.sh
 
 
 jobico::kube::destroy_machines
+
 rm -rf work
