@@ -1,5 +1,5 @@
 debian-12.qcow2
-cloud-init.iso
+*.iso
 machines.txt
 **/downloads
 **/work*

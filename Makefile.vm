@@ -6,11 +6,18 @@ curr_mac=$(shell virsh -q domifaddr ${VM_NAME} --source arp | awk '{print $$2}')
 
 ## New VM
 
-new-vm: deploy mac virt 
+new-vm-node: deploy-node mac virt 
 
-deploy: debian-12.qcow2 resize cloud-init.cfg cloud-init.iso
+new-vm-server: deploy-server mac virt 
+
+deploy-node: debian-12.qcow2 resize cloud-init-node.cfg cloud-init-node.iso
 	sudo cp debian-12.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
-	sudo cp cloud-init.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
+	sudo cp cloud-init-node.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
+
+
+deploy-server: debian-12.qcow2 resize cloud-init-server.cfg cloud-init-server.iso
+	sudo cp debian-12.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
+	sudo cp cloud-init-server.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
 
 mac:
 	-virsh net-update default add ip-dhcp-host \
@@ -27,8 +34,11 @@ resize: debian-12.qcow2
   		debian-12.qcow2 \
   		${DESIRED_SIZE} 
 
-cloud-init.cfg cloud-init.iso: 
-	sudo cloud-localds cloud-init.iso cloud-init.cfg
+cloud-init-server.cfg cloud-init-server.iso: 
+	sudo cloud-localds cloud-init-server.iso cloud-init-server.cfg
+
+cloud-init-node.cfg cloud-init-node.iso: 
+	sudo cloud-localds cloud-init-node.iso cloud-init-node.cfg
 
 virt:
 	sudo virt-install \

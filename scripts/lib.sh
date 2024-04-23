@@ -7,13 +7,13 @@ readonly MAKE=make
 readonly STATUS_FILE=${WORK_DIR}/jobico_status
 
 jobico::kube::create_vms(){
-	while read IP FQDN HOST SUBNET; do
-	  make -f Makefile.vm new-vm VM_IP=${IP} VM_NAME=${HOST}
+	while read IP FQDN HOST SUBNET TYPE; do
+	  make -f Makefile.vm new-vm-${TYPE} VM_IP=${IP} VM_NAME=${HOST}
 	done < ${JOBICO_CLUSTER_TBL}
 }
 
 jobico::kube::destroy_vms(){
-	while read IP FQDN HOST SUBNET; do
+	while read IP FQDN HOST SUBNET TYPE; do
     make -f Makefile.vm destroy-vm VM_IP=${IP} VM_NAME=${HOST}
 	done < ${JOBICO_CLUSTER_TBL}
 }
@@ -52,10 +52,16 @@ jobico::kube::init(){
   mkdir -p ${WORK_DIR}
   touch ${STATUS_FILE}
 }
-jobico::kube::machines(){
+jobico::kube::cluster(){
   jobico::kube::init
+  jobico::kube::load_database 
+  jobico::kube::machines
+  jobico::kube::deps
+  jobico::kube::init::locals
+  jobico::kube::generate
+}
+jobico::kube::machines(){
   if ! grep -q "machines" ${STATUS_FILE}; then
-    jobico::kube::load_database 
     jobico::kube::create_vms
     jobico::kube::set_done "machines"
   fi
@@ -64,19 +70,13 @@ jobico::kube::destroy_machines(){
   jobico::kube::load_database 
   jobico::kube::destroy_vms
 }
-jobico::kube::cluster(){
-  jobico::kube::init
-  jobico::kube::load_database 
-  jobico::kube::deps
-  jobico::kube::init::locals
-  jobico::kube::generate
-}
 jobico::kube::generate(){
   jobico::kube::wait_for_servers
   echo "Generating ..."
   #DNS
   if ! grep -q "host" ${STATUS_FILE}; then
     jobico::kube::gen_hostsfile
+    jobico::kube::update_knownhosts_file
     jobico::kube::cluster::set_hostname
     jobico::kube::cluster::update_hostnames_file
     jobico::kube::set_done "host"
@@ -111,7 +111,6 @@ jobico::kube::generate(){
   fi
   #Deployment
   if ! grep -q "deploy_server" ${STATUS_FILE}; then
-    #jobico::kube::deploy_aux
     jobico::kube::deploy_deps_to_server
     jobico::kube::set_done "deploy_server"
   fi
@@ -137,26 +136,32 @@ jobico::kube::deploy_aux(){
 jobico::kube::gen_hostsfile(){
 	echo "" > ${HOSTSFILE} 
 	echo "# Kubernetes Cluster" >> ${HOSTSFILE} 
-	while read IP FQDN HOST SUBNET; do
-		ENTRY="${IP} ${FQDN} ${HOST}"
-		echo $ENTRY >> ${HOSTSFILE} 
+	while read IP FQDN HOST SUBNET TYPE; do
+		entry="${IP} ${FQDN} ${HOST}"
+		echo ${entry} >> ${HOSTSFILE} 
 	done < ${JOBICO_CLUSTER_TBL}
 }
 
 jobico::kube::update_local_hostsfile(){
 	cat  ${HOSTSFILE} >> /etc/hosts
 }
-
+jobico::kube::update_knownhosts_file(){
+	while read IP FQDN HOST SUBNET TYPE; do
+    ssh-keyscan -H ${HOST} >> ~/.ssh/known_hosts
+    ssh-keyscan -H ${IP} >> ~/.ssh/known_hosts
+	done < ${JOBICO_CLUSTER_TBL}
+}
 jobico::kube::cluster::set_hostname(){
-	while read IP FQDN HOST SUBNET; do
-		CMD="sed -i 's/^127.0.0.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
-		ssh -o "StrictHostKeyChecking=no" user@hostname -n root@${IP} "$CMD"
-		ssh -n root@${IP} hostnamectl hostname ${HOST}	
+	while read IP FQDN HOST SUBNET TYPE; do
+    # -o "StrictHostKeyChecking=no" 
+		cmd="sed -i 's/^127.0.0.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
+	  ssh -n root@${IP} "${cmd}"
+	  ssh -n root@${IP} hostnamectl hostname ${HOST}	
 	done < ${JOBICO_CLUSTER_TBL}
 }
 
 jobico::kube::cluster::update_hostnames_file(){
-	while read IP FQDN HOST SUBNET; do
+	while read IP FQDN HOST SUBNET TYPE; do
 		scp  ${HOSTSFILE} root@${HOST}:~/
 		ssh -n \
 		  root@${HOST} "cat hosts >> /etc/hosts"	
@@ -172,19 +177,19 @@ jobico::kube::tls::gen_ca(){
 }
 
 jobico::kube::tls::gen_certs(){
-	for i in ${COMPONENTS_TBL[*]}; do
-		openssl genrsa -out "${WORK_DIR}/${i}.key" 4096
+	for component in ${COMPONENTS_TBL[*]}; do
+		openssl genrsa -out "${WORK_DIR}/${component}.key" 4096
 
-		openssl req -new -key "${WORK_DIR}/${i}.key" -sha256 \
-		  -config "${EXTRAS_DIR}/ca.conf" -section ${i} \
-		  -out "${WORK_DIR}/${i}.csr"
+		openssl req -new -key "${WORK_DIR}/${component}.key" -sha256 \
+		  -config "${EXTRAS_DIR}/ca.conf" -section ${component} \
+		  -out "${WORK_DIR}/${component}.csr"
 
-		openssl x509 -req -days 3653 -in "${WORK_DIR}/${i}.csr" \
+		openssl x509 -req -days 3653 -in "${WORK_DIR}/${component}.csr" \
 		  -copy_extensions copyall \
 		  -sha256 -CA "${WORK_DIR}/ca.crt" \
 		  -CAkey "${WORK_DIR}/ca.key" \
 		  -CAcreateserial \
-		  -out "${WORK_DIR}/${i}.crt"
+		  -out "${WORK_DIR}/${component}.crt"
 	done
 }
 
@@ -398,13 +403,14 @@ jobico::kube::deploy_deps_to_nodes(){
         ${EXTRAS_DIR}/units/kubelet.service \
         ${EXTRAS_DIR}/units/kube-proxy.service root@$host:~/
   done
-
+ 
+  #apt-get update
+  #sleep 12
+  #apt-get -y install socat conntrack ipset
+ 
   for host in ${NODE_TBL[*]}; do
     ssh root@$host \
 << 'EOF'
-
-  apt-get update
-  apt-get -y install socat conntrack ipset
 
   swapoff -a
 
@@ -481,7 +487,6 @@ EOF
 }
 
 jobico::kube::wait_for_servers() {
-  local servers=(server1 server2 server3)
   local port=22
   local timeout=60  # Timeout in seconds
   local delay=5     # Delay between attempts in seconds
@@ -489,7 +494,7 @@ jobico::kube::wait_for_servers() {
 
   echo "Waiting for servers to start..."
 
-	while read IP FQDN HOST SUBNET; do
+	while read IP FQDN HOST SUBNET TYPE; do
     echo "Waiting for $IP to start listening on port $port..."
     start_time=$(date +%s)
     while ! nc -z "$IP" "$port" >/dev/null 2>&1; do
