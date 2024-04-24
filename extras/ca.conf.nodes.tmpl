@@ -1,0 +1,24 @@
+#
+# {NAME} 
+#
+
+[{NAME}]
+distinguished_name = {NAME}_distinguished_name
+prompt             = no
+req_extensions     = {NAME}_req_extensions
+
+[{NAME}_req_extensions]
+basicConstraints     = CA:FALSE
+extendedKeyUsage     = clientAuth, serverAuth
+keyUsage             = critical, digitalSignature, keyEncipherment
+nsCertType           = client
+nsComment            = "{NAME} Certificate"
+subjectAltName       = DNS:{NAME} IP:127.0.0.1
+subjectKeyIdentifier = hash
+
+[{NAME}_distinguished_name]
+CN = system:node:{NAME}
+O  = system:nodes
+C  = CA
+ST = Quebec
+L  = Montreal
