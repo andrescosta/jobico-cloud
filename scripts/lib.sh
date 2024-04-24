@@ -8,13 +8,13 @@ readonly STATUS_FILE=${WORK_DIR}/jobico_status
 
 jobico::kube::create_vms(){
 	while read IP FQDN HOST SUBNET TYPE; do
-	  make -f Makefile.vm new-vm-${TYPE} VM_IP=${IP} VM_NAME=${HOST}
+	  make -f scripts/Makefile.vm new-vm-${TYPE} VM_IP=${IP} VM_NAME=${HOST}
 	done < ${JOBICO_CLUSTER_TBL}
 }
 
 jobico::kube::destroy_vms(){
 	while read IP FQDN HOST SUBNET TYPE; do
-    make -f Makefile.vm destroy-vm VM_IP=${IP} VM_NAME=${HOST}
+    make -f scripts/Makefile.vm destroy-vm VM_IP=${IP} VM_NAME=${HOST}
 	done < ${JOBICO_CLUSTER_TBL}
 }
 
@@ -403,10 +403,6 @@ jobico::kube::deploy_deps_to_nodes(){
         ${EXTRAS_DIR}/units/kubelet.service \
         ${EXTRAS_DIR}/units/kube-proxy.service root@$host:~/
   done
- 
-  #apt-get update
-  #sleep 12
-  #apt-get -y install socat conntrack ipset
  
   for host in ${NODE_TBL[*]}; do
     ssh root@$host \

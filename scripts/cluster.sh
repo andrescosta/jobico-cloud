@@ -1,10 +1,6 @@
 
 #!/bin/bash
 
-script_path=$(dirname $0)
-
-echo $script_path
-
-source $script_path/lib.sh
+. $(dirname "$0")/lib.sh 
 
 jobico::kube::cluster
