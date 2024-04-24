@@ -8,10 +8,11 @@ readonly STATUS_FILE=${WORK_DIR}/jobico_status
 readonly CLUSTER_NAME=jobico-cloud
 readonly WORKER_NAME=node
 readonly TOTAL_WORKERS=2
+readonly MACHINES_DB="${WORK_DIR}/cluster.txt"
+readonly DOWNLOADS_TBL=${EXTRAS_DIR}/downloads_amd64.txt
+readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
+readonly ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 
-
-cp ca.conf.base ca.conf
-echo ""> cluster.txt
 jobico::kube::utils::print_array(){
   values=($@)
   for e in "${values[@]}"; do
@@ -38,6 +39,7 @@ jobico::kube::deps(){
         jobico::kube::set_done "deps"
     fi
 }
+
 jobico::kube::init::locals(){
     if ! grep -q "locals" "${STATUS_FILE}"; then
         sudo cp ${DOWNLOADS_DIR}/kubectl /usr/local/bin && \
@@ -47,9 +49,9 @@ jobico::kube::init::locals(){
 }
 
 jobico::kube::dao::gen_db(){
-  cp ${EXTRAS}/db.txt.tmpl ${WORK_DIR}/db.txt
+  cp ${EXTRAS_DIR}/db/db.txt.tmpl ${WORK_DIR}/db.txt
   for ((i=0;i<$TOTAL_WORKERS;i++)); do
-    echo "$WORKER_NAME-$i worker gencert genkubeconfig" >> ${WORK_DIR}/db.txt
+    echo "$WORKER_NAME-$i worker gencert" >> ${WORK_DIR}/db.txt
   done
 }
 
@@ -61,31 +63,27 @@ jobico::kube::dao::query_db(){
 }
 
 jobico::kube::dao::gen_cluster_db(){
-  workers=($(query_db worker))
-  servers=($(query_db server))
+  echo "">${MACHINES_DB}
+  workers=($(jobico::kube::dao::query_db worker))
+  servers=($(jobico::kube::dao::query_db server))
   id1=7
   id2=0
   for e in "${servers[@]}"; do
-    echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 0.0.${id2}.0/24 node" >> cluster.txt
+    echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 0.0.${id2}.0/24 node" >> ${MACHINES_DB}
     ((id1++))
     ((id2++))
   done 
 
   id2=0
   for e in "${workers[@]}"; do
-    echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 10.200.${id2}.0/24 node" >> cluster.txt
+    echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 10.200.${id2}.0/24 node" >> ${MACHINES_DB}
     ((id1++))
     ((id2++))
   done 
 }
-
-jobico::kube::dao::load_database(){
+jobico::kube::dao::gen_databases(){
     jobico::kube::dao::gen_db
     jobico::kube::dao::gen_cluster_db
-    readonly MACHINES_DB="${WORK_DIR}/cluster.txt"
-    readonly DOWNLOADS_TBL=${EXTRAS_DIR}/downloads_amd64.txt
-    readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
-    readonly ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 }
 
 jobico::kube::debug(){
@@ -94,13 +92,13 @@ jobico::kube::debug(){
   gencert=($(jobico::kube::dao::query_db gencert))
   kubeconfig=($(jobico::kube::dao::query_db genkubeconfig))
   echo "-------workers---------"
-  print_array ${workers[@]}
+  jobico::kube::utils::print_array ${workers[@]}
   echo "------servers----------"
-  print_array ${servers[@]}
+  jobico::kube::utils::print_array ${servers[@]}
   echo "------gencert----------"
-  print_array ${gencert[@]}
+  jobico::kube::utils::print_array ${gencert[@]}
   echo "------kubeconfig-------"
-  print_array ${kubeconfig[@]}
+  jobico::kube::utils::print_array ${kubeconfig[@]}
   echo "----------------"
 }
 
@@ -110,7 +108,9 @@ jobico::kube::init(){
 }
 jobico::kube::cluster(){
     jobico::kube::init
-    jobico::kube::load_database
+    jobico::kube::dao::gen_databases
+    jobico::kube::debug
+    exit 0
     jobico::kube::machines
     jobico::kube::deps
     jobico::kube::init::locals
@@ -123,7 +123,6 @@ jobico::kube::machines(){
     fi
 }
 jobico::kube::destroy_machines(){
-    jobico::kube::load_database
     jobico::kube::destroy_vms
 }
 jobico::kube::generate(){
@@ -225,13 +224,14 @@ jobico::kube::cluster::update_hostnames_file(){
     done < ${JOBICO_CLUSTER_TBL}
 }
 jobico::kube::tls::gen_ca_conf(){
+  cp ${EXTRAS_DIR}/tls/ca.conf.base ${CA_CONF}
   workers=($(query_db worker))
   new_ca=""
   for e in "${workers[@]}"; do
-    node_req=$(sed "s/{NAME}/${e}/g" "${EXTRAS_DIR}/ca.conf.nodes.tmpl") 
+    node_req=$(sed "s/{NAME}/${e}/g" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl") 
     new_ca="${new_ca}\n\n${node_req}" 
   done 
-  echo -e "${new_ca}">>${WORKER_DIR}/ca.conf
+  echo -e "${new_ca}">>${CA_CONF}
 }
 
 jobico::kube::tls::gen_ca(){
