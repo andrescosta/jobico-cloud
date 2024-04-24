@@ -1,4 +1,4 @@
-.PHONY: cluster destroy local
+.PHONY: cluster destroy local deps
 
 cluster:
 	bash ./scripts/cluster.sh
@@ -12,7 +12,7 @@ local:
 ## Deps
 
 deps: 
-	sudo apt update && sudo apt install cloud-utils whois -y
+	bash ./scripts/install.sh
 
 
 ## Utils
