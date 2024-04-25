@@ -7,11 +7,13 @@ readonly MAKE=make
 readonly STATUS_FILE=${WORK_DIR}/jobico_status
 readonly CLUSTER_NAME=jobico-cloud
 readonly WORKER_NAME=node
-readonly TOTAL_WORKERS=2
+readonly TOTAL_WORKERS=3
 readonly MACHINES_DB="${WORK_DIR}/cluster.txt"
 readonly DOWNLOADS_TBL=${EXTRAS_DIR}/downloads_amd64.txt
 readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
 readonly ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
+readonly BEGIN_HOSTS_FILE="#B> Kubernetes Cluster" 
+readonly END_HOSTS_FILE="#E> Kubernetes Cluster" 
 
 jobico::kube::utils::print_array(){
   values=($@)
@@ -138,13 +140,16 @@ jobico::kube::machines(){
 }
 jobico::kube::destroy_machines(){
     jobico::kube::destroy_vms
+    jobico::kube::restore_local_hostsfile
 }
 jobico::kube::generate(){
     jobico::kube::wait_for_servers
     echo "Generating ..."
     #DNS
     if ! grep -q "host" ${STATUS_FILE}; then
+      echo "generateing hosts file"
         jobico::kube::gen_hostsfile
+        jobico::kube::update_local_hostsfile
         jobico::kube::update_knownhosts_file
         jobico::kube::cluster::set_hostname
         jobico::kube::cluster::update_hostnames_file
@@ -204,16 +209,21 @@ jobico::kube::deploy_aux(){
     jobico::kube::encryption::deploy_key_to_server
 }
 jobico::kube::gen_hostsfile(){
-    echo "" > ${HOSTSFILE}
-    echo "# Kubernetes Cluster" >> ${HOSTSFILE}
+    echo ${BEGIN_HOSTS_FILE} > ${HOSTSFILE}
     while read IP FQDN HOST SUBNET TYPE; do
         entry="${IP} ${FQDN} ${HOST}"
         echo ${entry} >> ${HOSTSFILE}
     done < ${JOBICO_CLUSTER_TBL}
+    echo  ${END_HOSTS_FILE}>> ${HOSTSFILE}
 }
 
 jobico::kube::update_local_hostsfile(){
-    cat  ${HOSTSFILE} >> /etc/hosts
+    cmd="cat ${HOSTSFILE} >> /etc/hosts"
+    sudo bash -c "$cmd" 
+}
+jobico::kube::restore_local_hostsfile(){
+    sed "/${BEGIN_HOSTS_FILE}/,/${END_HOSTS_FILE}/d" /etc/hosts > ${WORK_DIR}/uhosts
+    sudo bash -c "cp ${WORK_DIR}/uhosts /etc/hosts" 
 }
 jobico::kube::update_knownhosts_file(){
     while read IP FQDN HOST SUBNET TYPE; do
@@ -234,7 +244,7 @@ jobico::kube::cluster::update_hostnames_file(){
     while read IP FQDN HOST SUBNET TYPE; do
         scp  ${HOSTSFILE} root@${HOST}:~/
         ssh -n \
-        root@${HOST} "cat hosts >> /etc/hosts"
+          root@${HOST} "cat hosts >> /etc/hosts"
     done < ${JOBICO_CLUSTER_TBL}
 }
 jobico::kube::tls::gen_ca_conf(){
@@ -346,7 +356,8 @@ jobico::kube::kubeconfig::gen_for_controlplane(){
 }
 
 jobico::kube::kubeconfig::deploy_to_nodes(){
-    for host in node-0 node-1; do
+    local workers=($(jobico::kube::dao::query_db worker))
+    for host in ${workers[*]}; do
         ssh root@$host "mkdir -p /var/lib/{kube-proxy,kubelet}"
         scp ${WORK_DIR}/kube-proxy.kubeconfig \
         root@$host:/var/lib/kube-proxy/kubeconfig
@@ -530,7 +541,11 @@ EOF
     done
 }
 jobico::kube::cluster::set_local(){
-    jobico::kube::kubeconfig::gen_locally_for_kube_admin
+  echo "no op"
+  jobico::kube::restore_local_hostsfile
+ #jobico::kube::gen_hostsfile
+  #jobico::kube::update_local_hostsfile
+    #jobico::kube::kubeconfig::gen_locally_for_kube_admin
 }
 jobico::kube::kubeconfig::gen_locally_for_kube_admin(){
     kubectl config set-cluster ${CLUSTER_NAME} \
@@ -607,6 +622,3 @@ jobico::kube::wait_for_servers() {
         fi
     done < ${JOBICO_CLUSTER_TBL}
 }
-
-
-

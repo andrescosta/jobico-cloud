@@ -9,6 +9,3 @@ kubectl logs $POD_NAME
 
 kubectl exec -ti $POD_NAME -- nginx -v
 
-kubectl expose deployment nginx \
-  --port 80 --type NodePort
-
