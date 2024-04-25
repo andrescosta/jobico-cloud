@@ -1,5 +1,3 @@
-
-
 #!/bin/bash
 
 script_path=$(dirname $0)
