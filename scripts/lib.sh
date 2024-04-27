@@ -15,43 +15,37 @@ readonly BEGIN_HOSTS_FILE="#B> Kubernetes Cluster"
 readonly END_HOSTS_FILE="#E> Kubernetes Cluster"
 
 jobico::kube::cluster(){
-    jobico::kube::init
-    jobico::kube::dao::gen_databases $1
-    jobico::kube::machines
-    jobico::kube::deps
-    jobico::kube::init::locals
-    jobico::kube::generate
+    local number_of_nodes=$1
+    jobico::kube::init_local_files
+    jobico::kube::dao::gen_databases $number_of_nodes
+    jobico::kube::create_vms
+    jobico::kube::download_deps
+    jobico::kube::create_cluster
 }
-jobico::kube::init(){
+jobico::kube::init_local_files(){
     mkdir -p ${WORK_DIR}
     touch ${STATUS_FILE}
 }
 jobico::kube::dao::gen_databases(){
-    jobico::kube::dao::gen_db $1
+    local number_of_nodes=$1
+    jobico::kube::dao::gen_db $number_of_nodes
     jobico::kube::dao::gen_cluster_db
 }
-jobico::kube::machines(){
+jobico::kube::create_vms(){
     if ! grep -q "machines" ${STATUS_FILE}; then
         jobico::kube::create_vms
+        jobico::kube::wait_for_vms_ssh
         jobico::kube::set_done "machines"
     fi
 }
-jobico::kube::deps(){
+jobico::kube::download_deps(){
     if ! grep -q "deps" "${STATUS_FILE}"; then
         mkdir -p ${DOWNLOADS_DIR}
         wget -q --https-only -P  ${DOWNLOADS_DIR} -i ${DOWNLOADS_TBL}
         jobico::kube::set_done "deps"
     fi
 }
-jobico::kube::init::locals(){
-    if ! grep -q "locals" "${STATUS_FILE}"; then
-        sudo cp ${DOWNLOADS_DIR}/kubectl /usr/local/bin && \
-        sudo chmod +x /usr/local/bin/kubectl
-        jobico::kube::set_done "locals"
-    fi
-}
-jobico::kube::generate(){
-    jobico::kube::wait_for_servers_ssh
+jobico::kube::create_cluster(){
     # DNS
     if ! grep -q "host" ${STATUS_FILE}; then
         jobico::kube::gen_hostsfile
@@ -87,7 +81,7 @@ jobico::kube::generate(){
     fi
     # Etcd
     if ! grep -q "etcddb" ${STATUS_FILE}; then
-        jobico::kube::etcd::deploy_to_server
+        jobico::kube::etcd::install_to_server
         jobico::kube::set_done "etcddb"
     fi
     # Control Plane deployment
@@ -161,52 +155,6 @@ jobico::kube::dao::gen_cluster_db(){
         ((id1++))
         ((id2++))
     done
-}
-
-## Debug utils
-
-jobico::kube::utils::print_array(){
-    values=($@)
-    for v in "${values[@]}"; do
-        echo "$v"
-    done
-}
-
-jobico::kube::debug(){
-    workers=($(jobico::kube::dao::query_db worker))
-    servers=($(jobico::kube::dao::query_db control_plane))
-    gencert=($(jobico::kube::dao::query_db gencert))
-    kubeconfig=($(jobico::kube::dao::query_db genkubeconfig))
-    echo "---------workers------------"
-    jobico::kube::utils::print_array ${workers[@]}
-    echo "---------servers------------"
-    jobico::kube::utils::print_array ${servers[@]}
-    echo "------certificates----------"
-    jobico::kube::utils::print_array ${gencert[@]}
-    echo "--------kubeconfig----------"
-    jobico::kube::utils::print_array ${kubeconfig[@]}
-    echo "---------cluster------------"
-    while read IP FQDN HOST SUBNET TYPE; do
-        echo "IP:$IP FQDN:$FQDN HOST:$HOST SUBNET:$SUBNET TYPE:$TYPE"
-    done < ${JOBICO_CLUSTER_TBL}
-    echo "---------routes------------"
-    
-    for worker1 in "${workers[@]}"; do
-        for worker2 in "${workers[@]}"; do
-            if [ "$worker1" != "$worker2" ]; then
-                node_ip=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 1)
-                node_subnet=$(grep ${worker2}  ${MACHINES_DB} | cut -d " " -f 4)
-                echo "ssh root at ${worker1}"
-                echo "to add route ${node_subnet} via ${node_ip}"
-            fi
-        done
-    done
-}
-
-## Support
-
-jobico::kube::set_done(){
-    echo "|$1|" >> ${WORK_DIR}/jobico_status
 }
 
 ## Hosts files
@@ -407,7 +355,7 @@ jobico::kube::encryption::deploy_key_to_server(){
 
 # etcd
 
-jobico::kube::etcd::deploy_to_server(){
+jobico::kube::etcd::install_to_server(){
     scp ${DOWNLOADS_DIR}/etcd-v3.4.27-linux-amd64.tar.gz ${EXTRAS_DIR}/units/etcd.service root@server:~/
   ssh root@server << 'EOF'
 tar -xvf ~/etcd-v3.4.27-linux-amd64.tar.gz
@@ -424,7 +372,7 @@ etcdctl member list
 EOF
 }
 
-# Control plane deployment
+# Server deployment
 
 jobico::kube::deploy_deps_to_server(){
     scp ${DOWNLOADS_DIR}/kube-apiserver \
@@ -484,7 +432,7 @@ jobico::kube::deploy_deps_to_server(){
 EOF
 }
 
-# Workers deployment
+# Nodes deployment
 
 jobico::kube::deploy_deps_to_nodes(){
     local workers=($(jobico::kube::dao::query_db worker))
@@ -561,9 +509,16 @@ EOF
 # Local env
 
 jobico::kube::cluster::set_local_deps(){
-    echo "no op"
+    jobico::kube::init::locals
+    jobico::kube::kubeconfig::gen_locally_for_kube_admin
 }
-
+jobico::kube::init::locals(){
+    if ! grep -q "locals" "${STATUS_FILE}"; then
+        sudo cp ${DOWNLOADS_DIR}/kubectl /usr/local/bin && \
+        sudo chmod +x /usr/local/bin/kubectl
+        jobico::kube::set_done "locals"
+    fi
+}
 jobico::kube::kubeconfig::gen_locally_for_kube_admin(){
     kubectl config set-cluster ${CLUSTER_NAME} \
     --certificate-authority=${WORK_DIR}/ca.crt \
@@ -614,10 +569,16 @@ EOF
     done
 }
 
-jobico::kube::wait_for_servers_ssh() {
+
+## Support
+
+jobico::kube::set_done(){
+    echo "|$1|" >> ${WORK_DIR}/jobico_status
+}
+jobico::kube::wait_for_vms_ssh() {
     local port=22
-    local timeout=60  # Timeout in seconds
-    local delay=5     # Delay between attempts in seconds
+    local timeout=60  
+    local delay=5 
     local elapsed_time=0
     
     echo "Waiting for servers to start..."
@@ -640,4 +601,44 @@ jobico::kube::wait_for_servers_ssh() {
             echo "$IP is now listening on port $port"
         fi
     done < ${JOBICO_CLUSTER_TBL}
+}
+
+## Debug utils
+
+jobico::kube::utils::print_array(){
+    values=($@)
+    for v in "${values[@]}"; do
+        echo "$v"
+    done
+}
+
+jobico::kube::debug(){
+    workers=($(jobico::kube::dao::query_db worker))
+    servers=($(jobico::kube::dao::query_db control_plane))
+    gencert=($(jobico::kube::dao::query_db gencert))
+    kubeconfig=($(jobico::kube::dao::query_db genkubeconfig))
+    echo "---------workers------------"
+    jobico::kube::utils::print_array ${workers[@]}
+    echo "---------servers------------"
+    jobico::kube::utils::print_array ${servers[@]}
+    echo "------certificates----------"
+    jobico::kube::utils::print_array ${gencert[@]}
+    echo "--------kubeconfig----------"
+    jobico::kube::utils::print_array ${kubeconfig[@]}
+    echo "---------cluster------------"
+    while read IP FQDN HOST SUBNET TYPE; do
+        echo "IP:$IP FQDN:$FQDN HOST:$HOST SUBNET:$SUBNET TYPE:$TYPE"
+    done < ${JOBICO_CLUSTER_TBL}
+    echo "---------routes------------"
+    
+    for worker1 in "${workers[@]}"; do
+        for worker2 in "${workers[@]}"; do
+            if [ "$worker1" != "$worker2" ]; then
+                node_ip=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 1)
+                node_subnet=$(grep ${worker2}  ${MACHINES_DB} | cut -d " " -f 4)
+                echo "ssh root at ${worker1}"
+                echo "to add route ${node_subnet} via ${node_ip}"
+            fi
+        done
+    done
 }
