@@ -6,8 +6,31 @@ DEFAULT_NODES=2
 . $(dirname "$0")/kvm.sh 
 
 function destroy(){
-  read -r -p "Are you sure to destroy the cluster? [Y/n] " response
-  response=${response,,}
+    ask=true
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -y )
+                shift
+                ask=false
+                response="yes"
+                ;;
+            -* )
+                echo "Unrecognized or incomplete option: $1" >&2
+                display_help
+                exit 1
+                ;;
+            * )
+                echo "Invalid argument: $1" >&2
+                display_help
+                exit 1
+                ;;
+        esac
+        shift
+    done
+  if [ "$ask" = true ]; then 
+    read -r -p "Are you sure to destroy the cluster? [Y/n] " response
+    response=${response,,}
+  fi
   if [[ $response == "yes" || $response == "y" ]]; then
     echo "Destroying the cluster ... "
     jobico::kube::destroy_cluster
@@ -134,7 +157,8 @@ function exec_command(){
       cluster "$@"
       ;;
     destroy)
-      destroy
+      shift
+      destroy "$@"
       ;;
     local)
       clocal
