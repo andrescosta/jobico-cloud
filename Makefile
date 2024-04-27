@@ -1,19 +1,4 @@
-.PHONY: cluster destroy local deps
-
-cluster:
-	bash ./scripts/cluster.sh
-
-destroy:
-	bash ./scripts/destroy.sh
-
-local:
-	bash ./scripts/local.sh
-
-## Deps
-
-deps: 
-	bash ./scripts/install.sh
-
+.PHONY: status dhcp list net 
 
 ## Utils
 
