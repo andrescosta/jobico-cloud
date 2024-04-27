@@ -153,7 +153,6 @@ jobico::kube::dao::gen_cluster_db(){
         ((id1++))
         ((id2++))
     done
-    DEBUG echo "22222222222222222"
     
     id2=0
     for e in "${workers[@]}"; do
