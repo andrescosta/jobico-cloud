@@ -1,0 +1,76 @@
+Destroying the cluster ... 
+dhcp_release virbr0 192.168.122.7 02:12:96:89:14:ca
+virsh net-update default delete ip-dhcp-host \
+  '<host ip="192.168.122.7"/>' \
+  --live --config
+Updated network default persistent config and live state
+ssh-keygen -f ~/.ssh/known_hosts -R 192.168.122.7
+# Host 192.168.122.7 found: line 4
+# Host 192.168.122.7 found: line 5
+# Host 192.168.122.7 found: line 6
+/home/ajcosta/.ssh/known_hosts updated.
+Original contents retained as /home/ajcosta/.ssh/known_hosts.old
+ssh-keygen -f ~/.ssh/known_hosts -R server
+# Host server found: line 1
+# Host server found: line 2
+# Host server found: line 3
+/home/ajcosta/.ssh/known_hosts updated.
+Original contents retained as /home/ajcosta/.ssh/known_hosts.old
+virsh destroy server 
+Domain 'server' destroyed
+
+virsh undefine server --remove-all-storage
+Domain 'server' has been undefined
+Volume 'vda'(/var/lib/libvirt/boot/debian-12-server.qcow2) removed.
+Volume 'sda'(/var/lib/libvirt/boot/cloud-init-server.iso) removed.
+
+dhcp_release virbr0 192.168.122.8 02:57:ba:be:13:e0
+virsh net-update default delete ip-dhcp-host \
+  '<host ip="192.168.122.8"/>' \
+  --live --config
+Updated network default persistent config and live state
+ssh-keygen -f ~/.ssh/known_hosts -R 192.168.122.8
+# Host 192.168.122.8 found: line 4
+# Host 192.168.122.8 found: line 5
+# Host 192.168.122.8 found: line 6
+/home/ajcosta/.ssh/known_hosts updated.
+Original contents retained as /home/ajcosta/.ssh/known_hosts.old
+ssh-keygen -f ~/.ssh/known_hosts -R node-0
+# Host node-0 found: line 1
+# Host node-0 found: line 2
+# Host node-0 found: line 3
+/home/ajcosta/.ssh/known_hosts updated.
+Original contents retained as /home/ajcosta/.ssh/known_hosts.old
+virsh destroy node-0 
+Domain 'node-0' destroyed
+
+virsh undefine node-0 --remove-all-storage
+Domain 'node-0' has been undefined
+Volume 'vda'(/var/lib/libvirt/boot/debian-12-node-0.qcow2) removed.
+Volume 'sda'(/var/lib/libvirt/boot/cloud-init-node-0.iso) removed.
+
+dhcp_release virbr0 192.168.122.9 02:71:8e:21:25:c6
+virsh net-update default delete ip-dhcp-host \
+  '<host ip="192.168.122.9"/>' \
+  --live --config
+Updated network default persistent config and live state
+ssh-keygen -f ~/.ssh/known_hosts -R 192.168.122.9
+# Host 192.168.122.9 found: line 4
+# Host 192.168.122.9 found: line 5
+# Host 192.168.122.9 found: line 6
+/home/ajcosta/.ssh/known_hosts updated.
+Original contents retained as /home/ajcosta/.ssh/known_hosts.old
+ssh-keygen -f ~/.ssh/known_hosts -R node-1
+# Host node-1 found: line 1
+# Host node-1 found: line 2
+# Host node-1 found: line 3
+/home/ajcosta/.ssh/known_hosts updated.
+Original contents retained as /home/ajcosta/.ssh/known_hosts.old
+virsh destroy node-1 
+Domain 'node-1' destroyed
+
+virsh undefine node-1 --remove-all-storage
+Domain 'node-1' has been undefined
+Volume 'vda'(/var/lib/libvirt/boot/debian-12-node-1.qcow2) removed.
+Volume 'sda'(/var/lib/libvirt/boot/cloud-init-node-1.iso) removed.
+
