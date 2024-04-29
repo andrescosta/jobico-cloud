@@ -1,3 +1,6 @@
+
+. $(dirname "$0")/utils.sh 
+
 readonly WORK_DIR="work"
 readonly DOWNLOADS_DIR="${WORK_DIR}/downloads"
 readonly EXTRAS_DIR="extras"
@@ -8,16 +11,18 @@ readonly STATUS_FILE=${WORK_DIR}/jobico_status
 readonly CLUSTER_NAME=jobico-cloud
 readonly WORKER_NAME=node
 readonly MACHINES_DB="${WORK_DIR}/cluster.txt"
-readonly DOWNLOADS_TBL=${EXTRAS_DIR}/downloads_amd64.txt
+readonly DOWNLOADS_TBL=${EXTRAS_DIR}/downloads/downloads_amd64.txt
 readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
 readonly ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 readonly BEGIN_HOSTS_FILE="#B> Kubernetes Cluster"
 readonly END_HOSTS_FILE="#E> Kubernetes Cluster"
+_DEBUG="off"
 
 jobico::kube::cluster(){
     local number_of_nodes=$1
     jobico::kube::init_local_files
     jobico::kube::dao::gen_databases $number_of_nodes
+    DEBUG jobico::kube::print_databases_info
     jobico::kube::create_vms
     jobico::kube::download_deps
     jobico::kube::create_cluster
@@ -33,7 +38,7 @@ jobico::kube::dao::gen_databases(){
 }
 jobico::kube::create_vms(){
     if ! grep -q "machines" ${STATUS_FILE}; then
-        jobico::kube::create_vms
+        jobico::kube::create_kvm_vms
         jobico::kube::wait_for_vms_ssh
         jobico::kube::set_done "machines"
     fi
@@ -108,7 +113,7 @@ jobico::kube::destroy_cluster(){
 
 ## VMs
 
-jobico::kube::create_vms(){
+jobico::kube::create_kvm_vms(){
     while read IP FQDN HOST SUBNET TYPE; do
         make -f scripts/Makefile.vm new-vm-${TYPE} VM_IP=${IP} VM_NAME=${HOST}
     done < ${JOBICO_CLUSTER_TBL}
@@ -139,10 +144,10 @@ jobico::kube::dao::query_db(){
 
 jobico::kube::dao::gen_cluster_db(){
     rm -f ${MACHINES_DB}
-    workers=($(jobico::kube::dao::query_db worker))
-    servers=($(jobico::kube::dao::query_db control_plane))
-    id1=7
-    id2=0
+    local workers=($(jobico::kube::dao::query_db worker))
+    local servers=($(jobico::kube::dao::query_db control_plane))
+    local id1=7
+    local id2=0
     for e in "${servers[@]}"; do
         echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 0.0.${id2}.0/24 server" >> ${MACHINES_DB}
         ((id1++))
@@ -169,7 +174,7 @@ jobico::kube::gen_hostsfile(){
 }
 
 jobico::kube::update_local_etc_hosts(){
-    cmd="cat ${HOSTSFILE} >> /etc/hosts"
+    local cmd="cat ${HOSTSFILE} >> /etc/hosts"
     sudo bash -c "$cmd"
 }
 
@@ -539,7 +544,7 @@ jobico::kube::kubeconfig::gen_locally_for_kube_admin(){
 # Routes
 
 jobico::kube::cluster::add_routes(){
-    servers=($(jobico::kube::dao::query_db server))
+    servers=($(jobico::kube::dao::query_db control_plane))
     workers=($(jobico::kube::dao::query_db worker))
     for server in "${servers[@]}"; do
         for worker in "${workers[@]}"; do
@@ -605,26 +610,19 @@ jobico::kube::wait_for_vms_ssh() {
 
 ## Debug utils
 
-jobico::kube::utils::print_array(){
-    values=($@)
-    for v in "${values[@]}"; do
-        echo "$v"
-    done
-}
-
-jobico::kube::debug(){
+jobico::kube::print_databases_info(){
     workers=($(jobico::kube::dao::query_db worker))
     servers=($(jobico::kube::dao::query_db control_plane))
     gencert=($(jobico::kube::dao::query_db gencert))
     kubeconfig=($(jobico::kube::dao::query_db genkubeconfig))
     echo "---------workers------------"
-    jobico::kube::utils::print_array ${workers[@]}
+    print_array ${workers[@]}
     echo "---------servers------------"
-    jobico::kube::utils::print_array ${servers[@]}
+    print_array ${servers[@]}
     echo "------certificates----------"
-    jobico::kube::utils::print_array ${gencert[@]}
+    print_array ${gencert[@]}
     echo "--------kubeconfig----------"
-    jobico::kube::utils::print_array ${kubeconfig[@]}
+    print_array ${kubeconfig[@]}
     echo "---------cluster------------"
     while read IP FQDN HOST SUBNET TYPE; do
         echo "IP:$IP FQDN:$FQDN HOST:$HOST SUBNET:$SUBNET TYPE:$TYPE"
