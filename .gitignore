@@ -5,3 +5,5 @@ machines.txt
 **/work*
 *.swp
 *.bak
+*.log
+**/log
