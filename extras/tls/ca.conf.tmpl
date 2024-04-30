@@ -156,29 +156,48 @@ subjectKeyIdentifier = hash
 # ETCD 
 #
 
-[etcd]
-distinguished_name = etcd_distinguished_name
+[etcd-server]
+distinguished_name = etcd-server_distinguished_name
 prompt             = no
-req_extensions     = etcd_req_extensions
+req_extensions     = etcd-server_req_extensions
 
-[kube-api-server_req_extensions]
+[etcd-server_req_extensions]
 basicConstraints     = CA:FALSE
 extendedKeyUsage     = clientAuth, serverAuth
 keyUsage             = critical, digitalSignature, keyEncipherment
 nsCertType           = client
 nsComment            = "Etcd Certificate"
-subjectAltName       = @etcd_alt_names
+subjectAltName       = @etcd-server_alt_names
 subjectKeyIdentifier = hash
 
-[etcd_alt_names]
-#IP.0  = 127.0.0.1
+[etcd-server_alt_names]
 {ETCD_IPS}
-#DNS.0 = api-server.kubernetes.local
 {ETCD_DNS}
-
-[etcd_distinguished_name]
+[etcd-server_distinguished_name]
 CN = etcd-server 
 C  = CA
 ST = Quebec
 L  = Montreal
 
+[lb]
+distinguished_name = lb_distinguished_name
+prompt             = no
+req_extensions     = lb_req_extensions
+
+[lb_req_extensions]
+basicConstraints     = CA:FALSE
+extendedKeyUsage     = clientAuth, serverAuth
+keyUsage             = critical, digitalSignature, keyEncipherment
+nsCertType           = client
+nsComment            = "Load balancer Certificate"
+subjectAltName       = @lb_alt_names
+subjectKeyIdentifier = hash
+
+[lb_alt_names]
+IP.0={LB_IP}
+DNS.0={LB_DNS}
+[lb_distinguished_name]
+CN = LoadBalancer 
+C  = CA
+ST = Quebec
+L  = Montreal
