@@ -267,7 +267,7 @@ jobico::kube::tls::gen_ca_conf(){
     sed -i "s/{LB_DNS}/${vipdns}/g" "${CA_CONF}"
 }
 jobico::kube::dao::get_lb_data(){
-    vip=$(jobico::kube::dao::query_cluster_db lbvip $1)
+    lb=$(jobico::kube::dao::query_cluster_db lbvip $1)
     echo "${lb}"
 }
 jobico::kube::tls::gen_ca(){
@@ -723,15 +723,21 @@ jobico::kube::gen_and_print_databases_info(){
         jobico::kube::tls::gen_ca_conf
         jobico::kube::tls::gen_ca
         jobico::kube::tls::gen_certs
+        #jobico::kube::kubeconfig::gen_for_nodes
+        #jobico::kube::kubeconfig::gen_for_controlplane
+        #jobico::kube::kubeconfig::gen_locally_for_kube_admin
     fi
     jobico::kube::print_databases_info
 }
 jobico::kube::print_databases_info(){
     workers=($(jobico::kube::dao::query_db worker))
-    vip=$(jobico::kube::dao::query_cluster_db lbvip 1)
-    vipdns=$(jobico::kube::dao::query_cluster_db lbvip 2)
+    vip=$(jobico::kube::dao::get_lb_data 1)
+    vipdns=$(jobico::kube::dao::get_lb_data 2)
+    viphost=$(jobico::kube::dao::get_lb_data 3)
     cluster=$(jobico::kube::etcd::get_etcd_cluster)
     serversip=($(jobico::kube::dao::query_cluster_db server 1))
+    serversfqdn=($(jobico::kube::dao::query_cluster_db server 2))
+    servershost=($(jobico::kube::dao::query_cluster_db server 3))
     servers=($(jobico::kube::dao::query_db control_plane))
     gencert=($(jobico::kube::dao::query_db gencert))
     kubeconfig=($(jobico::kube::dao::query_db genkubeconfig))
@@ -740,12 +746,17 @@ jobico::kube::print_databases_info(){
     echo "------------vip-------------"
     echo "${vip}"
     echo "${vipdns}"
+    echo "${viphost}"
     echo "---------workers------------"
     print_array ${workers[@]}
     echo "---------servers------------"
     print_array ${servers[@]}
     echo "---------servers ips--------"
     print_array ${serversip[@]}
+    echo "---------servers fqdn-------"
+    print_array ${serversfqdn[@]}
+    echo "--------servers host--------"
+    print_array ${servershost[@]}
     echo "---------servers ip---------"
     while read IP FQDN HOST SUBNET TYPE; do
         if [ "${TYPE}" == "server" ]; then
