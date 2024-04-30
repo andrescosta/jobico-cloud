@@ -1,6 +1,7 @@
 #!/bin/bash
 PS4='LINENO:'
 DEFAULT_NODES=2
+DEFAULT_CPL=1
 
 . $(dirname "$0")/lib.sh 
 . $(dirname "$0")/kvm.sh 
@@ -46,7 +47,56 @@ function kvm(){
   install_kvm
 }
 show_databases_content(){
-    jobico::kube::print_databases_info
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --nodes )
+                shift
+                if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
+                    nodes=$1
+                else
+                    echo "Invalid value for --nodes. Please provide a numeric value." >&2
+                    display_help
+                    exit 1
+                fi
+                ;;
+            --cpl )
+                shift
+                if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
+                    cpl=$1
+                else
+                    echo "Invalid value for --cpl. Please provide a numeric value." >&2
+                    display_help
+                    exit 1
+                fi
+                ;;
+            --debug )
+                shift
+                if [ "$1" != "s" ] && [ "$1" != "d" ]; then
+                    echo "Invalid value for --debug.Plase provide s or d" >&2
+                    display_help
+                    exit 1
+                fi
+                if [ "$1" == "d" ]; then
+                    set -x
+                 fi
+                _DEBUG="on"
+                ;;
+            -* )
+                echo "Unrecognized or incomplete option: $1" >&2
+                display_help
+                exit 1
+                ;;
+            * )
+                echo "Invalid argument: $1" >&2
+                display_help
+                exit 1
+                ;;
+        esac
+        shift
+    done
+    nodes=${nodes:-$DEFAULT_NODES}
+    cpl=${cpl:-$DEFAULT_CPL}
+    jobico::kube::gen_and_print_databases_info $nodes $cpl
 }
 
 new() {
@@ -58,6 +108,16 @@ new() {
                     nodes=$1
                 else
                     echo "Invalid value for --nodes. Please provide a numeric value." >&2
+                    display_help
+                    exit 1
+                fi
+                ;;
+            --cpl )
+                shift
+                if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
+                    cpl=$1
+                else
+                    echo "Invalid value for --cpl. Please provide a numeric value." >&2
                     display_help
                     exit 1
                 fi
@@ -88,8 +148,9 @@ new() {
         shift
     done
   nodes=${nodes:-$DEFAULT_NODES}
-  echo " The K8s Cluster is being created with $nodes node(s) ..."
-  jobico::kube::cluster $nodes
+  cpl=${cpl:-$DEFAULT_CPL}
+  echo " The K8s Cluster is being created with $nodes node(s) and $cpl control plane node(s) ..."
+  jobico::kube::cluster $nodes $cpl
   echo " The K8s Cluster was created."
 }
 
@@ -137,6 +198,8 @@ display_help_for_new(){
   echo "The arguments that define how the cluster will be created:"
   echo "     --nodes n"
   echo "            Specify the number of worker nodes to be created. The default value is 2. "
+  echo "     --cpl n"
+  echo "            Specify the number of control planed nodes to be created. The default value is 1. "
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."
@@ -173,13 +236,15 @@ exec_command(){
       destroy "$@"
       ;;
     local)
-      clocal
+      shift
+      clocal "$@"
       ;;
     kvm)
       kvm      
       ;;
     db)
-      show_databases_content
+      shift
+      show_databases_content "$@"
       ;;
     help)
       if [ $# -gt 1 ]; then

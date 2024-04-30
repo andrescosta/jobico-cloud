@@ -1,8 +1,9 @@
 admin role gencert genkubeconfig
-etcd-server db gencert
 kube-proxy component gencert genkubeconfig
 kube-scheduler component gencert genkubeconfig
 kube-controller-manager component gencert genkubeconfig
 kube-api-server component gencert 
-lb load_balancer gencert
+server control_plane
 service-accounts role gencert 
+node-0 worker gencert
+node-1 worker gencert
