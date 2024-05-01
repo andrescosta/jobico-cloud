@@ -26,6 +26,7 @@ jobico::kube::cluster(){
     jobico::kube::dao::gen_databases $number_of_nodes $number_of_cpl_nodes
     DEBUG jobico::kube::print_databases_info
     jobico::kube::create_vms
+    exit 0
     jobico::kube::download_deps
     jobico::kube::create_cluster
 }
@@ -63,6 +64,12 @@ jobico::kube::create_cluster(){
         jobico::kube::cluster::update_etc_hosts
         jobico::kube::set_done "host"
     fi
+    # HAProxy
+    if ! grep -q "haproxy" ${STATUS_FILE}; then
+        jobico::kube::haproxy::gen_cfg
+        jobico::kube::haproxy::deploy
+    fi
+    exit
     # TLS
     if ! grep -q "tls_certs" ${STATUS_FILE}; then
         jobico::kube::tls::gen_ca_conf
@@ -396,6 +403,48 @@ jobico::kube::kubeconfig::deploy_to_server(){
     done
 }
 
+# HA Proxy
+
+jobico::kube::haproxy::gen_cfg(){
+    local vip=$(jobico::kube::dao::get_lb_data 1)
+    cp  ${EXTRAS_DIR}/configs/haproxy.cfg.tmpl ${WORK_DIR}/haproxy.cfg
+    #sed -i "s/{VIP}/${vip}/g" "${WORK_DIR}/haproxy.cfg"
+    servers=""
+    while read IP FQDN HOST SUBNET TYPE; do
+        if [ "${TYPE}" == "server" ]; then
+            servers="${servers}    server ${HOST} ${IP}:6443 check fall 3 rise 2\n"
+        fi
+    done < ${WORK_DIR}/cluster.txt
+    sed -i "s/{LB_IPS}/${servers}/g" "${WORK_DIR}/haproxy.cfg" 
+    local servers=($(jobico::kube::dao::query_cluster_db server 1))
+    for ip1 in ${servers[*]}; do
+        file="${WORK_DIR}/keepalived${ip1}.conf"
+        cp  ${EXTRAS_DIR}/configs/keepalived.conf.tmpl ${file} 
+        sed -i "s/{IP}/${ip1}/g" "${file}" 
+        sed -i "s/{VIP}/${vip}/g" "${file}" 
+        ips=""
+        for ip2 in ${servers[*]}; do
+            if [ "${ip1}" != "${ip2}" ]; then
+                ips="${ips}    ${ip2}\n"
+            fi
+        done
+        sed -i "s/{LB_IPS}/${ips}/g" "${file}" 
+    done
+}
+
+jobico::kube::haproxy::deploy(){
+    local servers=($(jobico::kube::dao::query_cluster_db server 1))
+    for ip in ${servers[*]}; do
+        scp ${WORK_DIR}/haproxy.cfg root@${ip}:~/ 
+        scp ${WORK_DIR}/keepalived${ip}.conf root@${ip}:/etc/keepalived/keepalived.conf
+        ssh root@$ip << 'EOF'
+cat ~/haproxy.cfg >> /etc/haproxy/haproxy.cfg
+cp keepalived.cfg /etc/keepalived
+systemctl reload haproxy 
+systemctl restart keepalived
+EOF
+    done
+}
 # Encryption key
 
 jobico::kube::encryption::gen_key(){
@@ -723,9 +772,10 @@ jobico::kube::gen_and_print_databases_info(){
         jobico::kube::tls::gen_ca_conf
         jobico::kube::tls::gen_ca
         jobico::kube::tls::gen_certs
-        #jobico::kube::kubeconfig::gen_for_nodes
-        #jobico::kube::kubeconfig::gen_for_controlplane
-        #jobico::kube::kubeconfig::gen_locally_for_kube_admin
+        jobico::kube::haproxy::gen_haproxy_cfg
+        jobico::kube::kubeconfig::gen_for_nodes
+        jobico::kube::kubeconfig::gen_for_controlplane
+        jobico::kube::kubeconfig::gen_locally_for_kube_admin
     fi
     jobico::kube::print_databases_info
 }
