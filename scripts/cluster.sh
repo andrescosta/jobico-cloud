@@ -207,7 +207,10 @@ display_help_for_new(){
 }
 display_help_for_db(){
   echo "Usage: $0 db"
+  echo "The arguments that define how the cluster will be created:"
   echo "Display the content of the internal databases."
+  echo "     --cpl n"
+  echo "            Specify the number of control planed nodes to be created. The default value is 1. "
 }
 display_help_for_destroy(){
   echo "Usage: $0 destroy"
