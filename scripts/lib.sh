@@ -171,6 +171,7 @@ jobico::kube::dao::gen_db(){
     local total_of_lbs=$3
     cp ${EXTRAS_DIR}/db/db.txt.tmpl ${WORK_DIR}/db.txt
     if [ $total_cpl_nodes -gt 1 ]; then
+        echo "server lbvip gencert" >> ${WORK_DIR}/db.txt
         for ((i=0;i<total_of_lbs;i++)); do
             echo "$LB_NAME-$i lb gencert" >> ${WORK_DIR}/db.txt
         done
@@ -186,10 +187,29 @@ jobico::kube::dao::gen_db(){
 }
 
 jobico::kube::dao::query_db(){
-    local values=($(grep "$1" ${WORK_DIR}/db.txt | cut -d " " -f 1))
+    #local values=($(grep "$1" ${WORK_DIR}/db.txt | cut -d " " -f 1))
+    local values=($(awk -v value="$1" -v col="1"  '$2 == value {print $col}' ${WORK_DIR}/db.txt))
     for e in "${values[@]}"; do
         echo "$e"
     done
+}
+
+#dogrep "lbvip" | while read IP FQDN HOST SUBNET TYPE; do
+#   echo "$SUBNET|${TYPE}=${IP}=${HOST}"
+#done
+
+
+jobico::kube::dao::select_not_type_cluster_db(){
+    local result=$(awk -v value="$1" '$5 != value {print $0}' ${WORK_DIR}/cluster.txt)
+    echo "$result"
+}
+#dogrep | while read IP FQDN HOST SUBNET TYPE; do
+#   echo "${TYPE}=${IP}=${HOST}"
+#done
+
+jobico::kube::dao::select_db(){
+    local values=$(awk -v value="$1" '$2 == value {print $0}' ${WORK_DIR}/db.txt)
+    echo "$values"
 }
 
 jobico::kube::dao::query_cluster_db(){
@@ -212,8 +232,10 @@ jobico::kube::dao::gen_cluster_db(){
     local id1=7
     local id2=0
     if [ "${#servers[@]}" -gt 1 ]; then
-        echo "192.168.122.${id1} .kubernetes.local server 0.0.0.0/24 lbvip" >> ${MACHINES_DB}
-        ((id1++))
+        if [ lbvip != "" ]; then 
+            echo "192.168.122.${id1} ${lbvip}.kubernetes.local ${lbvip} 0.0.0.0/24 lbvip" >> ${MACHINES_DB}
+            ((id1++))
+        fi
         for e in "${lbs[@]}"; do
             echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 0.0.0.0/24 lb" >> ${MACHINES_DB}
             ((id1++))
