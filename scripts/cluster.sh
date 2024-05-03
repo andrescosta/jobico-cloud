@@ -2,8 +2,9 @@
 PS4='LINENO:'
 DEFAULT_NODES=2
 DEFAULT_CPL=1
-
+DEFAULT_LB=2
 . $(dirname "$0")/lib.sh 
+. $(dirname "$0")/utils.sh 
 . $(dirname "$0")/kvm.sh 
 
 function destroy(){
@@ -15,70 +16,9 @@ function destroy(){
                 ask=false
                 response="yes"
                 ;;
-            -* )
-                echo "Unrecognized or incomplete option: $1" >&2
-                display_help
-                exit 1
-                ;;
-            * )
-                echo "Invalid argument: $1" >&2
-                display_help
-                exit 1
-                ;;
-        esac
-        shift
-    done
-  if [ "$ask" = true ]; then 
-    read -r -p "Are you sure to destroy the cluster? [Y/n] " response
-    response=${response,,}
-  fi
-  if [[ $response == "yes" || $response == "y" ]]; then
-    echo "Destroying the cluster ... "
-    jobico::kube::destroy_cluster
-    rm -rf work
-  else
-    echo "Command execution cancelled."
-  fi
-}
-function clocal(){
-  jobico::kube::cluster::set_local
-}
-function kvm(){
-  install_kvm
-}
-show_databases_content(){
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --nodes )
+            --dry_run )
                 shift
-                if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
-                    nodes=$1
-                else
-                    echo "Invalid value for --nodes. Please provide a numeric value." >&2
-                    display_help
-                    exit 1
-                fi
-                ;;
-            --cpl )
-                shift
-                if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
-                    cpl=$1
-                else
-                    echo "Invalid value for --cpl. Please provide a numeric value." >&2
-                    display_help
-                    exit 1
-                fi
-                ;;
-            --debug )
-                shift
-                if [ "$1" != "s" ] && [ "$1" != "d" ]; then
-                    echo "Invalid value for --debug.Plase provide s or d" >&2
-                    display_help
-                    exit 1
-                fi
-                if [ "$1" == "d" ]; then
-                    set -x
-                 fi
+                _DRY_RUN=true
                 _DEBUG="on"
                 ;;
             -* )
@@ -94,11 +34,28 @@ show_databases_content(){
         esac
         shift
     done
-    nodes=${nodes:-$DEFAULT_NODES}
-    cpl=${cpl:-$DEFAULT_CPL}
-    jobico::kube::gen_and_print_databases_info $nodes $cpl
+    NOT_DRY_RUN do_destroy
+    DRY_RUN jobico::kube::destroy_cluster
 }
-
+do_destroy(){
+  if [ "$ask" = true ]; then 
+    read -r -p "Are you sure to destroy the cluster? [Y/n] " response
+    response=${response,,}
+  fi
+  if [[ $response == "yes" || $response == "y" ]]; then
+    echo "Destroying the cluster ... "
+    jobico::kube::destroy_cluster
+    rm -rf work
+  else
+    echo "Command execution cancelled."
+  fi
+}
+clocal(){
+  jobico::kube::cluster::set_local
+}
+kvm(){
+  install_kvm
+}
 new() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -121,6 +78,21 @@ new() {
                     display_help
                     exit 1
                 fi
+                ;;
+            --lb )
+                shift
+                if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
+                    lb=$1
+                else
+                    echo "Invalid value for --lb. Please provide a numeric value." >&2
+                    display_help
+                    exit 1
+                fi
+                ;;
+            --dry_run )
+                shift
+                _DRY_RUN=true
+                _DEBUG="on"
                 ;;
             --debug )
                 shift
@@ -149,9 +121,14 @@ new() {
     done
   nodes=${nodes:-$DEFAULT_NODES}
   cpl=${cpl:-$DEFAULT_CPL}
-  echo " The K8s Cluster is being created with $nodes node(s) and $cpl control plane node(s) ..."
-  jobico::kube::cluster $nodes $cpl
-  echo " The K8s Cluster was created."
+  lb=${lb:-$DEFAULT_LB}
+  
+  echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balncer(s) ..."
+  DRY_RUN echo ">> Dryn run << "
+  
+  jobico::kube::cluster $nodes $cpl $lb 
+  
+  NOT_DRY_RUN echo "The K8s Cluster was created."
 }
 
 display_help() {
@@ -162,7 +139,6 @@ display_help() {
     echo "          destroy"
     echo "          local"
     echo "          kvm"
-    echo "          db"
     echo ""
     echo "Additional help: $0 help <command>"
 }
@@ -181,9 +157,6 @@ display_help_command(){
     kvm)
       display_help_for_kvm
       ;;
-    db)
-      display_help_for_db
-      ;;
     *)
       echo "Invalid command: $1" >&2
       display_help 
@@ -200,17 +173,14 @@ display_help_for_new(){
   echo "            Specify the number of worker nodes to be created. The default value is 2. "
   echo "     --cpl n"
   echo "            Specify the number of control planed nodes to be created. The default value is 1. "
+  echo "     --lb n"
+  echo "            Specify the number of load balancers to be created in case --cpl is greater than 1. The default value is 2. "
+  echo "     --dry_run"
+  echo "            Create the local dabases and displays its content but does not create the cluster."
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."
   echo "       d: display advanced information."
-}
-display_help_for_db(){
-  echo "Usage: $0 db"
-  echo "The arguments that define how the cluster will be created:"
-  echo "Display the content of the internal databases."
-  echo "     --cpl n"
-  echo "            Specify the number of control planed nodes to be created. The default value is 1. "
 }
 display_help_for_destroy(){
   echo "Usage: $0 destroy"
@@ -244,10 +214,6 @@ exec_command(){
       ;;
     kvm)
       kvm      
-      ;;
-    db)
-      shift
-      show_databases_content "$@"
       ;;
     help)
       if [ $# -gt 1 ]; then

@@ -7,6 +7,12 @@ print_array(){
 DEBUG() {
     [ "$_DEBUG" == "on" ] && $@
 }
+DRY_RUN() {
+    [ "$_DRY_RUN" == true ] && $@
+}
+NOT_DRY_RUN(){
+    [ "$_DRY_RUN" == false ] && $@
+} 
 escape() {
     escaped_result=$(printf '%s\n' "$1" | sed -e 's/[]\/$*.^[]/\\&/g')
     echo "${escaped_result}"
