@@ -36,6 +36,14 @@ jobico::kube::cluster(){
 }
 
 jobico::kube::destroy_cluster(){
+    if [ ! -e ${MACHINES_DB} ]; then
+        echo "${MACHINES_DB} does not exist"
+        exit 1
+    fi
+    if [ ! -e ${WORK_DIR}/db.txt ]; then
+        echo "${WORK_DIR}/db.txt does not exist"
+        exit 1
+    fi
     NOT_DRY_RUN jobico::kube::destroy_vms
     NOT_DRY_RUN jobico::kube::restore_local_etc_hosts
 }
@@ -259,6 +267,7 @@ jobico::kube::dao::get_lb_data(){
     fi
     echo "${lb}"
 }
+
 ## Hosts files
 
 jobico::kube::gen_hostsfile(){
@@ -388,7 +397,7 @@ jobico::kube::tls::deploy_certs_to_server(){
     done
 }
 
-# Kubeconfig
+## Kubeconfig
 
 jobico::kube::kubeconfig::gen_for_nodes(){
     local workers=($(jobico::kube::dao::query_db worker))
@@ -460,7 +469,7 @@ jobico::kube::kubeconfig::deploy_to_server(){
     done
 }
 
-# HA Proxy
+## HA Proxy
 
 jobico::kube::haproxy::gen_cfg(){
     local vip=$(jobico::kube::dao::get_lb_data 1)
@@ -529,7 +538,8 @@ jobico::kube::encryption::deploy_key_to_server(){
     done
 }
 
-# etcd
+## etcd
+
 jobico::kube::etcd::get_etcd_cluster(){
     local cluster=""
     local i=0
@@ -617,7 +627,8 @@ jobico::kube::gen_kubeapiserver_service(){
     sed -i "s/{SERVERS}/${n_servers}/g" ${WORK_DIR}/kube-apiserver.service 
 }
 
-# Server deployment
+## Server deployment
+
 jobico::kube::deploy_deps_to_server(){
     local servers=($(jobico::kube::dao::query_cluster_db server 1))
     for host in ${servers[*]}; do
@@ -679,7 +690,7 @@ EOF
     done
 }
 
-# Nodes deployment
+## Nodes deployment
 
 jobico::kube::deploy_deps_to_nodes(){
     local workers=($(jobico::kube::dao::query_db worker))
@@ -753,7 +764,7 @@ EOF
     done
 }
 
-# Local env
+## Local env
 
 jobico::kube::init::locals(){
     if ! grep -q "locals" "${STATUS_FILE}"; then
@@ -779,7 +790,7 @@ jobico::kube::kubeconfig::gen_locally_for_kube_admin(){
     kubectl config use-context ${CLUSTER_NAME}
 }
 
-# Routes
+## Routes
 
 jobico::kube::cluster::add_routes(){
     servers=($(jobico::kube::dao::query_db control_plane))
@@ -848,7 +859,7 @@ jobico::kube::wait_for_vms_ssh() {
     done < ${JOBICO_CLUSTER_TBL}
 }
 
-## Debug utils
+## Debug 
 
 jobico::kube::print_databases_info(){
     local n_servers=$(jobico::kube::dao::count_cluster_db server)
