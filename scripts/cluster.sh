@@ -90,7 +90,6 @@ new() {
                 fi
                 ;;
             --dry_run )
-                shift
                 _DRY_RUN=true
                 _DEBUG="on"
                 ;;
