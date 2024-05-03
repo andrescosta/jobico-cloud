@@ -141,22 +141,22 @@ jobico::kube::download_deps(){
 ## VMs
 
 jobico::kube::create_kvm_vms(){
-    while read IP FQDN HOST SUBNET TYPE; do
-        if [ $TYPE != "lbvip" ]; then
-            make -f scripts/Makefile.vm new-vm-${TYPE} VM_IP=${IP} VM_NAME=${HOST}
-        fi
-    done < ${JOBICO_CLUSTER_TBL}
+    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
+
+        make -f scripts/Makefile.vm new-vm-${TYPE} VM_IP=${IP} VM_NAME=${HOST}
+    
+    done 
 }
 
 jobico::kube::destroy_vms(){
-    while read IP FQDN HOST SUBNET TYPE; do
-        if [ $TYPE != "lbvip" ]; then
-            make -f scripts/Makefile.vm destroy-vm VM_IP=${IP} VM_NAME=${HOST}
-        fi
-    done < ${JOBICO_CLUSTER_TBL}
+    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
+    
+        make -f scripts/Makefile.vm destroy-vm VM_IP=${IP} VM_NAME=${HOST}
+    
+    done 
 }
 
-## Databases
+## DAO 
 
 jobico::kube::dao::gen_databases(){
     local number_of_nodes=$1
@@ -165,64 +165,28 @@ jobico::kube::dao::gen_databases(){
     jobico::kube::dao::gen_db $number_of_nodes $number_of_cpl_nodes $number_of_lbs
     jobico::kube::dao::gen_cluster_db
 }
+
 jobico::kube::dao::gen_db(){
     local total_workers=$1
     local total_cpl_nodes=$2
     local total_of_lbs=$3
     cp ${EXTRAS_DIR}/db/db.txt.tmpl ${WORK_DIR}/db.txt
     if [ $total_cpl_nodes -gt 1 ]; then
-        echo "server lbvip gencert" >> ${WORK_DIR}/db.txt
+        echo "server lbvip" >> ${WORK_DIR}/db.txt
         for ((i=0;i<total_of_lbs;i++)); do
-            echo "$LB_NAME-$i lb gencert" >> ${WORK_DIR}/db.txt
+            echo "$LB_NAME-$i lb" >> ${WORK_DIR}/db.txt
         done
         for ((i=0;i<total_cpl_nodes;i++)); do
             echo "$SERVER_NAME-$i control_plane" >> ${WORK_DIR}/db.txt
         done
     else
-        echo "server control_plane gencert" >> ${WORK_DIR}/db.txt
+        echo "server control_plane" >> ${WORK_DIR}/db.txt
     fi
     for ((i=0;i<total_workers;i++)); do
         echo "$WORKER_NAME-$i worker gencert" >> ${WORK_DIR}/db.txt
     done
 }
 
-jobico::kube::dao::query_db(){
-    #local values=($(grep "$1" ${WORK_DIR}/db.txt | cut -d " " -f 1))
-    local values=($(awk -v value="$1" -v col="1"  '$2 == value {print $col}' ${WORK_DIR}/db.txt))
-    for e in "${values[@]}"; do
-        echo "$e"
-    done
-}
-
-#dogrep "lbvip" | while read IP FQDN HOST SUBNET TYPE; do
-#   echo "$SUBNET|${TYPE}=${IP}=${HOST}"
-#done
-
-
-jobico::kube::dao::select_not_type_cluster_db(){
-    local result=$(awk -v value="$1" '$5 != value {print $0}' ${WORK_DIR}/cluster.txt)
-    echo "$result"
-}
-#dogrep | while read IP FQDN HOST SUBNET TYPE; do
-#   echo "${TYPE}=${IP}=${HOST}"
-#done
-
-jobico::kube::dao::select_db(){
-    local values=$(awk -v value="$1" '$2 == value {print $0}' ${WORK_DIR}/db.txt)
-    echo "$values"
-}
-
-jobico::kube::dao::query_cluster_db(){
-    local values=($(awk -v value="$1" -v col="$2"  '$5 == value {print $col}' ${WORK_DIR}/cluster.txt))
-    for e in "${values[@]}"; do
-        echo "$e"
-    done
-}
-
-jobico::kube::dao::count_cluster_db(){
-    local value=$(awk -v value="$1" '$5 == value {count++} END {print count}' ${WORK_DIR}/cluster.txt)
-    echo "$value"
-}
 jobico::kube::dao::gen_cluster_db(){
     rm -f ${MACHINES_DB}
     local workers=($(jobico::kube::dao::query_db worker))
@@ -245,7 +209,7 @@ jobico::kube::dao::gen_cluster_db(){
             ((id1++))
         done
     else
-        echo "192.168.122.${id1} ${servers[1]}.kubernetes.local ${servers[1]} 0.0.0.0/24 server" >> ${MACHINES_DB}
+        echo "192.168.122.${id1} ${servers[0]}.kubernetes.local ${servers[0]} 0.0.0.0/24 server" >> ${MACHINES_DB}
         ((id1++))
     fi
     for e in "${workers[@]}"; do
@@ -253,6 +217,35 @@ jobico::kube::dao::gen_cluster_db(){
         ((id1++))
         ((id2++))
     done
+}
+
+jobico::kube::dao::query_db(){
+    colf="${2:-2}"
+    local values=($(awk -v value="$1" -v col="1" -v cole="$colf" '$cole == value {print $col}' ${WORK_DIR}/db.txt))
+    for e in "${values[@]}"; do
+        echo "$e"
+    done
+}
+jobico::kube::dao::select_not_vip_cluster_db(){
+    echo "$(jobico::kube::dao::select_not_type_cluster_db "lbvip")"
+}
+jobico::kube::dao::select_not_type_cluster_db(){
+    local result=$(awk -v value="$1" '$5 != value {print $0}' ${WORK_DIR}/cluster.txt)
+    echo "$result"
+}
+jobico::kube::dao::select_db(){
+    local values=$(awk -v value="$1" '$2 == value {print $0}' ${WORK_DIR}/db.txt)
+    echo "$values"
+}
+jobico::kube::dao::query_cluster_db(){
+    local values=($(awk -v value="$1" -v col="$2"  '$5 == value {print $col}' ${WORK_DIR}/cluster.txt))
+    for e in "${values[@]}"; do
+        echo "$e"
+    done
+}
+jobico::kube::dao::count_cluster_db(){
+    local value=$(awk -v value="$1" '$5 == value {count++} END {print count}' ${WORK_DIR}/cluster.txt)
+    echo "$value"
 }
 
 ## Hosts files
@@ -276,31 +269,28 @@ jobico::kube::restore_local_etc_hosts(){
     sudo bash -c "cp ${WORK_DIR}/uhosts /etc/hosts"
 }
 jobico::kube::update_ssh_known_hosts(){
-    while read IP FQDN HOST SUBNET TYPE; do
-        if [ $TYPE != "lbvip" ]; then
-            ssh-keyscan -H ${HOST} >> ~/.ssh/known_hosts
-            ssh-keyscan -H ${IP} >> ~/.ssh/known_hosts
-        fi
-    done < ${JOBICO_CLUSTER_TBL}
+    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
+        
+        ssh-keyscan -H ${HOST} >> ~/.ssh/known_hosts
+        ssh-keyscan -H ${IP} >> ~/.ssh/known_hosts
+    
+    done 
 }
 jobico::kube::cluster::set_hostname(){
-    while read IP FQDN HOST SUBNET TYPE; do
-        if [ $TYPE != "lbvip" ]; then
-            cmd="sed -i 's/^127.0.0.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
-            ssh -n root@${IP} "${cmd}"
-            ssh -n root@${IP} hostnamectl hostname ${HOST}
-        fi
-    done < ${JOBICO_CLUSTER_TBL}
+    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
+         
+        cmd="sed -i 's/^127.0.0.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
+        ssh -n root@${IP} "${cmd}"
+        ssh -n root@${IP} hostnamectl hostname ${HOST}
+    
+    done 
 }
-
 jobico::kube::cluster::update_etc_hosts(){
-    while read IP FQDN HOST SUBNET TYPE; do
-        if [ $TYPE != "lbvip" ]; then
-            scp  ${HOSTSFILE} root@${IP}:~/
-            ssh -n \
-                root@${IP} "cat hosts >> /etc/hosts"
-        fi
-    done < ${JOBICO_CLUSTER_TBL}
+    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
+        scp  ${HOSTSFILE} root@${IP}:~/
+        ssh -n \
+            root@${IP} "cat hosts >> /etc/hosts"
+    done 
 }
 
 ## TLS
@@ -324,18 +314,21 @@ jobico::kube::tls::gen_ca_conf(){
             dns="${dns}DNS.${i}=${FQDN}\n"
             ((i++))
         fi
-    done < ${WORK_DIR}/cluster.txt
+    done < ${JOBICO_CLUSTER_TBL}
     sed -i "s/{ETCD_IPS}/$ips/g" "${CA_CONF}"
     sed -i "s/{ETCD_DNS}/$dns/g" "${CA_CONF}"
     sed -i "s/{API_SERVER_IPS}/$ips/g" "${CA_CONF}"
    
     local vip=$(jobico::kube::dao::get_lb_data 1)
-    local vipdns=$(jobico::kube::dao::get_lb_data 2)
+    local vipname=$(jobico::kube::dao::get_lb_data 2)
     sed -i "s/{LB_IP}/${vip}/g" "${CA_CONF}"
-    sed -i "s/{LB_DNS}/${vipdns}/g" "${CA_CONF}"
+    sed -i "s/{LB_DNS}/${vipname}/g" "${CA_CONF}"
 }
 jobico::kube::dao::get_lb_data(){
     local lb=$(jobico::kube::dao::query_cluster_db lbvip $1)
+    if [ lb == "" ]; then 
+        lb=$(jobico::kube::dao::query_cluster_db server $1)
+    fi
     echo "${lb}"
 }
 jobico::kube::tls::gen_ca(){
@@ -347,7 +340,7 @@ jobico::kube::tls::gen_ca(){
 }
 
 jobico::kube::tls::gen_certs(){
-    local comps=($(jobico::kube::dao::query_db gencert))
+    local comps=($(jobico::kube::dao::query_db gencert 3))
     for component in ${comps[*]}; do
         openssl genrsa -out "${WORK_DIR}/${component}.key" 4096
         
@@ -418,7 +411,7 @@ jobico::kube::kubeconfig::gen_for_nodes(){
     done
 }
 jobico::kube::kubeconfig::gen_for_controlplane(){
-    local comps=($(jobico::kube::dao::query_db genkubeconfig))
+    local comps=($(jobico::kube::dao::query_db genkubeconfig 4))
     local lb=$(jobico::kube::dao::get_lb_data 2)
     for comp in ${comps[*]}; do
         kubectl config set-cluster ${CLUSTER_NAME} \
@@ -843,6 +836,7 @@ jobico::kube::wait_for_vms_ssh() {
 
 jobico::kube::print_databases_info(){
     local n_servers=$(jobico::kube::dao::count_cluster_db server)
+    local comps=($(jobico::kube::dao::query_db gencert 3))
     local workers=($(jobico::kube::dao::query_db worker))
     local vip=$(jobico::kube::dao::get_lb_data 1)
     local vipdns=$(jobico::kube::dao::get_lb_data 2)
@@ -854,8 +848,14 @@ jobico::kube::print_databases_info(){
     local lbs=($(jobico::kube::dao::query_cluster_db lb 1))
     local servers=($(jobico::kube::dao::query_db control_plane))
     local gencert=($(jobico::kube::dao::query_db gencert))
-    local kubeconfig=($(jobico::kube::dao::query_db genkubeconfig))
+    local kubeconfig=($(jobico::kube::dao::query_db genkubeconfig 4))
     local etcd_servers=$(jobico::kube::etcd::get_etcd_servers)
+    echo "----------notvip------------"
+    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
+        echo "$IP $FQDN $HOST $SUBNET $TYPE"
+    done 
+    echo "---------- certss ------------"
+    print_array "${comps[@]}"
     echo "---------- etcd ------------"
     echo "$etcd_servers"
     echo "----------n servers --------"
