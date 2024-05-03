@@ -1,2 +1,2 @@
 ssh root@server \
-    'etcdctl get /registry/secrets/default/kubernetes-the-hard-way | hexdump -C'
+'etcdctl get --cert=/etc/etcd/etcd-server.crt --key=/etc/etcd/etcd-server.key --cacert=/etc/etcd/ca.crt /registry/secrets/default/kubernetes-the-hard-way | hexdump -C'

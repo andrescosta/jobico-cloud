@@ -1,7 +1,0 @@
-192.168.122.7 server.kubernetes.local server 0.0.0.0/24 lbvip
-192.168.122.8 lb-0.kubernetes.local lb-0 0.0.0.0/24 lb
-192.168.122.9 lb-1.kubernetes.local lb-1 0.0.0.0/24 lb
-192.168.122.10 server-0.kubernetes.local server-0 0.0.0.0/24 server
-192.168.122.11 server-1.kubernetes.local server-1 0.0.0.0/24 server
-192.168.122.12 node-0.kubernetes.local node-0 10.200.0.0/24 node
-192.168.122.13 node-1.kubernetes.local node-1 10.200.1.0/24 node
