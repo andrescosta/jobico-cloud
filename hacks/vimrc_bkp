@@ -10,3 +10,14 @@ nnoremap dd "_dd
 syntax on
 set wildmenu
 colorscheme industry
+set tabstop=4
+set shiftwidth=4
+set expandtab
+filetype plugin indent on
+
+set backup
+set backupdir=~/.vim/backup//
+set writebackup
+set backupcopy=yes
+au BufWritePre * let &bex = '@' . strftime("%F.%H:%M")
+
