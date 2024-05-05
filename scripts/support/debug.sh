@@ -16,7 +16,7 @@ kube::debug::print(){
     local kubeconfig=($(kube::dao::cpl::get genkubeconfig 4))
     local etcd_servers=$(kube::etcd::get_etcd_servers)
     echo "----------notvip------------"
-    kube::dao::select_type_cluster_db "server" | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::get_type_is "server" | while read IP FQDN HOST SUBNET TYPE; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
     done 
     echo "---------- certss ------------"

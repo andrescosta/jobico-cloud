@@ -4,20 +4,36 @@ kube::init(){
 }
 kube::do_init(){
     if ! grep -q "doinit" "${STATUS_FILE}"; then
+        local number_of_nodes=$1
+        local number_of_cpl_nodes=$2
+        local number_of_lbs=$3
         kube::dao::gen_databases $number_of_nodes $number_of_cpl_nodes $number_of_lbs
-        kube::local::download_deps
-        kube::local::install_kubectl
+        NOT_DRY_RUN kube::local::download_deps
+        NOT_DRY_RUN kube::local::install_kubectl
         kube::set_done "doinit"
     fi
 }
 kube::create_machines(){
     if ! grep -q "machines" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::kvm::create
+        NOT_DRY_RUN kube::machine::create
         NOT_DRY_RUN kube::wait_for_vms_ssh
         kube::set_done "machines"
     fi
 }
 
+kube::add_nodes(){
+    //Add node to the Databases
+    kube::machine::create
+    kube::wait_for_vms_ssh
+    kube::host::set_machines_hostname
+    kube::host::update_machines_etc_hosts
+    kube::tls::gen_certs
+    kube::tls::deploy_to_nodes
+    kube::kubeconfig::gen_for_nodes
+    kube::kubeconfig::deploy_to_nodes
+    kube::cluster::deploy_to_nodes
+    kube::cluster::add_routes
+}
 kube::create_cluster(){
     # DNS
     if ! grep -q "host" ${STATUS_FILE}; then
@@ -87,14 +103,14 @@ kube::create_cluster(){
 }
 kube::local(){
     if ! grep -q "locals" "${STATUS_FILE}"; then
-        kube::local::download_deps
+        kube::local::download_local_deps
         kube::local::install_kubectl
         kube::kubeconfig::gen_for_kube_admin
         kube::set_done "locals"
     fi
 }
 kube::destroy_machines(){
-    NOT_DRY_RUN kube::kvm::destroy
+    NOT_DRY_RUN kube::machine::destroy
 }
 
 kube::restore_local_env(){

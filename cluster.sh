@@ -3,9 +3,12 @@ PS4='LINENO:'
 DEFAULT_NODES=2
 DEFAULT_CPL=1
 DEFAULT_LB=2
-. $(dirname "$0")/lib.sh 
-. $(dirname "$0")/utils.sh 
-. $(dirname "$0")/kvm.sh 
+DIR=$(dirname "$0")
+SCRIPTS="${DIR}/scripts"
+
+. ${SCRIPTS}/api.sh 
+. ${SCRIPTS}/support/utils.sh 
+. ${SCRIPTS}/kvm.sh 
 
 destroy(){
     ask=true
@@ -129,7 +132,52 @@ new() {
   
   NOT_DRY_RUN echo "The K8s Cluster was created."
 }
-
+add(){
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --nodes )
+                shift
+                if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
+                    nodes=$1
+                else
+                    echo "Invalid value for --nodes. Please provide a numeric value." >&2
+                    display_help
+                    exit 1
+                fi
+                ;;
+            --debug )
+                shift
+                if [ "$1" != "s" ] && [ "$1" != "d" ]; then
+                    echo "Invalid value for --debug.Plase provide s or d" >&2
+                    display_help
+                    exit 1
+                fi
+                if [ "$1" == "d" ]; then
+                    set -x
+                 fi
+                _DEBUG="on"
+                ;;
+            -* )
+                echo "Unrecognized or incomplete option: $1" >&2
+                display_help
+                exit 1
+                ;;
+            * )
+                echo "Invalid argument: $1" >&2
+                display_help
+                exit 1
+                ;;
+        esac
+        shift
+    done
+  nodes=${nodes:-1}
+  
+  echo "$nodes are being added ...  "
+  
+  kube::add $nodes  
+  
+  echo "The node(s) were added."
+}
 display_help() {
     echo "Usage: "
     echo "       $0 <command> [arguments]"
@@ -203,6 +251,9 @@ exec_command(){
       shift
       new "$@"
       ;;
+    add)
+      shift
+      add "$@"
     destroy)
       shift
       destroy "$@"
