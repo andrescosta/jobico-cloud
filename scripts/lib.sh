@@ -147,7 +147,7 @@ jobico::kube::download_deps(){
     wget -q --https-only -P  ${DOWNLOADS_DIR} -i ${DOWNLOADS_TBL}
 }
 
-## VMs
+## KVM VMs
 
 jobico::kube::create_kvm_vms(){
     jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
