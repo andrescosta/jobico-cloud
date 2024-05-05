@@ -51,7 +51,7 @@ do_destroy(){
   fi
 }
 clocal(){
-    kube::gen_local_deps
+    kube::gen_local_env
 }
 kvm(){
   install_kvm
