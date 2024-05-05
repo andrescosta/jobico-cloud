@@ -7,7 +7,7 @@ DEFAULT_LB=2
 . $(dirname "$0")/utils.sh 
 . $(dirname "$0")/kvm.sh 
 
-function destroy(){
+destroy(){
     ask=true
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -35,7 +35,7 @@ function destroy(){
         shift
     done
     NOT_DRY_RUN do_destroy
-    DRY_RUN jobico::kube::destroy_cluster
+    DRY_RUN kube::destroy_cluster
 }
 do_destroy(){
   if [ "$ask" = true ]; then 
@@ -44,14 +44,14 @@ do_destroy(){
   fi
   if [[ $response == "yes" || $response == "y" ]]; then
     echo "Destroying the cluster ... "
-    jobico::kube::destroy_cluster
+    kube::destroy_cluster
     rm -rf work
   else
     echo "Command execution cancelled."
   fi
 }
 clocal(){
-  jobico::kube::cluster::set_local
+    kube::gen_local_deps
 }
 kvm(){
   install_kvm
@@ -125,7 +125,7 @@ new() {
   echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balncer(s) ..."
   DRY_RUN echo ">> Dryn run << "
   
-  jobico::kube::cluster $nodes $cpl $lb 
+  kube::cluster $nodes $cpl $lb 
   
   NOT_DRY_RUN echo "The K8s Cluster was created."
 }
@@ -175,7 +175,7 @@ display_help_for_new(){
   echo "     --lb n"
   echo "            Specify the number of load balancers to be created in case --cpl is greater than 1. The default value is 2. "
   echo "     --dry_run"
-  echo "            Create the local dabases and displays its content but does not create the cluster."
+  echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."
