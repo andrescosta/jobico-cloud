@@ -1,13 +1,13 @@
 .PHONY: status dhcp list net cluster destroy help
 
 new:
-	./scripts/cluster.sh new
+	./cluster.sh new
 
 destroy:
-	./scripts/cluster.sh destroy
+	./cluster.sh destroy
 
 help:
-	./scripts/cluster.sh help
+	./cluster.sh help
 
 ## Utils
 
