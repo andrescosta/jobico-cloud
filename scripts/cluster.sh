@@ -1,8 +1,10 @@
 #!/bin/bash
 PS4='LINENO:'
 DEFAULT_NODES=2
-
+DEFAULT_CPL=1
+DEFAULT_LB=2
 . $(dirname "$0")/lib.sh 
+. $(dirname "$0")/utils.sh 
 . $(dirname "$0")/kvm.sh 
 
 function destroy(){
@@ -13,6 +15,11 @@ function destroy(){
                 shift
                 ask=false
                 response="yes"
+                ;;
+            --dry_run )
+                shift
+                _DRY_RUN=true
+                _DEBUG="on"
                 ;;
             -* )
                 echo "Unrecognized or incomplete option: $1" >&2
@@ -27,6 +34,10 @@ function destroy(){
         esac
         shift
     done
+    NOT_DRY_RUN do_destroy
+    DRY_RUN jobico::kube::destroy_cluster
+}
+do_destroy(){
   if [ "$ask" = true ]; then 
     read -r -p "Are you sure to destroy the cluster? [Y/n] " response
     response=${response,,}
@@ -39,16 +50,12 @@ function destroy(){
     echo "Command execution cancelled."
   fi
 }
-function clocal(){
+clocal(){
   jobico::kube::cluster::set_local
 }
-function kvm(){
+kvm(){
   install_kvm
 }
-show_databases_content(){
-    jobico::kube::print_databases_info
-}
-
 new() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -61,6 +68,30 @@ new() {
                     display_help
                     exit 1
                 fi
+                ;;
+            --cpl )
+                shift
+                if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
+                    cpl=$1
+                else
+                    echo "Invalid value for --cpl. Please provide a numeric value." >&2
+                    display_help
+                    exit 1
+                fi
+                ;;
+            --lb )
+                shift
+                if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
+                    lb=$1
+                else
+                    echo "Invalid value for --lb. Please provide a numeric value." >&2
+                    display_help
+                    exit 1
+                fi
+                ;;
+            --dry_run )
+                _DRY_RUN=true
+                _DEBUG="on"
                 ;;
             --debug )
                 shift
@@ -88,9 +119,15 @@ new() {
         shift
     done
   nodes=${nodes:-$DEFAULT_NODES}
-  echo " The K8s Cluster is being created with $nodes node(s) ..."
-  jobico::kube::cluster $nodes
-  echo " The K8s Cluster was created."
+  cpl=${cpl:-$DEFAULT_CPL}
+  lb=${lb:-$DEFAULT_LB}
+  
+  echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balncer(s) ..."
+  DRY_RUN echo ">> Dryn run << "
+  
+  jobico::kube::cluster $nodes $cpl $lb 
+  
+  NOT_DRY_RUN echo "The K8s Cluster was created."
 }
 
 display_help() {
@@ -101,7 +138,6 @@ display_help() {
     echo "          destroy"
     echo "          local"
     echo "          kvm"
-    echo "          db"
     echo ""
     echo "Additional help: $0 help <command>"
 }
@@ -120,9 +156,6 @@ display_help_command(){
     kvm)
       display_help_for_kvm
       ;;
-    db)
-      display_help_for_db
-      ;;
     *)
       echo "Invalid command: $1" >&2
       display_help 
@@ -137,14 +170,16 @@ display_help_for_new(){
   echo "The arguments that define how the cluster will be created:"
   echo "     --nodes n"
   echo "            Specify the number of worker nodes to be created. The default value is 2. "
+  echo "     --cpl n"
+  echo "            Specify the number of control planed nodes to be created. The default value is 1. "
+  echo "     --lb n"
+  echo "            Specify the number of load balancers to be created in case --cpl is greater than 1. The default value is 2. "
+  echo "     --dry_run"
+  echo "            Create the local dabases and displays its content but does not create the cluster."
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."
   echo "       d: display advanced information."
-}
-display_help_for_db(){
-  echo "Usage: $0 db"
-  echo "Display the content of the internal databases."
 }
 display_help_for_destroy(){
   echo "Usage: $0 destroy"
@@ -173,13 +208,11 @@ exec_command(){
       destroy "$@"
       ;;
     local)
-      clocal
+      shift
+      clocal "$@"
       ;;
     kvm)
       kvm      
-      ;;
-    db)
-      show_databases_content
       ;;
     help)
       if [ $# -gt 1 ]; then

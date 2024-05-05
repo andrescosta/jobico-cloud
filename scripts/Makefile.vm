@@ -15,14 +15,21 @@ vm:
 
 new-vm-server: iso vm deploy-server mac virt 
 
-deploy-node: vm/debian-12.qcow2 resize extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso
+new-vm-lb: iso vm deploy-lb mac virt 
+
+
+deploy-node: vm/debian-12.qcow2 extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso
 	sudo cp vm/debian-12.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
 	sudo cp iso/cloud-init-node.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
 
 
-deploy-server: vm/debian-12.qcow2 resize extras/cfg/cloud-init-server.cfg iso/cloud-init-server.iso
+deploy-server: vm/debian-12.qcow2 extras/cfg/cloud-init-server.cfg iso/cloud-init-server.iso
 	sudo cp vm/debian-12.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
 	sudo cp iso/cloud-init-server.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
+
+deploy-lb: vm/debian-12.qcow2 extras/cfg/cloud-init-lb.cfg iso/cloud-init-lb.iso
+	sudo cp vm/debian-12.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
+	sudo cp iso/cloud-init-lb.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
 
 mac:
 	-virsh net-update default add ip-dhcp-host \
@@ -33,14 +40,15 @@ vm/debian-12.qcow2:
 	wget https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
 	mv -i debian-12-generic-amd64.qcow2 \
   		vm/debian-12.qcow2
-
-resize: vm/debian-12.qcow2
 	qemu-img resize \
   		vm/debian-12.qcow2 \
   		${DESIRED_SIZE} 
 
 extras/cfg/cloud-init-server.cfg iso/cloud-init-server.iso: 
 	sudo cloud-localds iso/cloud-init-server.iso extras/cfg/cloud-init-server.cfg
+
+extras/cfg/cloud-init-lb.cfg iso/cloud-init-lb.iso: 
+	sudo cloud-localds iso/cloud-init-lb.iso extras/cfg/cloud-init-lb.cfg
 
 extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso: 
 	sudo cloud-localds iso/cloud-init-node.iso extras/cfg/cloud-init-node.cfg
