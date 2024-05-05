@@ -7,3 +7,4 @@ machines.txt
 *.bak
 *.log
 **/log
+*backup

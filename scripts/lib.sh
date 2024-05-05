@@ -23,19 +23,19 @@ _DRY_RUN=false
 
 # Public API
 
-jobico::kube::cluster(){
+kube::cluster(){
     local number_of_nodes=$1
     local number_of_cpl_nodes=$2
     local number_of_lbs=$3
-    jobico::kube::init_local_files
-    jobico::kube::dao::gen_databases $number_of_nodes $number_of_cpl_nodes $number_of_lbs
-    DEBUG jobico::kube::print_databases_info
-    jobico::kube::create_vms
-    jobico::kube::download_all
-    jobico::kube::create_cluster
+    kube::init_local_files
+    kube::dao::gen_databases $number_of_nodes $number_of_cpl_nodes $number_of_lbs
+    DEBUG kube::debug::print
+    kube::create_vms
+    kube::download_all
+    kube::create_cluster
 }
 
-jobico::kube::destroy_cluster(){
+kube::destroy_cluster(){
     if [ ! -e ${MACHINES_DB} ]; then
         echo "${MACHINES_DB} does not exist"
         exit 1
@@ -44,92 +44,95 @@ jobico::kube::destroy_cluster(){
         echo "${WORK_DIR}/db.txt does not exist"
         exit 1
     fi
-    NOT_DRY_RUN jobico::kube::destroy_vms
-    NOT_DRY_RUN jobico::kube::restore_local_etc_hosts
+    NOT_DRY_RUN kube::destroy_vms
+    NOT_DRY_RUN kube::host::restore_local_etc_hosts
 }
 
-jobico::kube::cluster::set_local_deps(){
-    jobico::kube::init::locals
-    jobico::kube::kubeconfig::gen_locally_for_kube_admin
+kube::gen_local_deps(){
+    kube::init::locals
+    kube::kubeconfig::gen_locally_for_kube_admin
 }
 
 # Controllers
 
-jobico::kube::create_vms(){
+kube::create_vms(){
     if ! grep -q "machines" ${STATUS_FILE}; then
-        NOT_DRY_RUN jobico::kube::create_kvm_vms
-        NOT_DRY_RUN jobico::kube::wait_for_vms_ssh
-        jobico::kube::set_done "machines"
+        NOT_DRY_RUN kube::create_kvm_vms
+        NOT_DRY_RUN kube::wait_for_vms_ssh
+        kube::set_done "machines"
     fi
 }
-jobico::kube::download_all(){
+kube::download_all(){
     if ! grep -q "downloads" "${STATUS_FILE}"; then
-        NOT_DRY_RUN jobico::kube::download_deps
-        jobico::kube::set_done "downloads"
+        NOT_DRY_RUN kube::deps::download
+        kube::set_done "downloads"
     fi
 }
-
-jobico::kube::create_cluster(){
+kube::create_cluster(){
     # DNS
     if ! grep -q "host" ${STATUS_FILE}; then
-        jobico::kube::gen_hostsfile
-        NOT_DRY_RUN jobico::kube::update_local_etc_hosts
-        NOT_DRY_RUN jobico::kube::update_ssh_known_hosts
-        NOT_DRY_RUN jobico::kube::cluster::set_hostname
-        NOT_DRY_RUN jobico::kube::cluster::update_etc_hosts
-        jobico::kube::set_done "host"
+        kube::host::gen_hostsfile
+        NOT_DRY_RUN kube::host::update_local_etc_hosts
+        NOT_DRY_RUN kube::host::update_local_known_hosts
+        NOT_DRY_RUN kube::host::set_machines_hostname
+        NOT_DRY_RUN kube::host::update_machines_etc_hosts
+        kube::set_done "host"
     fi
     # TLS
     if ! grep -q "tls_certs" ${STATUS_FILE}; then
-        jobico::kube::tls::gen_ca_conf
-        jobico::kube::tls::gen_ca
-        jobico::kube::tls::gen_certs
-        NOT_DRY_RUN jobico::kube::tls::deploy_certs_to_nodes
-        NOT_DRY_RUN jobico::kube::tls::deploy_certs_to_server
-        jobico::kube::set_done "tls_certs"
+        kube::tls::gen_ca_conf
+        kube::tls::gen_ca
+        kube::tls::gen_certs
+        NOT_DRY_RUN kube::tls::deploy_to_nodes
+        NOT_DRY_RUN kube::tls::deploy_to_server
+        kube::set_done "tls_certs"
     fi
     # HAProxy
     if ! grep -q "haproxy" ${STATUS_FILE}; then
-        jobico::kube::haproxy::gen_cfg
-        NOT_DRY_RUN jobico::kube::haproxy::deploy
-        jobico::kube::set_done "haproxy"
+        kube::haproxy::gen_cfg
+        NOT_DRY_RUN kube::haproxy::deploy
+        kube::set_done "haproxy"
     fi
     # Kubeconfig
     if ! grep -q "kubeconfig" ${STATUS_FILE}; then
-        jobico::kube::kubeconfig::gen_for_nodes
-        jobico::kube::kubeconfig::gen_for_controlplane
-        jobico::kube::kubeconfig::gen_locally_for_kube_admin
-        NOT_DRY_RUN jobico::kube::kubeconfig::deploy_to_nodes
-        NOT_DRY_RUN jobico::kube::kubeconfig::deploy_to_server
-        jobico::kube::set_done "kubeconfig"
+        kube::kubeconfig::gen_for_nodes
+        kube::kubeconfig::gen_for_controlplane
+        kube::kubeconfig::gen_for_kube_admin
+        NOT_DRY_RUN kube::kubeconfig::deploy_to_nodes
+        NOT_DRY_RUN kube::kubeconfig::deploy_to_server
+        kube::set_done "kubeconfig"
     fi
     # Gen key for encryption at rest
     if ! grep -q "encatrest" ${STATUS_FILE}; then
-        jobico::kube::encryption::gen_key
-        NOT_DRY_RUN jobico::kube::encryption::deploy_key_to_server
-        jobico::kube::set_done "encatrest"
+        kube::encryption::gen_key
+        NOT_DRY_RUN kube::encryption::deploy
+        kube::set_done "encatrest"
     fi
     # Etcd
     if ! grep -q "etcddb" ${STATUS_FILE}; then
-        jobico::kube::etcd::gen_etcd_services
-        NOT_DRY_RUN jobico::kube::etcd::install_to_server
-        jobico::kube::set_done "etcddb"
+        kube::etcd::gen_etcd_service
+        NOT_DRY_RUN kube::etcd::deploy
+        kube::set_done "etcddb"
+    fi
+    # Control plane components
+    if ! grep -q "cpl" ${STATUS_FILE}; then
+        kube::cpl::gen_kubeapiserver_service
+        kube::set_done "cpl"
     fi
     # Control Plane deployment
     if ! grep -q "deploy_server" ${STATUS_FILE}; then
-        jobico::kube::gen_kubeapiserver_service
-        NOT_DRY_RUN jobico::kube::deploy_deps_to_server
-        jobico::kube::set_done "deploy_server"
+        NOT_DRY_RUN kube::cluster::deploy_to_server
+        kube::set_done "deploy_server"
     fi
-    # Worker deployment
+    # Nodes deployment
     if ! grep -q "deploy_nodes" ${STATUS_FILE}; then
-        NOT_DRY_RUN jobico::kube::deploy_deps_to_nodes
-        jobico::kube::set_done "deploy_nodes"
+        NOT_DRY_RUN kube::cluster::deploy_to_nodes
+        kube::set_done "deploy_nodes"
     fi
-    # Add routes
-    if ! grep -q "add_routes" ${STATUS_FILE}; then
-        NOT_DRY_RUN jobico::kube::cluster::add_routes
-        jobico::kube::set_done "add_routes"
+    # Routes
+    if ! grep -q "routes" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::cluster::add_routes
+        kube::set_done "routes"
     fi
 }
 
@@ -137,45 +140,36 @@ jobico::kube::create_cluster(){
 
 ## Local env
 
-jobico::kube::init_local_files(){
+kube::init_local_files(){
     mkdir -p ${WORK_DIR}
     touch ${STATUS_FILE}
 }
 
-jobico::kube::download_deps(){
-    mkdir -p ${DOWNLOADS_DIR}
-    wget -q --https-only -P  ${DOWNLOADS_DIR} -i ${DOWNLOADS_TBL}
-}
-
 ## KVM VMs
 
-jobico::kube::create_kvm_vms(){
-    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
-
+kube::create_kvm_vms(){
+     kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
         make -f scripts/Makefile.vm new-vm-${TYPE} VM_IP=${IP} VM_NAME=${HOST}
-    
     done 
 }
 
-jobico::kube::destroy_vms(){
-    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
-    
+kube::destroy_vms(){
+    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
         make -f scripts/Makefile.vm destroy-vm VM_IP=${IP} VM_NAME=${HOST}
-    
     done 
 }
 
 ## DAO 
 
-jobico::kube::dao::gen_databases(){
+kube::dao::gen_databases(){
     local number_of_nodes=$1
     local number_of_cpl_nodes=$2
     local number_of_lbs=$3
-    jobico::kube::dao::gen_db $number_of_nodes $number_of_cpl_nodes $number_of_lbs
-    jobico::kube::dao::gen_cluster_db
+    kube::dao::gen_db $number_of_nodes $number_of_cpl_nodes $number_of_lbs
+    kube::dao::gen_cluster_db
 }
 
-jobico::kube::dao::gen_db(){
+kube::dao::gen_db(){
     local total_workers=$1
     local total_cpl_nodes=$2
     local total_of_lbs=$3
@@ -196,81 +190,83 @@ jobico::kube::dao::gen_db(){
     done
 }
 
-jobico::kube::dao::gen_cluster_db(){
+kube::dao::gen_cluster_db(){
     rm -f ${MACHINES_DB}
-    local workers=($(jobico::kube::dao::query_db worker))
-    local servers=($(jobico::kube::dao::query_db control_plane))
-    local lbs=($(jobico::kube::dao::query_db lb))
-    local lbvip=$(jobico::kube::dao::query_db lbvip)
-    local id1=7
-    local id2=0
+    local workers=($(kube::dao::cpl::get worker))
+    local servers=($(kube::dao::cpl::get control_plane))
+    local lbs=($(kube::dao::cpl::get lb))
+    local lbvip=$(kube::dao::cpl::get lbvip)
+    local host_1=7
     if [ "${#servers[@]}" -gt 1 ]; then
         if [ lbvip != "" ]; then 
-            echo "192.168.122.${id1} ${lbvip}.kubernetes.local ${lbvip} 0.0.0.0/24 lbvip" >> ${MACHINES_DB}
-            ((id1++))
+            echo "192.168.122.${host_1} ${lbvip}.kubernetes.local ${lbvip} 0.0.0.0/24 lbvip" >> ${MACHINES_DB}
+            ((host_1++))
         fi
-        for e in "${lbs[@]}"; do
-            echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 0.0.0.0/24 lb" >> ${MACHINES_DB}
-            ((id1++))
+        for lb in "${lbs[@]}"; do
+            echo "192.168.122.${host_1} ${lb}.kubernetes.local ${lb} 0.0.0.0/24 lb" >> ${MACHINES_DB}
+            ((host_1++))
         done
-        for e in "${servers[@]}"; do
-            echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 0.0.0.0/24 server" >> ${MACHINES_DB}
-            ((id1++))
+        for svr in "${servers[@]}"; do
+            echo "192.168.122.${host_1} ${svr}.kubernetes.local ${svr} 0.0.0.0/24 server" >> ${MACHINES_DB}
+            ((host_1++))
         done
     else
-        echo "192.168.122.${id1} ${servers[0]}.kubernetes.local ${servers[0]} 0.0.0.0/24 server" >> ${MACHINES_DB}
-        ((id1++))
+        svr=${servers[0]}
+        echo "192.168.122.${host_1} ${svr}.kubernetes.local ${svr} 0.0.0.0/24 server" >> ${MACHINES_DB}
+        ((host_1++))
     fi
-    for e in "${workers[@]}"; do
-        echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 10.200.${id2}.0/24 node" >> ${MACHINES_DB}
-        ((id1++))
-        ((id2++))
+    local host_2=0
+    for wkr in "${workers[@]}"; do
+        echo "192.168.122.${host_1} ${wkr}.kubernetes.local ${wkr} 10.200.${host_2}.0/24 node" >> ${MACHINES_DB}
+        ((host_1++))
+        ((host_2++))
     done
 }
 
-jobico::kube::dao::query_db(){
+kube::dao::cpl::get(){
     colf="${2:-2}"
     local values=($(awk -v value="$1" -v col="1" -v cole="$colf" '$cole == value {print $col}' ${WORK_DIR}/db.txt))
     for e in "${values[@]}"; do
         echo "$e"
     done
 }
-jobico::kube::dao::select_not_vip_cluster_db(){
-    echo "$(jobico::kube::dao::select_not_type_cluster_db "lbvip")"
-}
-jobico::kube::dao::select_not_type_cluster_db(){
-    local result=$(awk -v value="$1" '$5 != value {print $0}' ${WORK_DIR}/cluster.txt)
-    echo "$result"
-}
-jobico::kube::dao::select_type_cluster_db(){
-    local result=$(awk -v value="$1" '$5 == value {print $0}' ${WORK_DIR}/cluster.txt)
-    echo "$result"
-}
-jobico::kube::dao::select_db(){
+kube::dao::cpl::getby(){
     local values=$(awk -v value="$1" '$2 == value {print $0}' ${WORK_DIR}/db.txt)
     echo "$values"
 }
-jobico::kube::dao::query_cluster_db(){
+
+kube::dao::cluster::machines(){
+    echo "$(kube::dao::cluster::get_type_is_not "lbvip")"
+}
+kube::dao::cluster::lb(){
+    local lb=$(kube::dao::cluster::get lbvip $1)
+    if [ -z ${lb} ]; then 
+        lb=$(kube::dao::cluster::get server $1)
+    fi
+    echo "${lb}"
+}
+kube::dao::cluster::get_type_is_not(){ 
+    local result=$(awk -v value="$1" '$5 != value {print $0}' ${WORK_DIR}/cluster.txt)
+    echo "$result"
+}
+kube::dao::cluster::get_type_is(){ 
+    local result=$(awk -v value="$1" '$5 == value {print $0}' ${WORK_DIR}/cluster.txt)
+    echo "$result"
+}
+kube::dao::cluster::get(){
     local values=($(awk -v value="$1" -v col="$2"  '$5 == value {print $col}' ${WORK_DIR}/cluster.txt))
     for e in "${values[@]}"; do
         echo "$e"
     done
 }
-jobico::kube::dao::count_cluster_db(){
+kube::dao::cluster::count(){
     local value=$(awk -v value="$1" '$5 == value {count++} END {print count}' ${WORK_DIR}/cluster.txt)
     echo "$value"
-}
-jobico::kube::dao::get_lb_data(){
-    local lb=$(jobico::kube::dao::query_cluster_db lbvip $1)
-    if [ -z ${lb} ]; then 
-        lb=$(jobico::kube::dao::query_cluster_db server $1)
-    fi
-    echo "${lb}"
 }
 
 ## Hosts files
 
-jobico::kube::gen_hostsfile(){
+kube::host::gen_hostsfile(){
     echo ${BEGIN_HOSTS_FILE} > ${HOSTSFILE}
     while read IP FQDN HOST SUBNET TYPE; do
         entry="${IP} ${FQDN} ${HOST}"
@@ -278,35 +274,29 @@ jobico::kube::gen_hostsfile(){
     done < ${JOBICO_CLUSTER_TBL}
     echo  ${END_HOSTS_FILE}>> ${HOSTSFILE}
 }
-
-jobico::kube::update_local_etc_hosts(){
+kube::host::update_local_etc_hosts(){
     local cmd="cat ${HOSTSFILE} >> /etc/hosts"
     sudo bash -c "$cmd"
 }
-
-jobico::kube::restore_local_etc_hosts(){
+kube::host::restore_local_etc_hosts(){
     sed "/${BEGIN_HOSTS_FILE}/,/${END_HOSTS_FILE}/d" /etc/hosts > ${WORK_DIR}/uhosts
     sudo bash -c "cp ${WORK_DIR}/uhosts /etc/hosts"
 }
-jobico::kube::update_ssh_known_hosts(){
-    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
-        
+kube::host::update_local_known_hosts(){
+     kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
         ssh-keyscan -H ${HOST} >> ~/.ssh/known_hosts
         ssh-keyscan -H ${IP} >> ~/.ssh/known_hosts
-    
     done 
 }
-jobico::kube::cluster::set_hostname(){
-    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
-         
+kube::host::set_machines_hostname(){
+    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
         cmd="sed -i 's/^127.0.0.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
         ssh -n root@${IP} "${cmd}"
         ssh -n root@${IP} hostnamectl hostname ${HOST}
-    
     done 
 }
-jobico::kube::cluster::update_etc_hosts(){
-    jobico::kube::dao::select_not_vip_cluster_db | while read IP FQDN HOST SUBNET TYPE; do
+kube::host::update_machines_etc_hosts(){
+     kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
         scp  ${HOSTSFILE} root@${IP}:~/
         ssh -n \
             root@${IP} "cat hosts >> /etc/hosts"
@@ -315,9 +305,9 @@ jobico::kube::cluster::update_etc_hosts(){
 
 ## TLS
 
-jobico::kube::tls::gen_ca_conf(){
+kube::tls::gen_ca_conf(){
     cp ${EXTRAS_DIR}/tls/ca.conf.tmpl ${CA_CONF}
-    local workers=($(jobico::kube::dao::query_db worker))
+    local workers=($(kube::dao::cpl::get worker))
     local new_ca=""
     for e in "${workers[@]}"; do
         node_req=$(sed "s/{NAME}/${e}/g" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl")
@@ -339,12 +329,12 @@ jobico::kube::tls::gen_ca_conf(){
     sed -i "s/{ETCD_DNS}/$dns/g" "${CA_CONF}"
     sed -i "s/{API_SERVER_IPS}/$ips/g" "${CA_CONF}"
    
-    local vip=$(jobico::kube::dao::get_lb_data 1)
-    local vipname=$(jobico::kube::dao::get_lb_data 2)
+    local vip=$(kube::dao::cluster::lb 1)
+    local vipname=$(kube::dao::cluster::lb 2)
     sed -i "s/{LB_IP}/${vip}/g" "${CA_CONF}"
     sed -i "s/{LB_DNS}/${vipname}/g" "${CA_CONF}"
 }
-jobico::kube::tls::gen_ca(){
+kube::tls::gen_ca(){
     openssl genrsa -out ${WORK_DIR}/ca.key 4096
     openssl req -x509 -new -sha512 -noenc \
     -key ${WORK_DIR}/ca.key -days 3653 \
@@ -352,8 +342,8 @@ jobico::kube::tls::gen_ca(){
     -out ${WORK_DIR}/ca.crt
 }
 
-jobico::kube::tls::gen_certs(){
-    local comps=($(jobico::kube::dao::query_db gencert 3))
+kube::tls::gen_certs(){
+    local comps=($(kube::dao::cpl::get gencert 3))
     for component in ${comps[*]}; do
         openssl genrsa -out "${WORK_DIR}/${component}.key" 4096
         
@@ -370,8 +360,8 @@ jobico::kube::tls::gen_certs(){
     done
 }
 
-jobico::kube::tls::deploy_certs_to_nodes(){
-    local workers=($(jobico::kube::dao::query_db worker))
+kube::tls::deploy_to_nodes(){
+    local workers=($(kube::dao::cpl::get worker))
     for host in ${workers[*]}; do
         ssh root@$host mkdir -p /var/lib/kubelet/
         
@@ -385,8 +375,8 @@ jobico::kube::tls::deploy_certs_to_nodes(){
     done
 }
 
-jobico::kube::tls::deploy_certs_to_server(){
-    local servers=($(jobico::kube::dao::query_cluster_db server 1))
+kube::tls::deploy_to_server(){
+    local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[*]}; do
         scp \
             ${WORK_DIR}/ca.key ${WORK_DIR}/ca.crt \
@@ -399,9 +389,9 @@ jobico::kube::tls::deploy_certs_to_server(){
 
 ## Kubeconfig
 
-jobico::kube::kubeconfig::gen_for_nodes(){
-    local workers=($(jobico::kube::dao::query_db worker))
-    local lb=$(jobico::kube::dao::get_lb_data 2)
+kube::kubeconfig::gen_for_nodes(){
+    local workers=($(kube::dao::cpl::get worker))
+    local lb=$(kube::dao::cluster::lb 2)
     for host in ${workers[*]}; do
         kubectl config set-cluster ${CLUSTER_NAME} \
         --certificate-authority=${WORK_DIR}/ca.crt \
@@ -423,9 +413,9 @@ jobico::kube::kubeconfig::gen_for_nodes(){
         kubectl config use-context default --kubeconfig=${WORK_DIR}/${host}.kubeconfig
     done
 }
-jobico::kube::kubeconfig::gen_for_controlplane(){
-    local comps=($(jobico::kube::dao::query_db genkubeconfig 4))
-    local lb=$(jobico::kube::dao::get_lb_data 2)
+kube::kubeconfig::gen_for_controlplane(){
+    local comps=($(kube::dao::cpl::get genkubeconfig 4))
+    local lb=$(kube::dao::cluster::lb 2)
     for comp in ${comps[*]}; do
         kubectl config set-cluster ${CLUSTER_NAME} \
         --certificate-authority=${WORK_DIR}/ca.crt \
@@ -448,8 +438,8 @@ jobico::kube::kubeconfig::gen_for_controlplane(){
     done
 }
 
-jobico::kube::kubeconfig::deploy_to_nodes(){
-    local workers=($(jobico::kube::dao::query_db worker))
+kube::kubeconfig::deploy_to_nodes(){
+    local workers=($(kube::dao::cpl::get worker))
     for host in ${workers[*]}; do
         ssh root@$host "mkdir -p /var/lib/{kube-proxy,kubelet}"
         scp ${WORK_DIR}/kube-proxy.kubeconfig \
@@ -459,8 +449,8 @@ jobico::kube::kubeconfig::deploy_to_nodes(){
     done
 }
 
-jobico::kube::kubeconfig::deploy_to_server(){
-    local servers=($(jobico::kube::dao::query_cluster_db server 1))
+kube::kubeconfig::deploy_to_server(){
+    local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[*]}; do
         scp ${WORK_DIR}/admin.kubeconfig \
         ${WORK_DIR}/kube-controller-manager.kubeconfig \
@@ -471,8 +461,8 @@ jobico::kube::kubeconfig::deploy_to_server(){
 
 ## HA Proxy
 
-jobico::kube::haproxy::gen_cfg(){
-    local vip=$(jobico::kube::dao::get_lb_data 1)
+kube::haproxy::gen_cfg(){
+    local vip=$(kube::dao::cluster::lb 1)
     cp  ${EXTRAS_DIR}/configs/haproxy.cfg.tmpl ${WORK_DIR}/haproxy.cfg
     local servers=""
     while read IP FQDN HOST SUBNET TYPE; do
@@ -481,7 +471,7 @@ jobico::kube::haproxy::gen_cfg(){
         fi
     done < ${WORK_DIR}/cluster.txt
     sed -i "s/{LB_IPS}/${servers}/g" "${WORK_DIR}/haproxy.cfg" 
-    servers=($(jobico::kube::dao::query_cluster_db lb 1))
+    servers=($(kube::dao::cluster::get lb 1))
     for ip1 in ${servers[*]}; do
         file="${WORK_DIR}/keepalived${ip1}.conf"
         cp  ${EXTRAS_DIR}/configs/keepalived.conf.tmpl ${file} 
@@ -497,8 +487,8 @@ jobico::kube::haproxy::gen_cfg(){
     done
 }
 
-jobico::kube::haproxy::deploy(){
-    local servers=($(jobico::kube::dao::query_cluster_db lb 1))
+kube::haproxy::deploy(){
+    local servers=($(kube::dao::cluster::get lb 1))
     for ip in ${servers[*]}; do
         scp ${WORK_DIR}/haproxy.cfg root@${ip}:~/ 
         scp ${WORK_DIR}/keepalived${ip}.conf root@${ip}:~/keepalived.conf
@@ -514,7 +504,7 @@ EOF
 
 # Encryption key
 
-jobico::kube::encryption::gen_key(){
+kube::encryption::gen_key(){
     cat > ${WORK_DIR}/encryption-config.yaml \
 <<EOF
   kind: EncryptionConfig
@@ -531,8 +521,8 @@ jobico::kube::encryption::gen_key(){
 EOF
 }
 
-jobico::kube::encryption::deploy_key_to_server(){
-    local servers=($(jobico::kube::dao::query_cluster_db server 1))
+kube::encryption::deploy(){
+    local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[*]}; do
         scp ${WORK_DIR}/encryption-config.yaml root@$host:~/
     done
@@ -540,10 +530,10 @@ jobico::kube::encryption::deploy_key_to_server(){
 
 ## etcd
 
-jobico::kube::etcd::get_etcd_cluster(){
+kube::etcd::get_etcd_cluster(){
     local cluster=""
     local i=0
-    local n_servers=$(jobico::kube::dao::count_cluster_db server)
+    local n_servers=$(kube::dao::cluster::count server)
     if [ ${n_servers} -eq 1 ]; then
        while read IP FQDN HOST SUBNET TYPE; do
             if [ "${TYPE}" == "server" ]; then
@@ -564,7 +554,7 @@ jobico::kube::etcd::get_etcd_cluster(){
     fi
     echo "${cluster}"
 }
-jobico::kube::etcd::get_etcd_servers(){
+kube::etcd::get_etcd_servers(){
     local cluster=""
     local i=0
     while read IP FQDN HOST SUBNET TYPE; do
@@ -578,8 +568,8 @@ jobico::kube::etcd::get_etcd_servers(){
     done < ${WORK_DIR}/cluster.txt
     echo "${cluster}"
 }
-jobico::kube::etcd::gen_etcd_services(){
-    local cluster=$(jobico::kube::etcd::get_etcd_cluster)
+kube::etcd::gen_etcd_service(){
+    local cluster=$(kube::etcd::get_etcd_cluster)
     local clustere=$(escape ${cluster})
     local i=0
     while read IP FQDN HOST SUBNET TYPE; do
@@ -592,9 +582,9 @@ jobico::kube::etcd::gen_etcd_services(){
         fi
     done < ${WORK_DIR}/cluster.txt
 }
-jobico::kube::etcd::install_to_server(){
+kube::etcd::deploy(){
     local i=0
-    local servers=($(jobico::kube::dao::query_cluster_db server 1))
+    local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[*]}; do
         file=${WORK_DIR}/etcd-${host}.service
         scp ${file} root@${host}:~/etcd.service 
@@ -619,18 +609,27 @@ EOF
     done
 }
 
-jobico::kube::gen_kubeapiserver_service(){
-    local etcd_servers=$(escape $(jobico::kube::etcd::get_etcd_servers))
-    local n_servers=$(jobico::kube::dao::count_cluster_db server)
+## Control plane
+
+kube::cpl::gen_kubeapiserver_service(){
+    local etcd_servers=$(escape $(kube::etcd::get_etcd_servers))
+    local n_servers=$(kube::dao::cluster::count server)
     cp ${EXTRAS_DIR}/units/kube-apiserver.service.tmpl ${WORK_DIR}/kube-apiserver.service   
     sed -i "s/{ETCD_SERVERS}/${etcd_servers}/g" ${WORK_DIR}/kube-apiserver.service 
     sed -i "s/{SERVERS}/${n_servers}/g" ${WORK_DIR}/kube-apiserver.service 
 }
 
-## Server deployment
+## Deps
 
-jobico::kube::deploy_deps_to_server(){
-    local servers=($(jobico::kube::dao::query_cluster_db server 1))
+kube::deps::download(){
+    mkdir -p ${DOWNLOADS_DIR}
+    wget -q --https-only -P  ${DOWNLOADS_DIR} -i ${DOWNLOADS_TBL}
+}
+
+## Cluster set up
+
+kube::cluster::deploy_to_server(){
+    local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[*]}; do
         scp ${DOWNLOADS_DIR}/kube-apiserver \
         ${DOWNLOADS_DIR}/kube-controller-manager \
@@ -692,8 +691,8 @@ EOF
 
 ## Nodes deployment
 
-jobico::kube::deploy_deps_to_nodes(){
-    local workers=($(jobico::kube::dao::query_db worker))
+kube::cluster::deploy_to_nodes(){
+    local workers=($(kube::dao::cpl::get worker))
     for host in ${workers[*]}; do
         subnets=$(grep $host $MACHINES_DB | cut -d " " -f 4)
         sed "s|SUBNET|${subnets}|g" \
@@ -764,37 +763,9 @@ EOF
     done
 }
 
-## Local env
-
-jobico::kube::init::locals(){
-    if ! grep -q "locals" "${STATUS_FILE}"; then
-        sudo cp ${DOWNLOADS_DIR}/kubectl /usr/local/bin && \
-        sudo chmod +x /usr/local/bin/kubectl
-        jobico::kube::set_done "locals"
-    fi
-}
-jobico::kube::kubeconfig::gen_locally_for_kube_admin(){
-    kubectl config set-cluster ${CLUSTER_NAME} \
-    --certificate-authority=${WORK_DIR}/ca.crt \
-    --embed-certs=true \
-    --server=https://server.kubernetes.local:6443
-    
-    kubectl config set-credentials admin \
-    --client-certificate=${WORK_DIR}/admin.crt \
-    --client-key=${WORK_DIR}/admin.key
-    
-    kubectl config set-context ${CLUSTER_NAME} \
-    --cluster=${CLUSTER_NAME} \
-    --user=admin
-    
-    kubectl config use-context ${CLUSTER_NAME}
-}
-
-## Routes
-
-jobico::kube::cluster::add_routes(){
-    servers=($(jobico::kube::dao::query_db control_plane))
-    workers=($(jobico::kube::dao::query_db worker))
+kube::cluster::add_routes(){
+    servers=($(kube::dao::cpl::get control_plane))
+    workers=($(kube::dao::cpl::get worker))
     for server in "${servers[@]}"; do
         for worker in "${workers[@]}"; do
             node_ip=$(grep ${worker} ${MACHINES_DB} | cut -d " " -f 1)
@@ -823,13 +794,38 @@ EOF
     done
 }
 
+## Local env
+
+kube::init::locals(){
+    if ! grep -q "locals" "${STATUS_FILE}"; then
+        sudo cp ${DOWNLOADS_DIR}/kubectl /usr/local/bin && \
+        sudo chmod +x /usr/local/bin/kubectl
+        kube::set_done "locals"
+    fi
+}
+kube::kubeconfig::gen_for_kube_admin(){
+    kubectl config set-cluster ${CLUSTER_NAME} \
+    --certificate-authority=${WORK_DIR}/ca.crt \
+    --embed-certs=true \
+    --server=https://server.kubernetes.local:6443
+    
+    kubectl config set-credentials admin \
+    --client-certificate=${WORK_DIR}/admin.crt \
+    --client-key=${WORK_DIR}/admin.key
+    
+    kubectl config set-context ${CLUSTER_NAME} \
+    --cluster=${CLUSTER_NAME} \
+    --user=admin
+    
+    kubectl config use-context ${CLUSTER_NAME}
+}
 
 ## Support
 
-jobico::kube::set_done(){
+kube::set_done(){
     echo "|$1|" >> ${WORK_DIR}/jobico_status
 }
-jobico::kube::wait_for_vms_ssh() {
+kube::wait_for_vms_ssh() {
     local port=22
     local timeout=120 
     local delay=5 
@@ -860,25 +856,24 @@ jobico::kube::wait_for_vms_ssh() {
 }
 
 ## Debug 
-
-jobico::kube::print_databases_info(){
-    local n_servers=$(jobico::kube::dao::count_cluster_db server)
-    local comps=($(jobico::kube::dao::query_db gencert 3))
-    local workers=($(jobico::kube::dao::query_db worker))
-    local vip=$(jobico::kube::dao::get_lb_data 1)
-    local vipdns=$(jobico::kube::dao::get_lb_data 2)
-    local viphost=$(jobico::kube::dao::get_lb_data 3)
-    local cluster=$(jobico::kube::etcd::get_etcd_cluster)
-    local serversip=($(jobico::kube::dao::query_cluster_db server 1))
-    local serversfqdn=($(jobico::kube::dao::query_cluster_db server 2))
-    local servershost=($(jobico::kube::dao::query_cluster_db server 3))
-    local lbs=($(jobico::kube::dao::query_cluster_db lb 1))
-    local servers=($(jobico::kube::dao::query_db control_plane))
-    local gencert=($(jobico::kube::dao::query_db gencert 3))
-    local kubeconfig=($(jobico::kube::dao::query_db genkubeconfig 4))
-    local etcd_servers=$(jobico::kube::etcd::get_etcd_servers)
+kube::debug::print(){
+    local n_servers=$(kube::dao::cluster::count server)
+    local comps=($(kube::dao::cpl::get gencert 3))
+    local workers=($(kube::dao::cpl::get worker))
+    local vip=$(kube::dao::cluster::lb 1)
+    local vipdns=$(kube::dao::cluster::lb 2)
+    local viphost=$(kube::dao::cluster::lb 3)
+    local cluster=$(kube::etcd::get_etcd_cluster)
+    local serversip=($(kube::dao::cluster::get server 1))
+    local serversfqdn=($(kube::dao::cluster::get server 2))
+    local servershost=($(kube::dao::cluster::get server 3))
+    local lbs=($(kube::dao::cluster::get lb 1))
+    local servers=($(kube::dao::cpl::get control_plane))
+    local gencert=($(kube::dao::cpl::get gencert 3))
+    local kubeconfig=($(kube::dao::cpl::get genkubeconfig 4))
+    local etcd_servers=$(kube::etcd::get_etcd_servers)
     echo "----------notvip------------"
-    jobico::kube::dao::select_type_cluster_db "server" | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::select_type_cluster_db "server" | while read IP FQDN HOST SUBNET TYPE; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
     done 
     echo "---------- certss ------------"
