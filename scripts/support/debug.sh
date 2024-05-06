@@ -16,6 +16,10 @@ kube::debug::print(){
     local gencert=($(kube::dao::cpl::get gencert 3))
     local kubeconfig=($(kube::dao::cpl::get genkubeconfig 4))
     local etcd_servers=$(kube::etcd::get_etcd_servers)
+    echo "------------all--------------"
+    kube::dao::cluster::all | while read IP FQDN HOST SUBNET TYPE; do
+        echo "$IP $FQDN $HOST $SUBNET $TYPE"
+    done 
     echo "---------- nodes ------------"
     print_array "${nodes[@]}"
     echo "----------notvip------------"

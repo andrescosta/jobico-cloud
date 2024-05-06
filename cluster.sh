@@ -49,6 +49,7 @@ do_destroy(){
     echo "Destroying the cluster ... "
     kube::destroy_cluster
     rm -rf work
+    exit 0
   else
     echo "Command execution cancelled."
   fi
