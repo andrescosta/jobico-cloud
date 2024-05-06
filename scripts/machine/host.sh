@@ -1,7 +1,7 @@
 
 kube::host::gen_hostsfile(){
     echo ${BEGIN_HOSTS_FILE} > ${HOSTSFILE}
-    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::all | while read IP FQDN HOST SUBNET TYPE; do
         entry="${IP} ${FQDN} ${HOST}"
         echo ${entry} >> ${HOSTSFILE}
     done
@@ -17,7 +17,7 @@ kube::host::restore_local_etc_hosts(){
     sudo bash -c "cp ${WORK_DIR}/uhosts /etc/hosts"
 }
 kube::host::update_local_known_hosts(){
-     kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
         ssh-keyscan -H ${HOST} >> ~/.ssh/known_hosts
         ssh-keyscan -H ${IP} >> ~/.ssh/known_hosts
     done 

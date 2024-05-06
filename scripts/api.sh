@@ -37,10 +37,11 @@ kube::cluster(){
     local number_of_nodes=$1
     local number_of_cpl_nodes=$2
     local number_of_lbs=$3
+    clear_dhcp
     kube::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs
     kube::plugins::load ${PLUGINS_CONF_FILE}
     DEBUG kube::debug::print
-    kube::create_machines
+    kube::create_machines "machines"
     kube::create_cluster
 }
 
@@ -64,8 +65,8 @@ kube::gen_local_env(){
 kube::add(){
     local number_of_nodes=$1
     kube::plugins::load ${PLUGINS_CONF_FILE}
-    #ube::add $number_of_nodes
-    #kube::create_machines
-    kube::add_nodes $number_of_nodes
-    #DEBUG kube::debug::print
+    kube::init_for_add $number_of_nodes
+    DEBUG kube::debug::print
+    kube::create_machines "add_machines"
+    kube::add_nodes
 }

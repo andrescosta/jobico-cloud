@@ -114,6 +114,10 @@ kube::dao::cluster::machines(){
 kube::dao::cluster::nodes(){
     echo "$(kube::dao::cluster::get_type_is "node")"
 }
+kube::dao::cluster::all(){
+    db=$(kube::dao::cluster::curr_db $1)
+    cat ${db}
+}
 kube::dao::cluster::lb(){
     local lb=$(awk -v value="lbvip" -v col="$1"  '$5 == value {print $col}' ${MACHINES_DB})
     if [ -z ${lb} ]; then 
