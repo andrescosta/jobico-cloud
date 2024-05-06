@@ -27,6 +27,15 @@ kube::tls::gen_ca_conf(){
     sed -i "s/{LB_IP}/${vip}/g" "${CA_CONF}"
     sed -i "s/{LB_DNS}/${vipname}/g" "${CA_CONF}"
 }
+kube::tls::add_nodes_to_ca_conf(){
+    local workers=($(kube::dao::cpl::get worker))
+    local new_ca=""
+    for e in "${workers[@]}"; do
+        node_req=$(sed "s/{NAME}/${e}/g" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl")
+        new_ca="${new_ca}\n\n${node_req}"
+    done
+    echo -e "${new_ca}">>${CA_CONF}
+}
 kube::tls::gen_ca(){
     openssl genrsa -out ${WORK_DIR}/ca.key 4096
     openssl req -x509 -new -sha512 -noenc \
@@ -54,8 +63,8 @@ kube::tls::gen_certs(){
 }
 
 kube::tls::deploy_to_nodes(){
-    local workers=($(kube::dao::cpl::get worker))
-    for host in ${workers[*]}; do
+    local nodes=($(kube::dao::cluster::get node 3))
+    for host in ${nodes[*]}; do
         ssh root@$host mkdir -p /var/lib/kubelet/
         
         scp ${WORK_DIR}/ca.crt root@$host:/var/lib/kubelet/

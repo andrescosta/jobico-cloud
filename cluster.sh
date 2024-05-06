@@ -145,6 +145,10 @@ add(){
                     exit 1
                 fi
                 ;;
+            --dry_run )
+                _DRY_RUN=true
+                _DEBUG="on"
+                ;;
             --debug )
                 shift
                 if [ "$1" != "s" ] && [ "$1" != "d" ]; then
@@ -172,7 +176,7 @@ add(){
     done
   nodes=${nodes:-1}
   
-  echo "$nodes are being added ...  "
+  echo "$nodes node(s) are being added ...  "
   
   kube::add $nodes  
   
@@ -254,6 +258,7 @@ exec_command(){
     add)
       shift
       add "$@"
+      ;;
     destroy)
       shift
       destroy "$@"

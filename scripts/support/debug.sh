@@ -8,6 +8,7 @@ kube::debug::print(){
     local viphost=$(kube::dao::cluster::lb 3)
     local cluster=$(kube::etcd::get_etcd_cluster)
     local serversip=($(kube::dao::cluster::get server 1))
+    local nodes=($(kube::dao::cluster::get node 3))
     local serversfqdn=($(kube::dao::cluster::get server 2))
     local servershost=($(kube::dao::cluster::get server 3))
     local lbs=($(kube::dao::cluster::get lb 1))
@@ -15,6 +16,8 @@ kube::debug::print(){
     local gencert=($(kube::dao::cpl::get gencert 3))
     local kubeconfig=($(kube::dao::cpl::get genkubeconfig 4))
     local etcd_servers=$(kube::etcd::get_etcd_servers)
+    echo "---------- nodes ------------"
+    print_array "${nodes[@]}"
     echo "----------notvip------------"
     kube::dao::cluster::get_type_is "server" | while read IP FQDN HOST SUBNET TYPE; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"

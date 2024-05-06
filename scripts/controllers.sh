@@ -1,6 +1,6 @@
 kube::init(){
     kube::local::init_fs
-    kube::do_init
+    kube::do_init "$@"
 }
 kube::do_init(){
     if ! grep -q "doinit" "${STATUS_FILE}"; then
@@ -22,17 +22,46 @@ kube::create_machines(){
 }
 
 kube::add_nodes(){
-    //Add node to the Databases
-    kube::machine::create
-    kube::wait_for_vms_ssh
-    kube::host::set_machines_hostname
-    kube::host::update_machines_etc_hosts
-    kube::tls::gen_certs
-    kube::tls::deploy_to_nodes
-    kube::kubeconfig::gen_for_nodes
-    kube::kubeconfig::deploy_to_nodes
-    kube::cluster::deploy_to_nodes
-    kube::cluster::add_routes
+    local number_of_nodes=$1
+    if ! grep -q "add_init" ${STATUS_FILE}; then
+        kube::dao::gen_add_db ${number_of_nodes}
+        kube::dao::gen_add_cluster_db
+        kube::set_done "add_init"
+    fi
+    DEBUG kube::debug::print
+    if ! grep -q "add_host" ${STATUS_FILE}; then
+        kube::host::add_new_nodes_to_hostsfile
+        kube::host::update_local_etc_hosts
+        kube::host::update_local_known_hosts
+        kube::set_done "add_host"
+    fi
+    if ! grep -q "add_new" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::machine::create
+        NOT_DRY_RUN kube::wait_for_vms_ssh
+        NOT_DRY_RUN kube::host::set_machines_hostname
+        NOT_DRY_RUN kube::host::update_machines_etc_hosts
+        kube::set_done "add_new"
+    fi
+    if ! grep -q "add_tl" ${STATUS_FILE}; then
+        kube::tls::add_nodes_to_ca_conf
+        kube::tls::gen_certs
+        NOT_DRY_RUN kube::tls::deploy_to_nodes
+        kube::set_done "add_tls"
+    fi
+    if ! grep -q "add_kc" ${STATUS_FILE}; then
+        kube::kubeconfig::gen_for_nodes
+        NOT_DRY_RUN kube::kubeconfig::deploy_to_nodes
+        kube::set_done "add_kc"
+    fi
+    if ! grep -q "add_deploy" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::cluster::deploy_to_nodes
+        NOT_DRY_RUN kube::cluster::add_routes
+        kube::set_done "add_deploy"
+    fi
+    if ! grep -q "add_merge_db" ${STATUS_FILE}; then
+        kube::dao::merge_dbs
+        kube::set_done "add_merge_db"
+    fi
 }
 kube::create_cluster(){
     # DNS
@@ -125,26 +154,24 @@ kube::wait_for_vms_ssh() {
     
     echo "Waiting for servers to start..."
     
-    while read IP FQDN HOST SUBNET TYPE; do
-        if [ $TYPE != "lbvip" ]; then
-            echo "Waiting for $IP to start listening on port $port..."
-            start_time=$(date +%s)
-            while ! nc -z "$IP" "$port" >/dev/null 2>&1; do
-                current_time=$(date +%s)
-                elapsed_time=$((current_time - start_time))
-                if [ "$elapsed_time" -ge "$timeout" ]; then
-                    echo "Timeout exceeded for $IP"
-                    break
-                fi
-            
-                sleep "$delay"
-            done
-        
-            if [ "$elapsed_time" -lt "$timeout" ]; then
-                echo "$IP is now listening on port $port"
-            fi
-        fi
-    done < ${JOBICO_CLUSTER_TBL}
+    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
+          echo "Waiting for $IP to start listening on port $port..."
+          start_time=$(date +%s)
+          while ! nc -z "$IP" "$port" >/dev/null 2>&1; do
+              current_time=$(date +%s)
+              elapsed_time=$((current_time - start_time))
+              if [ "$elapsed_time" -ge "$timeout" ]; then
+                  echo "Timeout exceeded for $IP"
+                  break
+              fi
+          
+              sleep "$delay"
+          done
+      
+          if [ "$elapsed_time" -lt "$timeout" ]; then
+              echo "$IP is now listening on port $port"
+          fi
+    done 
 }
 
 kube::set_done(){

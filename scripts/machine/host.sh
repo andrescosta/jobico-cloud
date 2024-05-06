@@ -1,13 +1,14 @@
 
 kube::host::gen_hostsfile(){
     echo ${BEGIN_HOSTS_FILE} > ${HOSTSFILE}
-    while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
         entry="${IP} ${FQDN} ${HOST}"
         echo ${entry} >> ${HOSTSFILE}
-    done < ${JOBICO_CLUSTER_TBL}
+    done
     echo  ${END_HOSTS_FILE}>> ${HOSTSFILE}
 }
 kube::host::update_local_etc_hosts(){
+    kube::host::restore_local_etc_hosts
     local cmd="cat ${HOSTSFILE} >> /etc/hosts"
     sudo bash -c "$cmd"
 }
@@ -29,10 +30,17 @@ kube::host::set_machines_hostname(){
     done 
 }
 kube::host::update_machines_etc_hosts(){
-     kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
         scp  ${HOSTSFILE} root@${IP}:~/
         ssh -n \
             root@${IP} "cat hosts >> /etc/hosts"
     done 
 }
-
+kube::host::add_new_nodes_to_hostsfile(){
+    entry=""
+    while IFS= read IP FQDN HOST SUBNET TYPE; do
+        entry="${entry}${IP} ${FQDN} ${HOST}\n"
+    done < <(kube::dao::cluster::nodes)
+    sed -i "/${END_HOSTS_FILE}/d" "${WORK_DIR}/hosts"
+    echo -e "${entry}${END_HOSTS_FILE}" >> "${WORK_DIR}/hosts"
+}
