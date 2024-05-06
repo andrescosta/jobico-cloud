@@ -11,8 +11,6 @@ readonly CLUSTER_NAME=jobico-cloud
 readonly WORKER_NAME=node
 readonly SERVER_NAME=server
 readonly LB_NAME=lb
-readonly MACHINES_DB="${WORK_DIR}/cluster.txt"
-readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
 readonly ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 readonly BEGIN_HOSTS_FILE="#B> Kubernetes Cluster"
 readonly END_HOSTS_FILE="#E> Kubernetes Cluster"
@@ -23,7 +21,6 @@ _DRY_RUN=false
 . ${SCRIPTS}/support/plugins.sh 
 . ${SCRIPTS}/support/utils.sh 
 . ${SCRIPTS}/support/debug.sh 
-. ${SCRIPTS}/controllers.sh 
 . ${SCRIPTS}/dao/dao.sh 
 . ${SCRIPTS}/machine/host.sh 
 . ${SCRIPTS}/machine/local.sh 
@@ -32,6 +29,7 @@ _DRY_RUN=false
 . ${SCRIPTS}/k8s/etcd.sh 
 . ${SCRIPTS}/k8s/cpl.sh 
 . ${SCRIPTS}/k8s/cluster.sh 
+. ${SCRIPTS}/controllers.sh 
 
 # Public API
 
@@ -66,9 +64,8 @@ kube::gen_local_env(){
 kube::add(){
     local number_of_nodes=$1
     kube::plugins::load ${PLUGINS_CONF_FILE}
-    DEBUG kube::debug::print
-    ## DB
-    kube::add $number_of_nodes
-    kube::create_machines
-    kube::add_nodes number_of_nodes
+    #ube::add $number_of_nodes
+    #kube::create_machines
+    kube::add_nodes $number_of_nodes
+    #DEBUG kube::debug::print
 }
