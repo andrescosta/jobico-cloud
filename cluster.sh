@@ -1,4 +1,9 @@
 #!/bin/bash
+
+#set -o errexit
+#set -o nounset
+#set -o pipefail
+
 PS4='LINENO:'
 DEFAULT_NODES=2
 DEFAULT_CPL=1
@@ -54,12 +59,15 @@ do_destroy(){
     echo "Command execution cancelled."
   fi
 }
+
 clocal(){
     kube::gen_local_env
 }
+
 kvm(){
   install_kvm
 }
+
 new() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -122,16 +130,19 @@ new() {
         esac
         shift
     done
-  nodes=${nodes:-$DEFAULT_NODES}
-  cpl=${cpl:-$DEFAULT_CPL}
-  lb=${lb:-$DEFAULT_LB}
+    nodes=${nodes:-$DEFAULT_NODES}
+    cpl=${cpl:-$DEFAULT_CPL}
+    lb=${lb:-$DEFAULT_LB}
+    if [[ $cpl > 1 ]]; then  
+        echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balncer(s) ..."
+    else
+        echo "The K8s Cluster is being created with $nodes node(s)."
+    fi
+    DRY_RUN echo ">> Dryn run << "
   
-  echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balncer(s) ..."
-  DRY_RUN echo ">> Dryn run << "
+    kube::cluster $nodes $cpl $lb 
   
-  kube::cluster $nodes $cpl $lb 
-  
-  NOT_DRY_RUN echo "The K8s Cluster was created."
+    NOT_DRY_RUN echo "The K8s Cluster was created."
 }
 add(){
     while [[ $# -gt 0 ]]; do
@@ -175,13 +186,13 @@ add(){
         esac
         shift
     done
-  nodes=${nodes:-1}
+    nodes=${nodes:-1}
   
-  echo "$nodes node(s) are being added ...  "
+    echo "$nodes node(s) are being added ...  "
   
-  kube::add $nodes  
+    kube::add $nodes  
   
-  echo "The node(s) were added."
+    echo "The node(s) were added."
 }
 display_help() {
     echo "Usage: "

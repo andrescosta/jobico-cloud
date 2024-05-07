@@ -46,7 +46,6 @@ kube::cluster(){
 }
 
 kube::destroy_cluster(){
-    kube::plugins::load ${PLUGINS_CONF_FILE}
     if [ ! -e ${MACHINES_DB} ]; then
         echo "${MACHINES_DB} does not exist"
         exit 1
@@ -55,6 +54,7 @@ kube::destroy_cluster(){
         echo "${WORK_DIR}/db.txt does not exist"
         exit 1
     fi
+    kube::plugins::load ${PLUGINS_CONF_FILE}
     kube::destroy_machines
     kube::restore_local_env
 }
@@ -63,6 +63,14 @@ kube::gen_local_env(){
     kube::local
 }
 kube::add(){
+    if [ ! -e ${MACHINES_DB} ]; then
+        echo "${MACHINES_DB} does not exist"
+        exit 1
+    fi
+    if [ ! -e ${WORK_DIR}/db.txt ]; then
+        echo "${WORK_DIR}/db.txt does not exist"
+        exit 1
+    fi
     local number_of_nodes=$1
     kube::plugins::load ${PLUGINS_CONF_FILE}
     kube::init_for_add $number_of_nodes

@@ -18,7 +18,7 @@ escape() {
     echo "${escaped_result}"
 }
 print_array_to_file(){
-    values=($@)
+    local values=($@)
     for v in "${values[@]}"; do
         echo "$v" > array.txt
     done
