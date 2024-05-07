@@ -16,12 +16,32 @@ kube::debug::print(){
     local gencert=($(kube::dao::cpl::get gencert 3))
     local kubeconfig=($(kube::dao::cpl::get genkubeconfig 4))
     local etcd_servers=$(kube::etcd::get_etcd_servers)
+    local ccpl=($(kube::dao::cpl::control_plane))
+    local all_workers=($(kube::dao::cpl::all_workers))
+    local curr_workers=($(kube::dao::cpl::curr_workers))
+    local curr_nodes_cluster=($(kube::dao::cluster::curr_nodes))
     echo "------------all--------------"
     kube::dao::cluster::all | while read IP FQDN HOST SUBNET TYPE; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
     done 
+    echo "---------all nodes-------------"
+    kube::dao::cluster::all_nodes | while read IP FQDN HOST SUBNET TYPE; do
+        echo "$IP $FQDN $HOST $SUBNET $TYPE"
+    done 
+    echo "---------cpl-----------------"
+    print_array ${ccpl[@]}
+    echo "---------all workers---------"
+    print_array ${all_workers[@]}
+    echo "---------curr workers--------"
+    print_array ${curr_workers[@]}
+    echo "---------workers------------"
+    print_array ${workers[@]}
     echo "---------- nodes ------------"
     print_array "${nodes[@]}"
+    echo "-----curr node cluster-------"
+    kube::dao::cluster::curr_nodes | while read IP FQDN HOST SUBNET TYPE; do
+        echo "$IP $FQDN $HOST $SUBNET $TYPE"
+    done 
     echo "----------notvip------------"
     kube::dao::cluster::get_type_is "server" | while read IP FQDN HOST SUBNET TYPE; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
@@ -38,8 +58,6 @@ kube::debug::print(){
     echo "${vip}"
     echo "${vipdns}"
     echo "${viphost}"
-    echo "---------workers------------"
-    print_array ${workers[@]}
     echo "------------lb--------------"
     print_array ${lbs[@]}
     echo "---------servers------------"

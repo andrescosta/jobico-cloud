@@ -1,7 +1,7 @@
 kube::kubeconfig::gen_for_nodes(){
     local workers=($(kube::dao::cpl::get worker))
     local lb=$(kube::dao::cluster::lb 2)
-    for host in ${workers[*]}; do
+    for host in ${workers[@]}; do
         kubectl config set-cluster ${CLUSTER_NAME} \
         --certificate-authority=${WORK_DIR}/ca.crt \
         --embed-certs=true \
@@ -25,7 +25,7 @@ kube::kubeconfig::gen_for_nodes(){
 kube::kubeconfig::gen_for_controlplane(){
     local comps=($(kube::dao::cpl::get genkubeconfig 4))
     local lb=$(kube::dao::cluster::lb 2)
-    for comp in ${comps[*]}; do
+    for comp in ${comps[@]}; do
         kubectl config set-cluster ${CLUSTER_NAME} \
         --certificate-authority=${WORK_DIR}/ca.crt \
         --embed-certs=true \
@@ -66,7 +66,7 @@ kube::kubeconfig::gen_for_kube_admin(){
 
 kube::kubeconfig::deploy_to_nodes(){
     local workers=($(kube::dao::cpl::get worker))
-    for host in ${workers[*]}; do
+    for host in ${workers[@]}; do
         ssh root@$host "mkdir -p /var/lib/{kube-proxy,kubelet}"
         scp ${WORK_DIR}/kube-proxy.kubeconfig \
         root@$host:/var/lib/kube-proxy/kubeconfig
@@ -77,7 +77,7 @@ kube::kubeconfig::deploy_to_nodes(){
 
 kube::kubeconfig::deploy_to_server(){
     local servers=($(kube::dao::cluster::get server 1))
-    for host in ${servers[*]}; do
+    for host in ${servers[@]}; do
         scp ${WORK_DIR}/admin.kubeconfig \
         ${WORK_DIR}/kube-controller-manager.kubeconfig \
         ${WORK_DIR}/kube-scheduler.kubeconfig \

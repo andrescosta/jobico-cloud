@@ -29,6 +29,7 @@ kube::init_for_add(){
     fi
 }
 kube::add_nodes(){
+    # DNS
     if ! grep -q "add_host" ${STATUS_FILE}; then
         kube::host::add_new_nodes_to_hostsfile
         kube::host::update_local_etc_hosts
@@ -37,24 +38,34 @@ kube::add_nodes(){
         NOT_DRY_RUN kube::host::update_machines_etc_hosts
         kube::set_done "add_host"
     fi
+    # TLS
     if ! grep -q "add_tls" ${STATUS_FILE}; then
         kube::tls::add_nodes_to_ca_conf
         kube::tls::gen_certs
         NOT_DRY_RUN kube::tls::deploy_to_nodes
         kube::set_done "add_tls"
     fi
+    # Kubeconfig
     if ! grep -q "add_kubeconfig" ${STATUS_FILE}; then
         kube::kubeconfig::gen_for_nodes
         NOT_DRY_RUN kube::kubeconfig::deploy_to_nodes
         kube::set_done "add_kubeconfig"
     fi
+    # Deployment
     if ! grep -q "add_deploy_nodes" ${STATUS_FILE}; then
         NOT_DRY_RUN kube::cluster::deploy_to_nodes
         NOT_DRY_RUN kube::cluster::add_routes
         kube::set_done "add_deploy_nodes"
     fi
+    # Routes
+    if ! grep -q "add_routes" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::cluster::add_routes
+        NOT_DRY_RUN kube::cluster::add_routes_to_new_node
+        kube::set_done "add_routes"
+    fi
+    # Merge DBs
     if ! grep -q "add_merge_db" ${STATUS_FILE}; then
-        kube::dao::merge_dbs
+        NOT_DRY_RUN kube::dao::merge_dbs
         kube::set_done "add_merge_db"
     fi
 }

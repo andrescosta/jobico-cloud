@@ -46,7 +46,7 @@ kube::tls::gen_ca(){
 
 kube::tls::gen_certs(){
     local comps=($(kube::dao::cpl::get gencert 3))
-    for component in ${comps[*]}; do
+    for component in ${comps[@]}; do
         openssl genrsa -out "${WORK_DIR}/${component}.key" 4096
         
         openssl req -new -key "${WORK_DIR}/${component}.key" -sha256 \
@@ -64,7 +64,7 @@ kube::tls::gen_certs(){
 
 kube::tls::deploy_to_nodes(){
     local nodes=($(kube::dao::cluster::get node 3))
-    for host in ${nodes[*]}; do
+    for host in ${nodes[@]}; do
         ssh root@$host mkdir -p /var/lib/kubelet/
         
         scp ${WORK_DIR}/ca.crt root@$host:/var/lib/kubelet/
@@ -79,7 +79,7 @@ kube::tls::deploy_to_nodes(){
 
 kube::tls::deploy_to_server(){
     local servers=($(kube::dao::cluster::get server 1))
-    for host in ${servers[*]}; do
+    for host in ${servers[@]}; do
         scp \
             ${WORK_DIR}/ca.key ${WORK_DIR}/ca.crt \
             ${WORK_DIR}/kube-api-server.key ${WORK_DIR}/kube-api-server.crt \

@@ -136,28 +136,23 @@ EOF
 
 kube::cluster::add_routes(){
     local servers=($(kube::dao::cpl::control_plane))
-    local workers=($(kube::dao::cpl::get worker))
+    echo "" > routes    
     for server in "${servers[@]}"; do
-        for worker in "${workers[@]}"; do
-            node_ip=$(grep ${worker} ${MACHINES_DB} | cut -d " " -f 1)
-            node_subnet=$(grep ${worker} ${MACHINES_DB} | cut -d " " -f 4)
+        kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
+            echo -e "\n0:${server}: ip route add ${SUBNET} via ${IP}" >> routes
             ssh root@${server} \
-<<EOF
-    ip route add ${node_subnet} via ${node_ip}
+<<EOF >> routes 2>&1
+    ip route add ${SUBNET} via ${IP}
 EOF
         done
     done
-    
-    local curr_workers=($(kube::dao::cpl::curr_workers))
-    for worker1 in "${curr_workers[@]}"; do
-        for worker2 in "${workers[@]}"; do
-            if [ "$worker1" != "$worker2" ]; then
-                node_ip=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 1)
-                node_subnet=$(grep ${worker2}  ${MACHINES_DB} | cut -d " " -f 4)
-                
-                ssh root@${worker1} \
-<<EOF
-    ip route add ${node_subnet} via ${node_ip}
+    kube::dao::cluster::all_nodes | while read IP1 FQDN1 HOST1 SUBNET1 TYPE1; do
+        kube::dao::cluster::nodes | while read IP2 FQDN2 HOST2 SUBNET2 TYPE2; do
+            if [ "${IP1}" != "${IP2}" ]; then
+                echo -e "\n1:${IP1}: ip route add ${SUBNET2} via ${IP2}" >> routes
+                ssh root@${IP1} \
+<<EOF >> routes 2>&1
+    ip route add ${SUBNET2} via ${IP2}
 EOF
             fi
         done
@@ -165,19 +160,13 @@ EOF
 }
 
 kube::cluster::add_routes_to_new_node(){
-    local workers=($(kube::dao::cpl::get worker))
-    local curr_workers=($(kube::dao::cpl::curr_workers))
-    for worker1 in "${workers[@]}"; do
-        for worker2 in "${curr_workers[@]}"; do
-            if [ "$worker1" != "$worker2" ]; then
-                node_ip=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 1)
-                node_subnet=$(grep ${worker2}  ${MACHINES_DB} | cut -d " " -f 4)
-                
-                ssh root@${worker1} \
-<<EOF
-    ip route add ${node_subnet} via ${node_ip}
+    kube::dao::cluster::nodes | while read IP1 FQDN1 HOST1 SUBNET1 TYPE1; do
+        kube::dao::cluster::curr_nodes | while read IP2 FQDN2 HOST2 SUBNET2 TYPE2; do
+            echo -e "\n2:${IP1}: ip route add ${SUBNET2} via ${IP2}" >> routes
+            ssh root@${IP1} \
+<<EOF >> routes 2>&1
+    ip route add ${SUBNET2} via ${IP2}
 EOF
-            fi
         done
     done
 }

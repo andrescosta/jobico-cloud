@@ -94,16 +94,45 @@ kue::dao::merge_dbs(){
     cat ${WORK_DIR}/db_new.txt >> ${WORK_DIR}/db.txt
     rm ${WORK_DIR}/db_new.txt
 }
+kube::dao::cpl::control_plane(){
+    local db=${WORK_DIR}/db.txt
+    local values=($(awk '$2 == "control_plane" {print $1}' ${db}))
+    for e in "${values[@]}"; do
+        echo "$e"
+    done
+}
+kube::dao::cpl::curr_workers(){
+    local values=($(awk '$2 == "worker" {print $1}' ${WORK_DIR}/db.txt))
+    for e in "${values[@]}"; do
+        echo "$e"
+    done
+}
+kube::dao::cpl::all_workers(){
+    local values=($(awk '$2 == "worker" {print $1}' ${WORK_DIR}/db.txt))
+    if [ -f ${WORK_DIR}/db_new.txt ]; then
+        values2=($(awk '$2 == "worker" {print $1}' ${WORK_DIR}/db_new.txt))
+        values=("${values[@]}" "${values2[@]}")
+    fi
+    for e in "${values[@]}"; do
+        echo "$e"
+    done
+}
+kube::dao::cluster::all_nodes(){
+    echo "$(kube::dao::cluster::curr_nodes)"
+    if [ -f "${MACHINES_NEW_DB}" ]; then
+        echo "$(kube::dao::cluster::nodes)"
+    fi
+}
 kube::dao::cpl::get(){
-    db=$(kube::dao::cpl::curr_db)
-    colf="${2:-2}"
+    local db=$(kube::dao::cpl::curr_db)
+    local colf="${2:-2}"
     local values=($(awk -v value="$1" -v col="1" -v cole="$colf" '$cole == value {print $col}' ${db}))
     for e in "${values[@]}"; do
         echo "$e"
     done
 }
 kube::dao::cpl::getby(){
-    db=$(kube::dao::cpl::curr_db)
+    local db=$(kube::dao::cpl::curr_db)
     local values=$(awk -v value="$1" '$2 == value {print $0}' ${db})
     echo "$values"
 }
@@ -114,8 +143,11 @@ kube::dao::cluster::machines(){
 kube::dao::cluster::nodes(){
     echo "$(kube::dao::cluster::get_type_is "node")"
 }
+kube::dao::cluster::servers(){
+    echo "$(kube::dao::cluster::get_type_is "server")"
+}
 kube::dao::cluster::all(){
-    db=$(kube::dao::cluster::curr_db $1)
+    local db=$(kube::dao::cluster::curr_db $1)
     cat ${db}
 }
 kube::dao::cluster::lb(){
@@ -126,24 +158,28 @@ kube::dao::cluster::lb(){
     echo "${lb}"
 }
 kube::dao::cluster::get_type_is_not(){ 
-    db=$(kube::dao::cluster::curr_db $1)
+    local db=$(kube::dao::cluster::curr_db $1)
     local result=$(awk -v value="$1" '$5 != value {print $0}' ${db})
     echo "$result"
 }
 kube::dao::cluster::get_type_is(){ 
-    db=$(kube::dao::cluster::curr_db $1)
+    local db=$(kube::dao::cluster::curr_db $1)
     local result=$(awk -v value="$1" '$5 == value {print $0}' ${db})
     echo "$result"
 }
 kube::dao::cluster::get(){
-    db=$(kube::dao::cluster::curr_db $1)
+    local db=$(kube::dao::cluster::curr_db $1)
     local values=($(awk -v value="$1" -v col="$2"  '$5 == value {print $col}' ${db}))
     for e in "${values[@]}"; do
         echo "$e"
     done
 }
+kube::dao::cluster::curr_nodes(){
+    local result=$(awk '$5 == "node" {print $0}' ${MACHINES_DB})
+    echo "$result"
+}
 kube::dao::cluster::count(){
-    db=$(kube::dao::cluster::curr_db $1)
+    local db=$(kube::dao::cluster::curr_db $1)
     local value=$(awk -v value="$1" '$5 == value {count++} END {print count}' ${db})
     echo "$value"
 }

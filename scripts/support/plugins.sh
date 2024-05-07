@@ -5,7 +5,7 @@ PLUGINS_DIR=${DIR}/scripts/plugins
 . $(dirname "$0")/scripts/support/debug.sh 
 
 kube::plugins::load(){
-    plugins_conf=$1
+    local plugins_conf=$1
     while IFS='=' read -r func plugin || [[ -n "$func" ]]; do 
         if [ -z "${plugin}" ]; then
             continue
