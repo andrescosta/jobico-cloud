@@ -1,7 +1,7 @@
 
 kube::cluster::deploy_to_server(){
     local servers=($(kube::dao::cluster::get server 1))
-    for host in ${servers[*]}; do
+    for host in ${servers[@]}; do
         scp ${DOWNLOADS_DIR}/kube-apiserver \
         ${DOWNLOADS_DIR}/kube-controller-manager \
         ${DOWNLOADS_DIR}/kube-scheduler \
@@ -64,7 +64,7 @@ EOF
 
 kube::cluster::deploy_to_nodes(){
     local workers=($(kube::dao::cpl::get worker))
-    for host in ${workers[*]}; do
+    for host in ${workers[@]}; do
         subnets=$(grep $host $MACHINES_DB | cut -d " " -f 4)
         sed "s|SUBNET|${subnets}|g" \
         ${EXTRAS_DIR}/configs/10-bridge.conf > ${WORK_DIR}/10-bridge.conf
@@ -77,7 +77,7 @@ kube::cluster::deploy_to_nodes(){
         root@$host:~/
     done
     
-    for host in ${workers[*]}; do
+    for host in ${workers[@]}; do
         scp ${DOWNLOADS_DIR}/runc.amd64 \
         ${DOWNLOADS_DIR}/crictl-v1.28.0-linux-amd64.tar.gz \
         ${DOWNLOADS_DIR}/cni-plugins-linux-amd64-v1.3.0.tgz \
@@ -93,7 +93,7 @@ kube::cluster::deploy_to_nodes(){
         ${EXTRAS_DIR}/units/kube-proxy.service root@$host:~/
     done
     
-    for host in ${workers[*]}; do
+    for host in ${workers[@]}; do
         ssh root@$host \
 << 'EOF'
 
@@ -135,8 +135,8 @@ EOF
 }
 
 kube::cluster::add_routes(){
-    servers=($(kube::dao::cpl::get control_plane))
-    workers=($(kube::dao::cpl::get worker))
+    local servers=($(kube::dao::cpl::control_plane))
+    local workers=($(kube::dao::cpl::get worker))
     for server in "${servers[@]}"; do
         for worker in "${workers[@]}"; do
             node_ip=$(grep ${worker} ${MACHINES_DB} | cut -d " " -f 1)
@@ -148,8 +148,8 @@ EOF
         done
     done
     
-    
-    for worker1 in "${workers[@]}"; do
+    local curr_workers=($(kube::dao::cpl::curr_workers))
+    for worker1 in "${curr_workers[@]}"; do
         for worker2 in "${workers[@]}"; do
             if [ "$worker1" != "$worker2" ]; then
                 node_ip=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 1)
@@ -159,7 +159,24 @@ EOF
 <<EOF
     ip route add ${node_subnet} via ${node_ip}
 EOF
+            fi
+        done
+    done
+}
+
+kube::cluster::add_routes_to_new_node(){
+    local workers=($(kube::dao::cpl::get worker))
+    local curr_workers=($(kube::dao::cpl::curr_workers))
+    for worker1 in "${workers[@]}"; do
+        for worker2 in "${curr_workers[@]}"; do
+            if [ "$worker1" != "$worker2" ]; then
+                node_ip=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 1)
+                node_subnet=$(grep ${worker2}  ${MACHINES_DB} | cut -d " " -f 4)
                 
+                ssh root@${worker1} \
+<<EOF
+    ip route add ${node_subnet} via ${node_ip}
+EOF
             fi
         done
     done
