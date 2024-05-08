@@ -20,59 +20,6 @@ kube::create_machines(){
         kube::set_done $1
     fi
 }
-kube::init_for_add(){
-    local number_of_nodes=$1
-    if ! grep -q "add_init" ${STATUS_FILE}; then
-        kube::dao::gen_add_db ${number_of_nodes}
-        kube::dao::gen_add_cluster_db
-        kube::set_done "add_init"
-    fi
-}
-kube::add_nodes(){
-    # DNS
-    if ! grep -q "add_host" ${STATUS_FILE}; then
-        kube::host::add_new_nodes_to_hostsfile
-        kube::host::update_local_etc_hosts
-        kube::host::update_local_known_hosts
-        NOT_DRY_RUN kube::host::set_machines_hostname
-        NOT_DRY_RUN kube::host::update_machines_etc_hosts
-        kube::set_done "add_host"
-    fi
-    # TLS
-    if ! grep -q "add_tls" ${STATUS_FILE}; then
-        kube::tls::add_nodes_to_ca_conf
-        kube::tls::gen_certs
-        NOT_DRY_RUN kube::tls::deploy_to_nodes
-        kube::set_done "add_tls"
-    fi
-    # Kubeconfig
-    if ! grep -q "add_kubeconfig" ${STATUS_FILE}; then
-        kube::kubeconfig::gen_for_nodes
-        NOT_DRY_RUN kube::kubeconfig::deploy_to_nodes
-        kube::set_done "add_kubeconfig"
-    fi
-    # Deployment
-    if ! grep -q "add_deploy_nodes" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::cluster::deploy_to_nodes
-        NOT_DRY_RUN kube::cluster::add_routes
-        kube::set_done "add_deploy_nodes"
-    fi
-    # Routes
-    if ! grep -q "add_routes" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::cluster::add_routes_to_new_node
-        kube::set_done "add_routes"
-    fi
-    # Merge DBs
-    if ! grep -q "add_merge_db" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::dao::merge_dbs
-        kube::set_done "add_merge_db"
-    fi
-    # Lock
-    if ! grep -q "add_lock" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::dao::cluster::lock
-        kube::set_done "add_lock"
-    fi
-}
 kube::create_cluster(){
     # DNS
     if ! grep -q "host" ${STATUS_FILE}; then
@@ -142,6 +89,59 @@ kube::create_cluster(){
     if ! grep -q "lock" ${STATUS_FILE}; then
         NOT_DRY_RUN kube::dao::cluster::lock
         kube::set_done "lock"
+    fi
+}
+kube::add_nodes(){
+    # DNS
+    if ! grep -q "add_host" ${STATUS_FILE}; then
+        kube::host::add_new_nodes_to_hostsfile
+        NOT_DRY_RUN kube::host::update_local_etc_hosts
+        NOT_DRY_RUN kube::host::update_local_known_hosts
+        NOT_DRY_RUN kube::host::set_machines_hostname
+        NOT_DRY_RUN kube::host::update_machines_etc_hosts
+        kube::set_done "add_host"
+    fi
+    # TLS
+    if ! grep -q "add_tls" ${STATUS_FILE}; then
+        kube::tls::add_nodes_to_ca_conf
+        kube::tls::gen_certs
+        NOT_DRY_RUN kube::tls::deploy_to_nodes
+        kube::set_done "add_tls"
+    fi
+    # Kubeconfig
+    if ! grep -q "add_kubeconfig" ${STATUS_FILE}; then
+        kube::kubeconfig::gen_for_nodes
+        NOT_DRY_RUN kube::kubeconfig::deploy_to_nodes
+        kube::set_done "add_kubeconfig"
+    fi
+    # Deployment
+    if ! grep -q "add_deploy_nodes" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::cluster::deploy_to_nodes
+        kube::set_done "add_deploy_nodes"
+    fi
+    # Routes
+    if ! grep -q "add_routes" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::cluster::add_routes
+        NOT_DRY_RUN kube::cluster::add_routes_to_added_node
+        kube::set_done "add_routes"
+    fi
+    # Merge DBs
+    if ! grep -q "add_merge_db" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::dao::merge_dbs
+        kube::set_done "add_merge_db"
+    fi
+    # Lock
+    if ! grep -q "add_lock" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::dao::cluster::lock
+        kube::set_done "add_lock"
+    fi
+}
+kube::init_for_add(){
+    local number_of_nodes=$1
+    if ! grep -q "add_init" ${STATUS_FILE}; then
+        kube::dao::gen_add_db ${number_of_nodes}
+        kube::dao::gen_add_cluster_db
+        kube::set_done "add_init"
     fi
 }
 kube::local(){
