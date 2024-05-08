@@ -198,7 +198,7 @@ kube::unlock_cluster(){
     NOT_DRY_RUN kube::dao::cluster::unlock
 }
 kube::add_was_executed(){
-    if grep -q '^|add_' ${WORK_DIR}/jobico_status; then
+    if grep -qs '^|add_' ${WORK_DIR}/jobico_status; then
         echo true
     else
         echo false
