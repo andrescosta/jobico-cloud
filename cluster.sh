@@ -211,6 +211,7 @@ display_help() {
     echo "Usage: "
     echo "       $0 <command> [arguments]"
     echo "Commands:"
+    echo "          help"
     echo "          new"
     echo "          add"
     echo "          destroy"
