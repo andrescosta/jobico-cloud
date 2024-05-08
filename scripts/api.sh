@@ -37,6 +37,10 @@ kube::cluster(){
     local number_of_nodes=$1
     local number_of_cpl_nodes=$2
     local number_of_lbs=$3
+    if [[ $(kube::dao::cluster::is_locked) == true ]]; then
+        echo "A cluster already exists."
+        exit 1
+    fi
     clear_dhcp
     kube::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs
     kube::plugins::load ${PLUGINS_CONF_FILE}
@@ -46,15 +50,18 @@ kube::cluster(){
 }
 
 kube::destroy_cluster(){
-    if [ ! -e ${MACHINES_DB} ]; then
-        echo "${MACHINES_DB} does not exist"
-        exit 1
+    if [[ $(kube::dao::cluster::is_locked) == false ]]; then
+        if [ ! -e ${MACHINES_DB} ]; then
+            echo "Error: The cluster was not created."
+            exit 1
+        fi
     fi
     if [ ! -e ${WORK_DIR}/db.txt ]; then
-        echo "${WORK_DIR}/db.txt does not exist"
+        echo "Error: The cluster was not created."
         exit 1
     fi
     kube::plugins::load ${PLUGINS_CONF_FILE}
+    kube::dao::cluster::unlock
     kube::destroy_machines
     kube::restore_local_env
 }
@@ -63,12 +70,16 @@ kube::gen_local_env(){
     kube::local
 }
 kube::add(){
+    if [[ $(kube::dao::cluster::is_locked) == true ]]; then
+        echo "Error: The cluster is locked. Use --force to add nodes"
+        exit 1
+    fi
     if [ ! -e ${MACHINES_DB} ]; then
-        echo "${MACHINES_DB} does not exist"
+        echo "Error: The cluster was not created."
         exit 1
     fi
     if [ ! -e ${WORK_DIR}/db.txt ]; then
-        echo "${WORK_DIR}/db.txt does not exist"
+        echo "Error: The cluster was not created."
         exit 1
     fi
     local number_of_nodes=$1

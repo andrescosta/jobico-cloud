@@ -136,12 +136,10 @@ EOF
 
 kube::cluster::add_routes(){
     local servers=($(kube::dao::cpl::control_plane))
-    echo "" > routes    
     for server in "${servers[@]}"; do
         kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
-            echo -e "\n0:${server}: ip route add ${SUBNET} via ${IP}" >> routes
             ssh root@${server} \
-<<EOF >> routes 2>&1
+<<EOF 
     ip route add ${SUBNET} via ${IP}
 EOF
         done
@@ -149,9 +147,8 @@ EOF
     kube::dao::cluster::all_nodes | while read IP1 FQDN1 HOST1 SUBNET1 TYPE1; do
         kube::dao::cluster::nodes | while read IP2 FQDN2 HOST2 SUBNET2 TYPE2; do
             if [ "${IP1}" != "${IP2}" ]; then
-                echo -e "\n1:${IP1}: ip route add ${SUBNET2} via ${IP2}" >> routes
                 ssh root@${IP1} \
-<<EOF >> routes 2>&1
+<<EOF 
     ip route add ${SUBNET2} via ${IP2}
 EOF
             fi
@@ -162,9 +159,8 @@ EOF
 kube::cluster::add_routes_to_new_node(){
     kube::dao::cluster::nodes | while read IP1 FQDN1 HOST1 SUBNET1 TYPE1; do
         kube::dao::cluster::curr_nodes | while read IP2 FQDN2 HOST2 SUBNET2 TYPE2; do
-            echo -e "\n2:${IP1}: ip route add ${SUBNET2} via ${IP2}" >> routes
             ssh root@${IP1} \
-<<EOF >> routes 2>&1
+<<EOF 
     ip route add ${SUBNET2} via ${IP2}
 EOF
         done

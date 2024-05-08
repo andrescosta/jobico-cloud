@@ -59,7 +59,6 @@ kube::add_nodes(){
     fi
     # Routes
     if ! grep -q "add_routes" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::cluster::add_routes
         NOT_DRY_RUN kube::cluster::add_routes_to_new_node
         kube::set_done "add_routes"
     fi
@@ -67,6 +66,11 @@ kube::add_nodes(){
     if ! grep -q "add_merge_db" ${STATUS_FILE}; then
         NOT_DRY_RUN kube::dao::merge_dbs
         kube::set_done "add_merge_db"
+    fi
+    # Lock
+    if ! grep -q "add_lock" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::dao::cluster::lock
+        kube::set_done "add_lock"
     fi
 }
 kube::create_cluster(){
@@ -135,6 +139,10 @@ kube::create_cluster(){
         NOT_DRY_RUN kube::cluster::add_routes
         kube::set_done "routes"
     fi
+    if ! grep -q "lock" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::dao::cluster::lock
+        kube::set_done "lock"
+    fi
 }
 kube::local(){
     if ! grep -q "locals" "${STATUS_FILE}"; then
@@ -182,4 +190,17 @@ kube::wait_for_vms_ssh() {
 
 kube::set_done(){
     echo "|$1|" >> ${WORK_DIR}/jobico_status
+}
+kuve::remove_add_commands(){
+    sed -i '/^|add_/d' ${WORK_DIR}/jobico_status
+}
+kube::unlock_cluster(){
+    NOT_DRY_RUN kube::dao::cluster::unlock
+}
+kube::add_was_executed(){
+    if grep -q '^|add_' ${WORK_DIR}/jobico_status; then
+        echo true
+    else
+        echo false
+    fi
 }
