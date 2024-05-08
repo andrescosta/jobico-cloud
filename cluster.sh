@@ -6,6 +6,7 @@
 
 PS4='LINENO:'
 DEFAULT_NODES=2
+DEFAULT_NODES_ADD=1
 DEFAULT_CPL=1
 DEFAULT_LB=2
 DIR=$(dirname "$0")
@@ -145,6 +146,7 @@ new() {
     NOT_DRY_RUN echo "The K8s Cluster was created."
 }
 add(){
+    local force=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --nodes )
@@ -173,6 +175,9 @@ add(){
                  fi
                 _DEBUG="on"
                 ;;
+            --force )
+                force=true
+                ;;
             -* )
                 echo "Unrecognized or incomplete option: $1" >&2
                 display_help
@@ -186,10 +191,18 @@ add(){
         esac
         shift
     done
-    nodes=${nodes:-1}
+    nodes=${nodes:-$DEFAULT_NODES_ADD}
   
     echo "$nodes node(s) are being added ...  "
   
+    if [[ $(kube::add_was_executed) == false && $(kube::dao::cluster::is_locked) == true ]]; then
+        kube::unlock_cluster
+    else
+        if [[ $force == true ]]; then
+            kuve::remove_add_commands
+            kube::unlock_cluster
+        fi
+    fi
     kube::add $nodes  
   
     echo "The node(s) were added."
@@ -199,6 +212,7 @@ display_help() {
     echo "       $0 <command> [arguments]"
     echo "Commands:"
     echo "          new"
+    echo "          add"
     echo "          destroy"
     echo "          local"
     echo "          kvm"
@@ -210,6 +224,9 @@ display_help_command(){
   case $1 in 
     new)
       display_help_for_new
+      ;;
+    add)
+      display_help_for_add
       ;;
     destroy)
       display_help_for_destroy
@@ -229,7 +246,7 @@ display_help_command(){
 } 
 
 display_help_for_new(){
-  echo "Usage: $0 new [--nodes n] [--debug s|d]"
+  echo "Usage: $0 new [arguments]"
   echo "Create the VMs and deploys Kubernetes cluster into them."
   echo "The arguments that define how the cluster will be created:"
   echo "     --nodes n"
@@ -240,6 +257,21 @@ display_help_for_new(){
   echo "            Specify the number of load balancers to be created in case --cpl is greater than 1. The default value is 2. "
   echo "     --dry_run"
   echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
+  echo "     --debug [ s | d ]"
+  echo "            Enable the debug mode."
+  echo "       s: displays basic information."
+  echo "       d: display advanced information."
+}
+display_help_for_add(){
+  echo "Usage: $0 add [arguments]"
+  echo "Add new nodes to the current Kubernetes cluster."
+  echo "The arguments that define how the cluster will be updated:"
+  echo "     --nodes n"
+  echo "            Specify the number of worker nodes to be added. The default value is 1. "
+  echo "     --dry_run"
+  echo "            Update the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
+  echo "     --force"
+  echo "            If new nodes were added previously, this parameter force the execution of this command."
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."
@@ -296,5 +328,4 @@ exec_command(){
       ;;
   esac
 }
-
 exec_command "$@"

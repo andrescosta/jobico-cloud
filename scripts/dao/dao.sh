@@ -1,5 +1,6 @@
 readonly MACHINES_DB="${WORK_DIR}/cluster.txt"
 readonly MACHINES_NEW_DB="${WORK_DIR}/cluster_new.txt"
+readonly MACHINES_DB_LOCK="${WORK_DIR}/cluster_lock.txt"
 readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
 readonly FROM_HOST=7
 
@@ -196,4 +197,17 @@ kube::dao::cluster::curr_db(){
         return
     fi
     echo "${MACHINES_DB}"
+}
+kube::dao::cluster::lock(){
+    mv ${MACHINES_DB} ${MACHINES_DB_LOCK}
+}
+kube::dao::cluster::unlock(){
+    mv ${MACHINES_DB_LOCK} ${MACHINES_DB} 
+}
+kube::dao::cluster::is_locked(){
+    if [ -f ${MACHINES_DB_LOCK} ]; then
+        echo true
+    else
+        echo false
+    fi
 }
