@@ -140,7 +140,8 @@ kube::cluster::add_routes(){
         kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
             ssh root@${server} \
 <<EOF 
-    ip route add ${SUBNET} via ${IP}
+    sed -i "/set-name: enp1s0/a\            routes:\n              - to: ${SUBNET}\n                via: ${IP}" /etc/netplan/50-cloud-init.yaml 
+    netplan apply
 EOF
         done
     done
@@ -149,7 +150,8 @@ EOF
             if [ "${IP1}" != "${IP2}" ]; then
                 ssh root@${IP1} \
 <<EOF 
-    ip route add ${SUBNET2} via ${IP2}
+    sed -i "/set-name: enp1s0/a\            routes:\n              - to: ${SUBNET2}\n                via: ${IP2}" /etc/netplan/50-cloud-init.yaml 
+    netplan apply
 EOF
             fi
         done
@@ -161,7 +163,8 @@ kube::cluster::add_routes_to_added_node(){
         kube::dao::cluster::curr_nodes | while read IP2 FQDN2 HOST2 SUBNET2 TYPE2; do
             ssh root@${IP1} \
 <<EOF 
-    ip route add ${SUBNET2} via ${IP2}
+    sed -i "/set-name: enp1s0/a\            routes:\n              - to: ${SUBNET2}\n                via: ${IP2}" /etc/netplan/50-cloud-init.yaml 
+    netplan apply
 EOF
         done
     done

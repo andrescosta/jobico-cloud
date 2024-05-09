@@ -1,5 +1,5 @@
 readonly MACHINES_DB="${WORK_DIR}/cluster.txt"
-readonly MACHINES_NEW_DB="${WORK_DIR}/cluster_new.txt"
+readonly MACHINES_NEW_DB="${WORK_DIR}/cluster_patch.txt"
 readonly MACHINES_DB_LOCK="${WORK_DIR}/cluster_lock.txt"
 readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
 readonly FROM_HOST=7
@@ -37,7 +37,7 @@ kube::dao::gen_add_db(){
     local total_workers=$1
     ((total_workers=total_workers + total_nodes))
     for ((i=total_nodes;i<total_workers;i++)); do
-        echo "$WORKER_NAME-$i worker gencert" >> ${WORK_DIR}/db_new.txt
+        echo "$WORKER_NAME-$i worker gencert" >> ${WORK_DIR}/db_patch.txt
     done
 }
 kube::dao::gen_add_cluster_db(){
@@ -54,8 +54,8 @@ kube::dao::gen_add_cluster_db(){
 }
 kube::dao::merge_dbs(){
     cat ${MACHINES_NEW_DB} >> ${MACHINES_DB} 
-    cat ${WORK_DIR}/db_new.txt >> ${WORK_DIR}/db.txt
-    rm ${MACHINES_NEW_DB} ${WORK_DIR}/db_new.txt
+    cat ${WORK_DIR}/db_patch.txt >> ${WORK_DIR}/db.txt
+    rm ${MACHINES_NEW_DB} ${WORK_DIR}/db_patch.txt
 }
 kube::dao::gen_cluster_db(){
     rm -f ${MACHINES_DB}
@@ -92,8 +92,8 @@ kube::dao::gen_cluster_db(){
 kue::dao::merge_dbs(){
     cat ${MACHINES_NEW_DB} >> ${MACHINES_DB}
     rm ${MACHINES_NEW_DB}
-    cat ${WORK_DIR}/db_new.txt >> ${WORK_DIR}/db.txt
-    rm ${WORK_DIR}/db_new.txt
+    cat ${WORK_DIR}/db_patch.txt >> ${WORK_DIR}/db.txt
+    rm ${WORK_DIR}/db_patch.txt
 }
 kube::dao::cpl::control_plane(){
     local db=${WORK_DIR}/db.txt
@@ -110,8 +110,8 @@ kube::dao::cpl::curr_workers(){
 }
 kube::dao::cpl::all_workers(){
     local values=($(awk '$2 == "worker" {print $1}' ${WORK_DIR}/db.txt))
-    if [ -f ${WORK_DIR}/db_new.txt ]; then
-        values2=($(awk '$2 == "worker" {print $1}' ${WORK_DIR}/db_new.txt))
+    if [ -f ${WORK_DIR}/db_patch.txt ]; then
+        values2=($(awk '$2 == "worker" {print $1}' ${WORK_DIR}/db_patch.txt))
         values=("${values[@]}" "${values2[@]}")
     fi
     for e in "${values[@]}"; do
@@ -185,8 +185,8 @@ kube::dao::cluster::count(){
     echo "$value"
 }
 kube::dao::cpl::curr_db(){
-    if [ -f ${WORK_DIR}/db_new.txt ]; then
-        echo "${WORK_DIR}/db_new.txt" 
+    if [ -f ${WORK_DIR}/db_patch.txt ]; then
+        echo "${WORK_DIR}/db_patch.txt" 
         return
     fi
     echo "${WORK_DIR}/db.txt"
