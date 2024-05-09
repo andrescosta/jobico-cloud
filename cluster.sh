@@ -135,7 +135,7 @@ new() {
     cpl=${cpl:-$DEFAULT_CPL}
     lb=${lb:-$DEFAULT_LB}
     if [[ $cpl > 1 ]]; then  
-        echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balncer(s) ..."
+        echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balancer(s) ..."
     else
         echo "The K8s Cluster is being created with $nodes node(s)."
     fi
