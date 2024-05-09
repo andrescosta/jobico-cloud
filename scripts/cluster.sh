@@ -1,22 +1,13 @@
 #!/bin/bash
-
-#set -o errexit
-#set -o nounset
-#set -o pipefail
-
 PS4='LINENO:'
 DEFAULT_NODES=2
-DEFAULT_NODES_ADD=1
 DEFAULT_CPL=1
 DEFAULT_LB=2
-DIR=$(dirname "$0")
-SCRIPTS="${DIR}/scripts"
+. $(dirname "$0")/lib.sh 
+. $(dirname "$0")/utils.sh 
+. $(dirname "$0")/kvm.sh 
 
-. ${SCRIPTS}/api.sh 
-. ${SCRIPTS}/support/utils.sh 
-. ${SCRIPTS}/kvm.sh 
-
-destroy(){
+function destroy(){
     ask=true
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -44,7 +35,7 @@ destroy(){
         shift
     done
     NOT_DRY_RUN do_destroy
-    DRY_RUN kube::destroy_cluster
+    DRY_RUN jobico::kube::destroy_cluster
 }
 do_destroy(){
   if [ "$ask" = true ]; then 
@@ -53,22 +44,18 @@ do_destroy(){
   fi
   if [[ $response == "yes" || $response == "y" ]]; then
     echo "Destroying the cluster ... "
-    kube::destroy_cluster
+    jobico::kube::destroy_cluster
     rm -rf work
-    exit 0
   else
     echo "Command execution cancelled."
   fi
 }
-
 clocal(){
-    kube::gen_local_env
+  jobico::kube::cluster::set_local
 }
-
 kvm(){
   install_kvm
 }
-
 new() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -131,89 +118,23 @@ new() {
         esac
         shift
     done
-    nodes=${nodes:-$DEFAULT_NODES}
-    cpl=${cpl:-$DEFAULT_CPL}
-    lb=${lb:-$DEFAULT_LB}
-    if [[ $cpl > 1 ]]; then  
-        echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balancer(s) ..."
-    else
-        echo "The K8s Cluster is being created with $nodes node(s)."
-    fi
-    DRY_RUN echo ">> Dryn run << "
+  nodes=${nodes:-$DEFAULT_NODES}
+  cpl=${cpl:-$DEFAULT_CPL}
+  lb=${lb:-$DEFAULT_LB}
   
-    kube::cluster $nodes $cpl $lb 
+  echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balncer(s) ..."
+  DRY_RUN echo ">> Dryn run << "
   
-    NOT_DRY_RUN echo "The K8s Cluster was created."
+  jobico::kube::cluster $nodes $cpl $lb 
+  
+  NOT_DRY_RUN echo "The K8s Cluster was created."
 }
-add(){
-    local force=false
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --nodes )
-                shift
-                if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
-                    nodes=$1
-                else
-                    echo "Invalid value for --nodes. Please provide a numeric value." >&2
-                    display_help
-                    exit 1
-                fi
-                ;;
-            --dry_run )
-                _DRY_RUN=true
-                _DEBUG="on"
-                ;;
-            --debug )
-                shift
-                if [ "$1" != "s" ] && [ "$1" != "d" ]; then
-                    echo "Invalid value for --debug.Plase provide s or d" >&2
-                    display_help
-                    exit 1
-                fi
-                if [ "$1" == "d" ]; then
-                    set -x
-                 fi
-                _DEBUG="on"
-                ;;
-            --force )
-                force=true
-                ;;
-            -* )
-                echo "Unrecognized or incomplete option: $1" >&2
-                display_help
-                exit 1
-                ;;
-            * )
-                echo "Invalid argument: $1" >&2
-                display_help
-                exit 1
-                ;;
-        esac
-        shift
-    done
-    nodes=${nodes:-$DEFAULT_NODES_ADD}
-  
-    echo "$nodes node(s) are being added ...  "
-  
-    if [[ $(kube::add_was_executed) == false && $(kube::dao::cluster::is_locked) == true ]]; then
-        kube::unlock_cluster
-    else
-        if [[ $force == true ]]; then
-            kuve::remove_add_commands
-            kube::unlock_cluster
-        fi
-    fi
-    kube::add $nodes  
-  
-    echo "The node(s) were added."
-}
+
 display_help() {
     echo "Usage: "
     echo "       $0 <command> [arguments]"
     echo "Commands:"
-    echo "          help"
     echo "          new"
-    echo "          add"
     echo "          destroy"
     echo "          local"
     echo "          kvm"
@@ -225,9 +146,6 @@ display_help_command(){
   case $1 in 
     new)
       display_help_for_new
-      ;;
-    add)
-      display_help_for_add
       ;;
     destroy)
       display_help_for_destroy
@@ -247,7 +165,7 @@ display_help_command(){
 } 
 
 display_help_for_new(){
-  echo "Usage: $0 new [arguments]"
+  echo "Usage: $0 new [--nodes n] [--debug s|d]"
   echo "Create the VMs and deploys Kubernetes cluster into them."
   echo "The arguments that define how the cluster will be created:"
   echo "     --nodes n"
@@ -257,22 +175,7 @@ display_help_for_new(){
   echo "     --lb n"
   echo "            Specify the number of load balancers to be created in case --cpl is greater than 1. The default value is 2. "
   echo "     --dry_run"
-  echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
-  echo "     --debug [ s | d ]"
-  echo "            Enable the debug mode."
-  echo "       s: displays basic information."
-  echo "       d: display advanced information."
-}
-display_help_for_add(){
-  echo "Usage: $0 add [arguments]"
-  echo "Add new nodes to the current Kubernetes cluster."
-  echo "The arguments that define how the cluster will be updated:"
-  echo "     --nodes n"
-  echo "            Specify the number of worker nodes to be added. The default value is 1. "
-  echo "     --dry_run"
-  echo "            Update the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
-  echo "     --force"
-  echo "            If new nodes were added previously, this parameter force the execution of this command."
+  echo "            Create the local dabases and displays its content but does not create the cluster."
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."
@@ -300,10 +203,6 @@ exec_command(){
       shift
       new "$@"
       ;;
-    add)
-      shift
-      add "$@"
-      ;;
     destroy)
       shift
       destroy "$@"
@@ -329,4 +228,5 @@ exec_command(){
       ;;
   esac
 }
+
 exec_command "$@"
