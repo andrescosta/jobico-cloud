@@ -83,7 +83,8 @@ kube::create_cluster(){
     fi
     # Routes
     if ! grep -q "routes" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::cluster::add_routes
+        NOT_DRY_RUN kube::net::fix_permission
+        NOT_DRY_RUN kube::net::add_routes
         kube::set_done "routes"
     fi
     if ! grep -q "lock" ${STATUS_FILE}; then
@@ -121,8 +122,9 @@ kube::add_nodes(){
     fi
     # Routes
     if ! grep -q "add_routes" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::cluster::add_routes
-        NOT_DRY_RUN kube::cluster::add_routes_to_added_node
+        NOT_DRY_RUN kube::net::fix_permission
+        NOT_DRY_RUN kube::net::add_routes
+        NOT_DRY_RUN kube::net::add_routes_to_added_node
         kube::set_done "add_routes"
     fi
     # Merge DBs
