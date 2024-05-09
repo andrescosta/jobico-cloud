@@ -83,7 +83,7 @@ kube::create_cluster(){
     fi
     # Routes
     if ! grep -q "routes" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::net::fix_permission
+        NOT_DRY_RUN kube::net::init
         NOT_DRY_RUN kube::net::add_routes
         kube::set_done "routes"
     fi
@@ -122,7 +122,7 @@ kube::add_nodes(){
     fi
     # Routes
     if ! grep -q "add_routes" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::net::fix_permission
+        NOT_DRY_RUN kube::net::init
         NOT_DRY_RUN kube::net::add_routes
         NOT_DRY_RUN kube::net::add_routes_to_added_node
         kube::set_done "add_routes"
