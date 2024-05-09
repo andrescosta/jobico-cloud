@@ -18,8 +18,11 @@ escape() {
     echo "${escaped_result}"
 }
 print_array_to_file(){
-    values=($@)
+    local values=($@)
     for v in "${values[@]}"; do
         echo "$v" > array.txt
     done
+}
+clear_dhcp(){
+    eval "$(make dhcp | awk '{split($5, ip, "/"); print "dhcp_release virbr0",ip[1],$3}')"
 }
