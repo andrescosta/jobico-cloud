@@ -1,5 +1,4 @@
-
-kube::net::fix_permission(){    
+kube::net::init(){    
     kube::dao::cluster::machines  | while read IP FQDN HOST SUBNET TYPE; do
             ssh root@${IP} \
 <<EOF 
