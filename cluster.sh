@@ -14,7 +14,6 @@ SCRIPTS="${DIR}/scripts"
 
 . ${SCRIPTS}/support/exception.sh
 set_trap_err
-    #trap 'throw "error ($?) executing command"' ERR
 . ${SCRIPTS}/api.sh 
 . ${SCRIPTS}/support/utils.sh 
 . ${SCRIPTS}/support/ssh.sh 
