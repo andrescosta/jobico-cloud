@@ -5,13 +5,31 @@ print_array(){
     done
 }
 DEBUG() {
-    [ "$_DEBUG" == "on" ] && $@
+    if [ "$_DEBUG" == true ]; then 
+        $@
+    fi
+}
+DEBUGOFF() {
+    _DEBUG=false
+}
+DEBUGON() {
+    _DEBUG=true
+}
+DRY_RUNOFF(){
+    _DRY_RUN=false
+}
+DRY_RUNON(){
+    _DRY_RUN=true
 }
 DRY_RUN() {
-    [ "$_DRY_RUN" == true ] && $@
+    if [ "${_DRY_RUN}" == true ]; then
+        $@
+    fi
 }
 NOT_DRY_RUN(){
-    [ "$_DRY_RUN" == false ] && $@
+    if [ "${_DRY_RUN}" == false ]; then 
+        $@
+    fi
 } 
 escape() {
     escaped_result=$(printf '%s\n' "$1" | sed -e 's/[]\/$*.^[]/\\&/g')

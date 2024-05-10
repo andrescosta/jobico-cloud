@@ -16,7 +16,7 @@ kube::etcd::get_etcd_cluster(){
                     cluster="${cluster},"
                 fi
                 cluster="${cluster}server-${i}=https://${IP}:2380"
-                ((i++))
+                ((i=i+1))
             fi
         done < ${WORK_DIR}/cluster.txt
     fi
@@ -31,7 +31,7 @@ kube::etcd::get_etcd_servers(){
                 cluster="${cluster},"
             fi
             cluster="${cluster}https://${IP}:2379"
-            ((i++))
+            ((i=i+1))
         fi
     done < ${WORK_DIR}/cluster.txt
     echo "${cluster}"
@@ -70,10 +70,9 @@ mv ~/etcd.service /etc/systemd/system
 systemctl daemon-reload
 systemctl enable etcd
 systemctl start etcd
-etcdctl member list
 EOF
 
-        ((i++))
+        ((i=i+1))
     done
 }
 

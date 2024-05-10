@@ -63,21 +63,19 @@ EOF
 ## Nodes deployment
 
 kube::cluster::deploy_to_nodes(){
-    local workers=($(kube::dao::cpl::get worker))
-    for host in ${workers[@]}; do
-        subnets=$(grep $host $MACHINES_DB | cut -d " " -f 4)
-        sed "s|SUBNET|${subnets}|g" \
+    kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
+        sed "s|SUBNET|${SUBNET}|g" \
         ${EXTRAS_DIR}/configs/10-bridge.conf > ${WORK_DIR}/10-bridge.conf
         
-        sed "s|SUBNET|${subnets}|g" \
+        sed "s|SUBNET|${SUBNET}|g" \
         ${EXTRAS_DIR}/configs/kubelet-config.yaml > ${WORK_DIR}/kubelet-config.yaml
         
         scp ${WORK_DIR}/10-bridge.conf \
         ${WORK_DIR}/kubelet-config.yaml \
-        root@$host:~/
+        root@${IP}:~/
     done
     
-    for host in ${workers[@]}; do
+    kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
         scp ${DOWNLOADS_DIR}/runc.amd64 \
         ${DOWNLOADS_DIR}/crictl-v1.28.0-linux-amd64.tar.gz \
         ${DOWNLOADS_DIR}/cni-plugins-linux-amd64-v1.3.0.tgz \
@@ -90,11 +88,11 @@ kube::cluster::deploy_to_nodes(){
         ${EXTRAS_DIR}/configs/kube-proxy-config.yaml \
         ${EXTRAS_DIR}/units/containerd.service \
         ${EXTRAS_DIR}/units/kubelet.service \
-        ${EXTRAS_DIR}/units/kube-proxy.service root@$host:~/
+        ${EXTRAS_DIR}/units/kube-proxy.service root@${IP}:~/
     done
     
-    for host in ${workers[@]}; do
-        ssh root@$host \
+    kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
+        ssh root@${IP} \
 << 'EOF'
 
   swapoff -a
