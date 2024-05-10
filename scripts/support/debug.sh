@@ -89,7 +89,7 @@ kube::debug::print(){
             if [ "$worker1" != "$worker2" ]; then
                 node_ip=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 1)
                 node_subnet=$(grep ${worker2}  ${MACHINES_DB} | cut -d " " -f 4)
-                echo "ssh root at ${worker1}"
+                echo "SSH root at ${worker1}"
                 echo "to add route ${node_subnet} via ${node_ip}"
             fi
         done

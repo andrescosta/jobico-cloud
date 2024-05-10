@@ -67,10 +67,10 @@ kube::kubeconfig::gen_for_kube_admin(){
 kube::kubeconfig::deploy_to_nodes(){
     local workers=($(kube::dao::cpl::get worker))
     for host in ${workers[@]}; do
-        ssh root@$host "mkdir -p /var/lib/{kube-proxy,kubelet}"
-        scp ${WORK_DIR}/kube-proxy.kubeconfig \
+        SSH root@$host "mkdir -p /var/lib/{kube-proxy,kubelet}"
+        SCP ${WORK_DIR}/kube-proxy.kubeconfig \
         root@$host:/var/lib/kube-proxy/kubeconfig
-        scp ${WORK_DIR}/${host}.kubeconfig \
+        SCP ${WORK_DIR}/${host}.kubeconfig \
         root@$host:/var/lib/kubelet/kubeconfig
     done
 }
@@ -78,7 +78,7 @@ kube::kubeconfig::deploy_to_nodes(){
 kube::kubeconfig::deploy_to_server(){
     local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[@]}; do
-        scp ${WORK_DIR}/admin.kubeconfig \
+        SCP ${WORK_DIR}/admin.kubeconfig \
         ${WORK_DIR}/kube-controller-manager.kubeconfig \
         ${WORK_DIR}/kube-scheduler.kubeconfig \
             root@$host:~/

@@ -15,8 +15,6 @@ readonly ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 readonly BEGIN_HOSTS_FILE="#B> Kubernetes Cluster"
 readonly END_HOSTS_FILE="#E> Kubernetes Cluster"
 readonly PLUGINS_CONF_FILE=${CURR_DIR}/plugins.conf
-_DEBUG="off"
-_DRY_RUN=false
 
 . ${SCRIPTS}/support/plugins.sh 
 . ${SCRIPTS}/support/utils.sh 

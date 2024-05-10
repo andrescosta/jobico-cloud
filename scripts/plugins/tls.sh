@@ -15,7 +15,7 @@ kube::tls::gen_ca_conf(){
         if [ "${TYPE}" == "server" ]; then
             ips="${ips}IP.${i}=${IP}\n"
             dns="${dns}DNS.${i}=${FQDN}\n"
-            ((i++))
+            ((i=i+1))
         fi
     done < ${JOBICO_CLUSTER_TBL}
     sed -i "s/{ETCD_IPS}/$ips/g" "${CA_CONF}"
@@ -65,14 +65,14 @@ kube::tls::gen_certs(){
 kube::tls::deploy_to_nodes(){
     local nodes=($(kube::dao::cluster::get node 3))
     for host in ${nodes[@]}; do
-        ssh root@$host mkdir -p /var/lib/kubelet/
+        SSH root@$host mkdir -p /var/lib/kubelet/
         
-        scp ${WORK_DIR}/ca.crt root@$host:/var/lib/kubelet/
+        SCP ${WORK_DIR}/ca.crt root@$host:/var/lib/kubelet/
         
-        scp ${WORK_DIR}/$host.crt \
+        SCP ${WORK_DIR}/$host.crt \
         root@$host:/var/lib/kubelet/kubelet.crt
         
-        scp ${WORK_DIR}/$host.key \
+        SCP ${WORK_DIR}/$host.key \
         root@$host:/var/lib/kubelet/kubelet.key
     done
 }
@@ -80,7 +80,7 @@ kube::tls::deploy_to_nodes(){
 kube::tls::deploy_to_server(){
     local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[@]}; do
-        scp \
+        SCP \
             ${WORK_DIR}/ca.key ${WORK_DIR}/ca.crt \
             ${WORK_DIR}/kube-api-server.key ${WORK_DIR}/kube-api-server.crt \
         ${WORK_DIR}/service-accounts.key ${WORK_DIR}/service-accounts.crt \
