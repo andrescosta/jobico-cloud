@@ -25,14 +25,14 @@ kube::host::update_local_known_hosts(){
 kube::host::set_machines_hostname(){
     kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
         cmd="sed -i 's/^127.0.0.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
-        ssh -n root@${IP} "${cmd}"
-        ssh -n root@${IP} hostnamectl hostname ${HOST}
+        SSH -n root@${IP} "${cmd}"
+        SSH -n root@${IP} hostnamectl hostname ${HOST}
     done 
 }
 kube::host::update_machines_etc_hosts(){
     kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
-        scp  ${HOSTSFILE} root@${IP}:~/
-        ssh -n \
+        SCP  ${HOSTSFILE} root@${IP}:~/
+        SSH -n \
             root@${IP} "cat hosts >> /etc/hosts"
     done 
 }

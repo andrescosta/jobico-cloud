@@ -19,6 +19,6 @@ EOF
 kube::encryption::deploy(){
     local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[@]}; do
-        scp ${WORK_DIR}/encryption-config.yaml root@$host:~/
+        SCP ${WORK_DIR}/encryption-config.yaml root@$host:~/
     done
 }

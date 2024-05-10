@@ -27,9 +27,9 @@ kube::haproxy::gen_cfg(){
 kube::haproxy::deploy(){
     local servers=($(kube::dao::cluster::get lb 1))
     for ip in ${servers[@]}; do
-        scp ${WORK_DIR}/haproxy.cfg root@${ip}:~/ 
-        scp ${WORK_DIR}/keepalived${ip}.conf root@${ip}:~/keepalived.conf
-        ssh root@$ip << 'EOF'
+        SCP ${WORK_DIR}/haproxy.cfg root@${ip}:~/ 
+        SCP ${WORK_DIR}/keepalived${ip}.conf root@${ip}:~/keepalived.conf
+        SSH root@$ip << 'EOF'
 cloud-init status --wait > /dev/null
 cat ~/haproxy.cfg >> /etc/haproxy/haproxy.cfg
 cp ~/keepalived.conf /etc/keepalived
