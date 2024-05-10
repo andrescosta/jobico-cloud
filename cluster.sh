@@ -17,6 +17,7 @@ set_trap_err
     #trap 'throw "error ($?) executing command"' ERR
 . ${SCRIPTS}/api.sh 
 . ${SCRIPTS}/support/utils.sh 
+. ${SCRIPTS}/support/ssh.sh 
 . ${SCRIPTS}/kvm.sh 
 
 destroy(){
@@ -210,6 +211,38 @@ add(){
   
     echo "The node(s) were added."
 }
+cfg(){
+    salt_def="SALT12345678"
+    auth_key_def=$(ls ~/.ssh/*.pub 2>/dev/null | head -n 1)
+    read -p "Salt for Debian user:" -e -i "${salt_def}" salt_deb
+    read -p "Password for Debian User:" -s pass_deb
+    echo
+    epass_deb=$(escape $(mkpasswd --method=SHA-512 --salt=${salt_deb} --rounds=4096 ${pass_deb}))
+    read -p "Authorized key file for debian:" -e -i "$auth_key_def" auth_key_deb
+    key_deb="- $(escape "$(<$auth_key_deb)")"
+    read -p "Salt for root:" -e -i "$salt_def" salt_root
+    read -p "Password for root:" -s pass_root
+    echo
+    epass_root=$(escape $(mkpasswd --method=SHA-512 --salt=${salt_root} --rounds=4096 ${pass_root}))
+    auth_key_root=$auth_key_deb
+    read -p "Authorized key file for root:" -e -i "$auth_key_def" auth_key_root
+    key_root="- $(escape "$(<"$auth_key_root")")"
+    cp extras/cfg/cloud-init-lb.cfg.tmpl extras/cfg/cloud-init-lb.cfg 
+    cp extras/cfg/cloud-init-server.cfg.tmpl extras/cfg/cloud-init-server.cfg 
+    cp extras/cfg/cloud-init-node.cfg.tmpl extras/cfg/cloud-init-node.cfg 
+    sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-lb.cfg
+    sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-lb.cfg
+    sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-node.cfg
+    sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-node.cfg
+    sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-server.cfg
+    sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-server.cfg
+    sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-server.cfg
+    sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-node.cfg
+    sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-node.cfg
+    sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-lb.cfg
+    sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-lb.cfg
+    sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-server.cfg
+}
 display_help() {
     echo "Usage: "
     echo "       $0 <command> [arguments]"
@@ -220,6 +253,7 @@ display_help() {
     echo "          destroy"
     echo "          local"
     echo "          kvm"
+    echo "          cfg"
     echo ""
     echo "Additional help: $0 help <command>"
 }
@@ -240,6 +274,9 @@ display_help_command(){
       ;;
     kvm)
       display_help_for_kvm
+      ;;
+    cfg)
+      display_help_for_cfg
       ;;
     *)
       echo "Invalid command: $1" >&2
@@ -285,6 +322,10 @@ display_help_for_destroy(){
   echo "Usage: $0 destroy"
   echo "Destroy the Kubernetes cluster and the VMs"
 }
+display_help_for_cfg(){
+  echo "Usage: $0 cfg"
+  echo "Create the cloud init cfg files."
+}
 display_help_for_local(){
   echo "Usage: $0 local"
   echo "Prepares the local enviroment. It creates the kubeconfig and installs kubectl."
@@ -319,6 +360,9 @@ main(){
       ;;
     kvm)
       kvm      
+      ;;
+    cfg)
+      cfg
       ;;
     help)
       if [ $# -gt 1 ]; then
