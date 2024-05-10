@@ -55,9 +55,9 @@ kube::etcd::deploy(){
     local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[*]}; do
         file=${WORK_DIR}/etcd-${host}.service
-        scp ${file} root@${host}:~/etcd.service 
-        scp ${DOWNLOADS_DIR}/etcd-v3.4.27-linux-amd64.tar.gz root@${host}:~/
-        ssh root@$host << 'EOF'
+        SCP ${file} root@${host}:~/etcd.service 
+        SCP ${DOWNLOADS_DIR}/etcd-v3.4.27-linux-amd64.tar.gz root@${host}:~/
+        SSH root@$host << 'EOF'
 tar -xvf ~/etcd-v3.4.27-linux-amd64.tar.gz
 mv ~/etcd-v3.4.27-linux-amd64/etcd* /usr/local/bin
 mkdir -p /etc/etcd /var/lib/etcd

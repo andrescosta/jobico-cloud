@@ -2,7 +2,7 @@
 kube::cluster::deploy_to_server(){
     local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[@]}; do
-        scp ${DOWNLOADS_DIR}/kube-apiserver \
+        SCP ${DOWNLOADS_DIR}/kube-apiserver \
         ${DOWNLOADS_DIR}/kube-controller-manager \
         ${DOWNLOADS_DIR}/kube-scheduler \
         ${DOWNLOADS_DIR}/kubectl \
@@ -12,7 +12,7 @@ kube::cluster::deploy_to_server(){
         ${EXTRAS_DIR}/configs/kube-scheduler.yaml \
         ${EXTRAS_DIR}/configs/kube-apiserver-to-kubelet.yaml root@$host:~/
     
-        ssh root@$host \
+        SSH root@$host \
 << 'EOF'
   mkdir -p /etc/kubernetes/config
   chmod +x kube-apiserver \
@@ -70,13 +70,13 @@ kube::cluster::deploy_to_nodes(){
         sed "s|SUBNET|${SUBNET}|g" \
         ${EXTRAS_DIR}/configs/kubelet-config.yaml > ${WORK_DIR}/kubelet-config.yaml
         
-        scp ${WORK_DIR}/10-bridge.conf \
+        SCP ${WORK_DIR}/10-bridge.conf \
         ${WORK_DIR}/kubelet-config.yaml \
         root@${IP}:~/
     done
     
     kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
-        scp ${DOWNLOADS_DIR}/runc.amd64 \
+        SCP ${DOWNLOADS_DIR}/runc.amd64 \
         ${DOWNLOADS_DIR}/crictl-v1.28.0-linux-amd64.tar.gz \
         ${DOWNLOADS_DIR}/cni-plugins-linux-amd64-v1.3.0.tgz \
         ${DOWNLOADS_DIR}/containerd-1.7.8-linux-amd64.tar.gz \
@@ -92,7 +92,7 @@ kube::cluster::deploy_to_nodes(){
     done
     
     kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
-        ssh root@${IP} \
+        SSH root@${IP} \
 << 'EOF'
 
   swapoff -a

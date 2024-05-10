@@ -1,23 +1,23 @@
 #cloud-config
-hostname: template-debian-12
-manage_etc_hosts: true
+preserve_hostname: false
+manage_etc_hosts: false
 ssh_pwauth: false
 disable_root: false
 users:
 - name: debian
-  hashed_passwd: [PASSWORD_USER_DEBIAN]
+  hashed_passwd: {PWD_DEBIAN}
   sudo: ALL=(ALL) NOPASSWD:ALL
   shell: /bin/bash
   lock-passwd: false
   ssh_authorized_keys:
-  [AUTH_KEYS_USER_DEBIAN]
+  {DEBIAN_KEYS}
 - name: root
-  hashed_passwd: [PASSWORD_USER_ROOT]
+  hashed_passwd: {PWD_ROOT}
   sudo: ALL=(ALL) NOPASSWD:ALL
   shell: /bin/bash
   lock-passwd: false
   ssh_authorized_keys:
-  [AUTH_KEYS_USER_ROOT]
+  {ROOT_KEYS}
 packages:
   - wget
   - curl
