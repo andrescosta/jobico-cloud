@@ -18,8 +18,6 @@ readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
 readonly ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
 readonly BEGIN_HOSTS_FILE="#B> Kubernetes Cluster"
 readonly END_HOSTS_FILE="#E> Kubernetes Cluster"
-_DEBUG="off"
-_DRY_RUN=false
 
 # Public API
 
@@ -207,24 +205,24 @@ jobico::kube::dao::gen_cluster_db(){
     if [ "${#servers[@]}" -gt 1 ]; then
         if [ lbvip != "" ]; then 
             echo "192.168.122.${id1} ${lbvip}.kubernetes.local ${lbvip} 0.0.0.0/24 lbvip" >> ${MACHINES_DB}
-            ((id1++))
+            ((id1=id1+1))
         fi
         for e in "${lbs[@]}"; do
             echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 0.0.0.0/24 lb" >> ${MACHINES_DB}
-            ((id1++))
+            ((id1=id1+1))
         done
         for e in "${servers[@]}"; do
             echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 0.0.0.0/24 server" >> ${MACHINES_DB}
-            ((id1++))
+            ((id1=id1+1))
         done
     else
         echo "192.168.122.${id1} ${servers[0]}.kubernetes.local ${servers[0]} 0.0.0.0/24 server" >> ${MACHINES_DB}
-        ((id1++))
+        ((id1=id1+1))
     fi
     for e in "${workers[@]}"; do
         echo "192.168.122.${id1} ${e}.kubernetes.local ${e} 10.200.${id2}.0/24 node" >> ${MACHINES_DB}
-        ((id1++))
-        ((id2++))
+        ((id1=id1+1))
+        ((id2=id2+1))
     done
 }
 
@@ -332,7 +330,7 @@ jobico::kube::tls::gen_ca_conf(){
         if [ "${TYPE}" == "server" ]; then
             ips="${ips}IP.${i}=${IP}\n"
             dns="${dns}DNS.${i}=${FQDN}\n"
-            ((i++))
+            ((i=i+1))
         fi
     done < ${JOBICO_CLUSTER_TBL}
     sed -i "s/{ETCD_IPS}/$ips/g" "${CA_CONF}"
@@ -558,7 +556,7 @@ jobico::kube::etcd::get_etcd_cluster(){
                     cluster="${cluster},"
                 fi
                 cluster="${cluster}server-${i}=https://${IP}:2380"
-                ((i++))
+                ((i=i+1))
             fi
         done < ${WORK_DIR}/cluster.txt
     fi
@@ -573,7 +571,7 @@ jobico::kube::etcd::get_etcd_servers(){
                 cluster="${cluster},"
             fi
             cluster="${cluster}https://${IP}:2379"
-            ((i++))
+            ((i=i+1))
         fi
     done < ${WORK_DIR}/cluster.txt
     echo "${cluster}"
@@ -615,7 +613,7 @@ systemctl start etcd
 etcdctl member list
 EOF
 
-        ((i++))
+        ((i=i+1))
     done
 }
 

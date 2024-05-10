@@ -15,7 +15,7 @@ kube::tls::gen_ca_conf(){
         if [ "${TYPE}" == "server" ]; then
             ips="${ips}IP.${i}=${IP}\n"
             dns="${dns}DNS.${i}=${FQDN}\n"
-            ((i++))
+            ((i=i+1))
         fi
     done < ${JOBICO_CLUSTER_TBL}
     sed -i "s/{ETCD_IPS}/$ips/g" "${CA_CONF}"

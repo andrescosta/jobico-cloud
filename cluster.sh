@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#set -o errexit
-#set -o nounset
-#set -o pipefail
+set -eu
+set -o pipefail
+set -o errtrace
 
 PS4='LINENO:'
 DEFAULT_NODES=2
@@ -12,6 +12,9 @@ DEFAULT_LB=2
 DIR=$(dirname "$0")
 SCRIPTS="${DIR}/scripts"
 
+. ${SCRIPTS}/support/exception.sh
+set_trap_err
+    #trap 'throw "error ($?) executing command"' ERR
 . ${SCRIPTS}/api.sh 
 . ${SCRIPTS}/support/utils.sh 
 . ${SCRIPTS}/kvm.sh 
@@ -27,8 +30,8 @@ destroy(){
                 ;;
             --dry_run )
                 shift
-                _DRY_RUN=true
-                _DEBUG="on"
+                DRY_RUNON
+                DEBUGON
                 ;;
             -* )
                 echo "Unrecognized or incomplete option: $1" >&2
@@ -77,7 +80,7 @@ new() {
                 if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
                     nodes=$1
                 else
-                    echo "Invalid value for --nodes. Please provide a numeric value." >&2
+                    echo "Invalid value for --nodes. Please provide a numeric value." 
                     display_help
                     exit 1
                 fi
@@ -103,8 +106,8 @@ new() {
                 fi
                 ;;
             --dry_run )
-                _DRY_RUN=true
-                _DEBUG="on"
+                DRY_RUNON
+                DEBUGON
                 ;;
             --debug )
                 shift
@@ -116,7 +119,7 @@ new() {
                 if [ "$1" == "d" ]; then
                     set -x
                  fi
-                _DEBUG="on"
+                DEBUGON
                 ;;
             -* )
                 echo "Unrecognized or incomplete option: $1" >&2
@@ -160,8 +163,8 @@ add(){
                 fi
                 ;;
             --dry_run )
-                _DRY_RUN=true
-                _DEBUG="on"
+                DRY_RUNON
+                DEBUGON
                 ;;
             --debug )
                 shift
@@ -172,8 +175,8 @@ add(){
                 fi
                 if [ "$1" == "d" ]; then
                     set -x
-                 fi
-                _DEBUG="on"
+                fi
+                DEBUGON
                 ;;
             --force )
                 force=true
@@ -290,7 +293,9 @@ display_help_for_kvm(){
   echo "Usage: $0 kvm"
   echo "Install kvm and its dependencies locally."
 }
-exec_command(){
+main(){
+  DEBUGOFF
+  DRY_RUNOFF
   if [ $# -eq 0 ]; then
       display_help $0
       exit 0
@@ -329,4 +334,4 @@ exec_command(){
       ;;
   esac
 }
-exec_command "$@"
+main "$@"
