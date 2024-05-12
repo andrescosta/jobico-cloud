@@ -13,6 +13,8 @@ kube::local::download_local_deps(){
     wget -q --https-only -P  ${DOWNLOADS_DIR} -i ${DOWNLOADS_TBL}
 }
 kube::local::install_kubectl(){
-    sudo cp ${DOWNLOADS_DIR}/kubectl /usr/local/bin && \
-    sudo chmod +x /usr/local/bin/kubectl
+    if [ ! -f /usr/local/bin/kubectl ]; then
+        sudo cp ${DOWNLOADS_DIR}/kubectl /usr/local/bin && \
+        sudo chmod +x /usr/local/bin/kubectl
+    fi
 }

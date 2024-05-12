@@ -19,59 +19,6 @@ set_trap_err
 . ${SCRIPTS}/support/ssh.sh 
 . ${SCRIPTS}/kvm.sh 
 
-destroy(){
-    ask=true
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -y )
-                shift
-                ask=false
-                response="yes"
-                ;;
-            --dry_run )
-                shift
-                DRY_RUNON
-                DEBUGON
-                ;;
-            -* )
-                echo "Unrecognized or incomplete option: $1" >&2
-                display_help
-                exit 1
-                ;;
-            * )
-                echo "Invalid argument: $1" >&2
-                display_help
-                exit 1
-                ;;
-        esac
-        shift
-    done
-    NOT_DRY_RUN do_destroy
-    DRY_RUN kube::destroy_cluster
-}
-do_destroy(){
-  if [ "$ask" = true ]; then 
-    read -r -p "Are you sure to destroy the cluster? [Y/n] " response
-    response=${response,,}
-  fi
-  if [[ $response == "yes" || $response == "y" ]]; then
-    echo "Destroying the cluster ... "
-    kube::destroy_cluster
-    rm -rf work
-    exit 0
-  else
-    echo "Command execution cancelled."
-  fi
-}
-
-clocal(){
-    kube::gen_local_env
-}
-
-kvm(){
-  install_kvm
-}
-
 new() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -105,9 +52,23 @@ new() {
                     exit 1
                 fi
                 ;;
-            --dry_run )
+            --dry-run )
                 DRY_RUNON
                 DEBUGON
+                ;;
+            --exec-dir )
+                shift
+                if [ -n "${1-}" ]; then
+                    exec_dir="$1"
+                    if [ ! -d "$exec_dir" ]; then
+                        echo "The directory ${exec_dir} does not exist." >&2
+                        exit 1
+                    fi
+                else
+                    echo "With --exec-dir a directory name must be passed."
+                    display_help
+                    exit 1
+                fi
                 ;;
             --debug )
                 shift
@@ -145,8 +106,28 @@ new() {
     DRY_RUN echo ">> Dryn run << "
   
     kube::cluster $nodes $cpl $lb 
-  
+    if [[ exec_dir != "" ]]; then
+        DRY_RUN echo "Warning: --dry-run option was provided. The scripts in $exec_dir are not executed."
+        NOT_DRY_RUN exec $exec_dir
+    fi 
     NOT_DRY_RUN echo "The K8s Cluster was created."
+}
+exec(){
+    echo "- Executing $1"
+    dir=$1
+    files=$(ls -p -v $1 | grep -v '/$')
+    err=0
+    for script in $files; do
+        echo ">Executing $script ..."
+        output=$(bash "$dir/$script" 2>&1) || err=$?
+        echo "> Result of $script:"
+        echo ">> $output"
+        if [[ $err != 0 ]]; then
+            echo "> Warning $script returned an error $err"
+            break
+        fi
+    done
+    echo "- Finished $1"
 }
 add(){
     local force=false
@@ -162,7 +143,7 @@ add(){
                     exit 1
                 fi
                 ;;
-            --dry_run )
+            --dry-run )
                 DRY_RUNON
                 DEBUGON
                 ;;
@@ -209,6 +190,56 @@ add(){
     kube::add $nodes  
   
     echo "The node(s) were added."
+}
+destroy(){
+    ask=true
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -y )
+                shift
+                ask=false
+                response="yes"
+                ;;
+            --dry-run )
+                shift
+                DRY_RUNON
+                DEBUGON
+                ;;
+            -* )
+                echo "Unrecognized or incomplete option: $1" >&2
+                display_help
+                exit 1
+                ;;
+            * )
+                echo "Invalid argument: $1" >&2
+                display_help
+                exit 1
+                ;;
+        esac
+        shift
+    done
+    NOT_DRY_RUN do_destroy
+    DRY_RUN kube::destroy_cluster
+}
+do_destroy(){
+  if [ "$ask" = true ]; then 
+    read -r -p "Are you sure to destroy the cluster? [Y/n] " response
+    response=${response,,}
+  fi
+  if [[ $response == "yes" || $response == "y" ]]; then
+    echo "Destroying the cluster ... "
+    kube::destroy_cluster
+    rm -rf work
+    exit 0
+  else
+    echo "Command execution cancelled."
+  fi
+}
+clocal(){
+    kube::gen_local_env
+}
+kvm(){
+  install_kvm
 }
 cfg(){
     salt_def="SALT12345678"
@@ -295,7 +326,9 @@ display_help_for_new(){
   echo "            Specify the number of control planed nodes to be created. The default value is 1. "
   echo "     --lb n"
   echo "            Specify the number of load balancers to be created in case --cpl is greater than 1. The default value is 2. "
-  echo "     --dry_run"
+  echo "     --exec-dir dir_name"
+  echo "            After the cluster is created successfully, the scripts in this directory will be executed in alphabetical order." 
+  echo "     --dry-run"
   echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
@@ -308,7 +341,7 @@ display_help_for_add(){
   echo "The arguments that define how the cluster will be updated:"
   echo "     --nodes n"
   echo "            Specify the number of worker nodes to be added. The default value is 1. "
-  echo "     --dry_run"
+  echo "     --dry-run"
   echo "            Update the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
   echo "     --force"
   echo "            If new nodes were added previously, this parameter force the execution of this command."
