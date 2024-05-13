@@ -39,9 +39,9 @@ kube::cluster(){
         echo "A cluster already exists."
         exit 1
     fi
+    kube::plugins::load ${PLUGINS_CONF_FILE}
     clear_dhcp
     kube::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs
-    kube::plugins::load ${PLUGINS_CONF_FILE}
     DEBUG kube::debug::print
     kube::create_machines "machines"
     kube::create_cluster
