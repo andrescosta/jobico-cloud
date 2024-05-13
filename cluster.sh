@@ -20,7 +20,7 @@ set_trap_err
 . ${SCRIPTS}/kvm.sh 
 
 new() {
-    local exec_dir=""
+    local exec_dir="" cpl lb nodes
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --nodes )
@@ -116,12 +116,12 @@ new() {
 }
 exec(){
     echo "- Executing $1"
-    dir=$1
-    files=$(ls -p -v $1 | grep -v '/$')
-    err=0
+    local dir=$1
+    local files=$(ls -p -v $1 | grep -v '/$')
+    local err=0
     for script in $files; do
         echo ">Executing $script ..."
-        output=$(bash "$dir/$script" 2>&1) || err=$?
+        local output=$(bash "$dir/$script" 2>&1) || err=$?
         echo "> Result of $script:"
         echo ">> $output"
         if [[ $err != 0 ]]; then
@@ -132,7 +132,7 @@ exec(){
     echo "- Finished $1"
 }
 add(){
-    local force=false
+    local force=false nodes
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --nodes )
@@ -194,7 +194,7 @@ add(){
     echo "The node(s) were added."
 }
 destroy(){
-    ask=true
+    local ask=true response
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -y )
@@ -224,6 +224,7 @@ destroy(){
     DRY_RUN kube::destroy_cluster
 }
 do_destroy(){
+  local response
   if [ "$ask" = true ]; then 
     read -r -p "Are you sure to destroy the cluster? [Y/n] " response
     response=${response,,}
@@ -232,7 +233,6 @@ do_destroy(){
     echo "Destroying the cluster ... "
     kube::destroy_cluster
     rm -rf work
-    exit 0
   else
     echo "Command execution cancelled."
   fi
@@ -244,21 +244,21 @@ kvm(){
   install_kvm
 }
 cfg(){
-    salt_def="SALT12345678"
-    auth_key_def=$(ls ~/.ssh/*.pub 2>/dev/null | head -n 1)
+    local salt_def="SALT12345678"
+    local auth_key_def=$(ls ~/.ssh/*.pub 2>/dev/null | head -n 1)
     read -p "Salt for Debian               :" -e -i "${salt_def}" salt_deb
     read -p "Password for Debian           :" -s pass_deb
     echo
-    epass_deb=$(escape $(mkpasswd --method=SHA-512 --salt=${salt_deb} --rounds=4096 ${pass_deb}))
+    local epass_deb=$(escape $(mkpasswd --method=SHA-512 --salt=${salt_deb} --rounds=4096 ${pass_deb}))
     read -p "Authorized key file for debian:" -e -i "$auth_key_def" auth_key_deb
-    key_deb="- $(escape "$(<$auth_key_deb)")"
+    local key_deb="- $(escape "$(<$auth_key_deb)")"
     read -p "Salt for root                 :" -e -i "$salt_def" salt_root
     read -p "Password for root             :" -s pass_root
     echo
-    epass_root=$(escape $(mkpasswd --method=SHA-512 --salt=${salt_root} --rounds=4096 ${pass_root}))
-    auth_key_root=$auth_key_deb
+    local epass_root=$(escape $(mkpasswd --method=SHA-512 --salt=${salt_root} --rounds=4096 ${pass_root}))
+    local auth_key_root=$auth_key_deb
     read -p "Authorized key file for root  :" -e -i "$auth_key_def" auth_key_root
-    key_root="- $(escape "$(<"$auth_key_root")")"
+    local key_root="- $(escape "$(<"$auth_key_root")")"
     cp extras/cfg/cloud-init-lb.cfg.tmpl extras/cfg/cloud-init-lb.cfg 
     cp extras/cfg/cloud-init-server.cfg.tmpl extras/cfg/cloud-init-server.cfg 
     cp extras/cfg/cloud-init-node.cfg.tmpl extras/cfg/cloud-init-node.cfg 
