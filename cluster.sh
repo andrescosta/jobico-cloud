@@ -20,6 +20,7 @@ set_trap_err
 . ${SCRIPTS}/kvm.sh 
 
 new() {
+    local exec_dir=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --nodes )
@@ -104,9 +105,10 @@ new() {
         echo "The K8s Cluster is being created with $nodes node(s)."
     fi
     DRY_RUN echo ">> Dryn run << "
-  
+    
     kube::cluster $nodes $cpl $lb 
-    if [[ exec_dir != "" ]]; then
+    
+    if [ "$exec_dir" != "" ]; then
         DRY_RUN echo "Warning: --dry-run option was provided. The scripts in $exec_dir are not executed."
         NOT_DRY_RUN exec $exec_dir
     fi 
@@ -391,10 +393,12 @@ main(){
       clocal "$@"
       ;;
     kvm)
-      kvm      
+      shift 
+      kvm "$@"    
       ;;
     cfg)
-      cfg
+      shift 
+      cfg "$@"
       ;;
     help)
       if [ $# -gt 1 ]; then
