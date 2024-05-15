@@ -157,9 +157,36 @@ kube::local(){
 kube::destroy_machines(){
     NOT_DRY_RUN kube::machine::destroy
 }
-
 kube::restore_local_env(){
     NOT_DRY_RUN kube::host::restore_local_etc_hosts
+}
+kube::install_addons(){
+    local action=$1
+    if ! grep -q $action ${STATUS_FILE}; then
+        local addonsdir=$2
+        local dirs=$(find $addonsdir -mindepth 1 -maxdepth 1 -type d)
+        local err=0
+        for dir in $dirs; do
+            local script="${dir}/main.sh"
+            if [ -f $script ]; then
+                echo "[*] Installing addon with $script ..."
+                if [[ $(IS_DRY_RUN) == false ]]; then
+                    local output=$(bash $script ${dir} 2>&1) || err=$?
+                    echo "Addon result:"
+                    echo "$output"
+                    if [[ $err != 0 ]]; then
+                        echo "Warning: the addon $script returned an error $err"
+                    fi
+                    echo "[*] Addon: $script installed."
+                    echo ""
+                fi
+            else
+                echo "Warning: no main.sh in $dir"
+            fi
+        done
+        kube::set_done $action
+        echo "Finished installing addons."
+    fi
 }
 
 kube::wait_for_vms_ssh() {
@@ -206,3 +233,4 @@ kube::add_was_executed(){
         echo false
     fi
 }
+
