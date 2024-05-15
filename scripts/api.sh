@@ -67,6 +67,7 @@ kube::destroy_cluster(){
 kube::gen_local_env(){
     kube::local
 }
+
 kube::add(){
     if [[ $(kube::dao::cluster::is_locked) == true ]]; then
         echo "Error: The cluster is locked. Use --force to add nodes"
@@ -86,4 +87,13 @@ kube::add(){
     DEBUG kube::debug::print
     kube::create_machines "add_machines"
     kube::add_nodes
+}
+
+kube::addons(){
+    local addonsdir=$1
+    if [ ! -d $addonsdir ]; then
+        echo "Error: The addons diresctory does not exits."
+        exit 1
+    fi
+    kube::install_addons "addons" $addonsdir
 }
