@@ -20,6 +20,6 @@ runtimeRequestTimeout: "15m"
 tlsCertFile: "/var/lib/kubelet/kubelet.crt"
 tlsPrivateKeyFile: "/var/lib/kubelet/kubelet.key"
 registerWithTaints:
-  - key: "important"
-    value: "worker-important"
+  - key: "CriticalAddonsOnly"
+    value: "true"
     effect: "NoSchedule"

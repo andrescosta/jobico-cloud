@@ -22,4 +22,4 @@ wait_for_pod(){
 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.5/config/manifests/metallb-native.yaml
 wait_for_pod
 echo ">> All pods ready <<"
-kubectl apply -f $1/cfg/metalb.yaml
+kubectl apply -f $1/manifest/metalb.yaml
