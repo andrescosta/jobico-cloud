@@ -8,6 +8,14 @@ kube::tls::gen_ca_conf(){
     done
     echo -e "${new_ca}">>${CA_CONF}
 
+    servers=($(kube::dao::cluster::get server 3))
+    new_ca=""
+    for e in "${servers[@]}"; do
+        node_req=$(sed "s/{NAME}/${e}/g" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl")
+        new_ca="${new_ca}\n\n${node_req}"
+    done
+    echo -e "${new_ca}">>${CA_CONF}
+
     local ips=""
     local dns=""
     local i=1
@@ -86,6 +94,20 @@ kube::tls::deploy_to_server(){
         ${WORK_DIR}/service-accounts.key ${WORK_DIR}/service-accounts.crt \
         ${WORK_DIR}/etcd-server.key ${WORK_DIR}/etcd-server.crt \
         root@$host:~/
+
+    done
+
+    servers=($(kube::dao::cluster::get server 3))
+    for host in ${servers[@]}; do
+        SSH root@$host mkdir -p /var/lib/kubelet/
+        
+        SCP ${WORK_DIR}/ca.crt root@$host:/var/lib/kubelet/
+        
+        SCP ${WORK_DIR}/$host.crt \
+        root@$host:/var/lib/kubelet/kubelet.crt
+        
+        SCP ${WORK_DIR}/$host.key \
+        root@$host:/var/lib/kubelet/kubelet.key
     done
 }
 

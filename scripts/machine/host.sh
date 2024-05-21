@@ -38,7 +38,7 @@ kube::host::update_machines_etc_hosts(){
 }
 kube::host::add_new_nodes_to_hostsfile(){
     local entry=""
-    while IFS= read IP FQDN HOST SUBNET TYPE; do
+    while read IP FQDN HOST SUBNET TYPE; do
         entry="${entry}${IP} ${FQDN} ${HOST}\n"
     done < <(kube::dao::cluster::nodes)
     sed -i "/${END_HOSTS_FILE}/d" "${WORK_DIR}/hosts"

@@ -23,10 +23,10 @@ kube::dao::gen_db(){
             echo "$LB_NAME-$i lb" >> ${WORK_DIR}/db.txt
         done
         for ((i=0;i<total_cpl_nodes;i++)); do
-            echo "$SERVER_NAME-$i control_plane" >> ${WORK_DIR}/db.txt
+            echo "$SERVER_NAME-$i control_plane gencert" >> ${WORK_DIR}/db.txt
         done
     else
-        echo "server control_plane" >> ${WORK_DIR}/db.txt
+        echo "server control_plane gencert" >> ${WORK_DIR}/db.txt
     fi
     for ((i=0;i<total_workers;i++)); do
         echo "$WORKER_NAME-$i worker gencert" >> ${WORK_DIR}/db.txt
@@ -64,6 +64,7 @@ kube::dao::gen_cluster_db(){
     local lbs=($(kube::dao::cpl::get lb))
     local lbvip=$(kube::dao::cpl::get lbvip)
     local host_1=${FROM_HOST}
+    local host_2=0
     if [ "${#servers[@]}" -gt 1 ]; then
         if [ -n "$lbvip" ]; then 
             echo "192.168.122.${host_1} ${lbvip}.kubernetes.local ${lbvip} 0.0.0.0/24 lbvip" >> ${MACHINES_DB}
@@ -74,15 +75,16 @@ kube::dao::gen_cluster_db(){
             ((host_1=host_1+1))
         done
         for svr in "${servers[@]}"; do
-            echo "192.168.122.${host_1} ${svr}.kubernetes.local ${svr} 0.0.0.0/24 server" >> ${MACHINES_DB}
+            echo "192.168.122.${host_1} ${svr}.kubernetes.local ${svr} 10.200.${host_2}.0/24 server" >> ${MACHINES_DB}
             ((host_1=host_1+1))
+            ((host_2=host_2+1))
         done
     else
         svr=${servers[0]}
-        echo "192.168.122.${host_1} ${svr}.kubernetes.local ${svr} 0.0.0.0/24 server" >> ${MACHINES_DB}
+        echo "192.168.122.${host_1} ${svr}.kubernetes.local ${svr} 10.200.${host_2}.0/24 server" >> ${MACHINES_DB}
         ((host_1=host_1+1))
+        ((host_2=host_2+1))
     fi
-    local host_2=0
     for wkr in "${workers[@]}"; do
         echo "192.168.122.${host_1} ${wkr}.kubernetes.local ${wkr} 10.200.${host_2}.0/24 node" >> ${MACHINES_DB}
         ((host_1=host_1+1))

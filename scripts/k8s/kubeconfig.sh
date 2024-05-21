@@ -22,6 +22,30 @@ kube::kubeconfig::gen_for_nodes(){
         kubectl config use-context default --kubeconfig=${WORK_DIR}/${host}.kubeconfig
     done
 }
+kube::kubeconfig::gen_for_server(){
+    local servers=($(kube::dao::cluster::get server 3))
+    local lb=$(kube::dao::cluster::lb 2)
+    for host in ${servers[@]}; do
+        kubectl config set-cluster ${CLUSTER_NAME} \
+        --certificate-authority=${WORK_DIR}/ca.crt \
+        --embed-certs=true \
+        --server=https://${lb}:6443 \
+        --kubeconfig=${WORK_DIR}/${host}.kubeconfig
+        
+        kubectl config set-credentials system:node:${host} \
+        --client-certificate=${WORK_DIR}/${host}.crt \
+        --client-key=${WORK_DIR}/${host}.key \
+        --embed-certs=true \
+        --kubeconfig=${WORK_DIR}/${host}.kubeconfig
+        
+        kubectl config set-context default \
+        --cluster=${CLUSTER_NAME} \
+        --user=system:node:${host} \
+        --kubeconfig=${WORK_DIR}/${host}.kubeconfig
+        
+        kubectl config use-context default --kubeconfig=${WORK_DIR}/${host}.kubeconfig
+    done
+}
 kube::kubeconfig::gen_for_controlplane(){
     local comps=($(kube::dao::cpl::get genkubeconfig 4))
     local lb=$(kube::dao::cluster::lb 2)
@@ -76,12 +100,19 @@ kube::kubeconfig::deploy_to_nodes(){
 }
 
 kube::kubeconfig::deploy_to_server(){
-    local servers=($(kube::dao::cluster::get server 1))
+    local servers=($(kube::dao::cluster::get server 3))
     for host in ${servers[@]}; do
         SCP ${WORK_DIR}/admin.kubeconfig \
         ${WORK_DIR}/kube-controller-manager.kubeconfig \
         ${WORK_DIR}/kube-scheduler.kubeconfig \
             root@$host:~/
+
+        SSH root@$host "mkdir -p /var/lib/{kube-proxy,kubelet}"
+        SCP ${WORK_DIR}/kube-proxy.kubeconfig \
+        root@$host:/var/lib/kube-proxy/kubeconfig
+        SCP ${WORK_DIR}/${host}.kubeconfig \
+        root@$host:/var/lib/kubelet/kubeconfig
+
     done
 }
 
