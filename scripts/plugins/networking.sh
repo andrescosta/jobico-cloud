@@ -40,7 +40,3 @@ EOF
         done
     done
 }
-kube::net::add_routes_local(){
-    sudo sed -i "/set-name: virbr0/a\            routes:\n              - to: 10.32.0.0/24\n                via: 192.168.122.8" /etc/netplan/00-custom-routes.yaml 
-    sudo netplan apply
-}

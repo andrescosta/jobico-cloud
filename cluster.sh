@@ -322,6 +322,7 @@ display_help() {
     echo "          new"
     echo "          add"
     echo "          destroy"
+    echo "          addons"
     echo "          local"
     echo "          kvm"
     echo "          cfg"
@@ -339,7 +340,10 @@ display_help_command(){
       ;;
     destroy)
       display_help_for_destroy
-    ;;
+      ;;
+    addons)
+      display_help_for_addons
+      ;;
     local)
       display_help_for_local
       ;;
@@ -356,7 +360,10 @@ display_help_command(){
       ;;
   esac
 } 
-
+display_help_for_addons(){
+  echo "Usage: $0 addons [arguments]"
+  echo "Install the addons from the folder ./addons or the one specified by --dir."
+}
 display_help_for_new(){
   echo "Usage: $0 new [arguments]"
   echo "Create the VMs and deploys Kubernetes cluster into them."
@@ -430,6 +437,9 @@ main(){
     destroy)
       shift
       destroy "$@"
+      ;;
+    addons)
+      addons false "./addons/new"
       ;;
     local)
       shift

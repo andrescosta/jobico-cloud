@@ -48,6 +48,7 @@ kube::create_cluster(){
     # Kubeconfig
     if ! grep -q "kubeconfig" ${STATUS_FILE}; then
         kube::kubeconfig::gen_for_nodes
+        kube::kubeconfig::gen_for_server
         kube::kubeconfig::gen_for_controlplane
         kube::kubeconfig::gen_for_kube_admin
         NOT_DRY_RUN kube::kubeconfig::deploy_to_nodes
@@ -75,6 +76,10 @@ kube::create_cluster(){
     if ! grep -q "deploy_server" ${STATUS_FILE}; then
         NOT_DRY_RUN kube::cluster::deploy_to_server
         kube::set_done "deploy_server"
+    fi
+    if ! grep -q "deploy_node_server" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::cluster::deploy_node_to_server
+        kube::set_done "deploy_node_server"
     fi
     # Nodes deployment
     if ! grep -q "deploy_nodes" ${STATUS_FILE}; then
