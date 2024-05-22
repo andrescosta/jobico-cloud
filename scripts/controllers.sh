@@ -165,11 +165,19 @@ kube::destroy_machines(){
 kube::restore_local_env(){
     NOT_DRY_RUN kube::host::restore_local_etc_hosts
 }
-kube::install_addons(){
+kube::install_all_addons(){
     local action=$1
+    local base_dir=$2
     if ! grep -q $action ${STATUS_FILE}; then
-        local addonsdir=$2
-        local dirs=$(find $addonsdir -mindepth 1 -maxdepth 1 -type d)
+        kube::install_addons $base_dir/core
+        kube::install_addons $base_dir/extras
+        kube::set_done $action
+        echo "Finished installing addons."
+    fi
+}
+kube::install_addons(){
+        local addons_dir=$1
+        local dirs=$(find $addons_dir -mindepth 1 -maxdepth 1 -type d)
         local err=0
         for dir in $dirs; do
             local script="${dir}/main.sh"
@@ -189,11 +197,7 @@ kube::install_addons(){
                 echo "Warning: no main.sh in $dir"
             fi
         done
-        kube::set_done $action
-        echo "Finished installing addons."
-    fi
 }
-
 kube::wait_for_vms_ssh() {
     local port=22
     local timeout=120 

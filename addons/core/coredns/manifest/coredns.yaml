@@ -27,6 +27,14 @@ rules:
   - nodes
   verbs:
   - get
+- apiGroups:
+  - "discovery.k8s.io"
+  resources:
+  - endpointslices
+  verbs:
+  - get
+  - list
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -63,6 +71,10 @@ data:
         }
         prometheus :9153
         cache 30
+        header {
+          response set ra
+        }
+        k8s_external jobico.org
         loop
         forward . 8.8.8.8
         reload
@@ -78,7 +90,7 @@ metadata:
     k8s-app: kube-dns
     kubernetes.io/name: "CoreDNS"
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -93,15 +105,15 @@ spec:
     spec:
       priorityClassName: system-cluster-critical
       serviceAccountName: coredns
-      tolerations:
-      - key: "CriticalAddonsOnly"
-        operator: "Exists"
-        effect: "NoSchedule"
+        #tolerations:
+        #- key: "CriticalAddonsOnly"
+        #operator: "Exists"
+        #effect: "NoSchedule"
       nodeSelector:
         kubernetes.io/os: linux
       containers:
       - name: coredns
-        image: coredns/coredns:1.7.0
+        image: coredns/coredns:1.11.1
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -171,6 +183,32 @@ spec:
   selector:
     k8s-app: kube-dns
   clusterIP: 10.32.0.10
+  ports:
+  - name: dns
+    port: 53
+    protocol: UDP
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+  - name: metrics
+    port: 9153
+    protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns
+  namespace: kube-system
+  labels:
+    k8s-app: kube-dns
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "CoreDNS"
+spec:
+  selector:
+    k8s-app: kube-dns
+  type: LoadBalancer
+  loadBalancerIP: 192.168.122.23 
   ports:
   - name: dns
     port: 53
