@@ -95,5 +95,5 @@ kube::addons(){
         echo "Error: The addons diresctory does not exits."
         exit 1
     fi
-    kube::install_addons "addons" $addonsdir
+    kube::install_all_addons "addons" $addonsdir
 }

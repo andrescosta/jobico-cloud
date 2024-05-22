@@ -124,19 +124,19 @@ new() {
     fi
     DRY_RUN echo ">> Dryn run << "
     kube::cluster $nodes $cpl $lb 
-    addons $skip_addons $addons_dir/new
+    addons $skip_addons $addons_dir
     NOT_DRY_RUN exec_dir $exec_dir
 
     NOT_DRY_RUN echo "The K8s Cluster was created."
 }
 addons(){
-    skip_addons=$1
-    dir=$2
+    local skip_addons=$1
+    local base_dir=$2
     if [ $skip_addons == false ]; then
-        if [ -d $dir ]; then
-            kube::addons $dir
+        if [ -d $base_dir ]; then
+            kube::addons $base_dir
         else
-            echo "No addons available to install"
+            echo "No addons available to install at $base_dir"
         fi
     fi
 }
@@ -439,7 +439,7 @@ main(){
       destroy "$@"
       ;;
     addons)
-      addons false "./addons/new"
+      addons false $ADDONS_DIR
       ;;
     local)
       shift
