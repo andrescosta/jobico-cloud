@@ -8,6 +8,7 @@ machines.txt
 *.bak
 *.log
 **/certs
+**/auth
 **/log
 **/cloud-init-lb.cfg
 **/cloud-init-node.cfg

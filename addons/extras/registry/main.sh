@@ -1,12 +1,12 @@
 REGISTRY_NAME="reg.jobico.org"
 
-if [ -d $1/certs ]; then
-    mkdir certs
+if [ ! -d $1/certs ]; then
+    mkdir $1/certs
     openssl req -x509 -newkey rsa:4096 -days 365 -nodes -sha256 -keyout $1/certs/tls.key -out $1/certs/tls.crt -subj "/CN=docker-registry,/CN=reg.jobico.org" -addext "subjectAltName = DNS:docker-registry,DNS:reg.jobico.org"
 fi
-if [ -d $1/auth ]; then
-    mkdir auth
-    docker run --rm --entrypoint htpasswd registry:2.6.2 -Bbn myuser mypasswd > auth/htpasswd
+if [ ! -d $1/auth ]; then
+    mkdir $1/auth
+    docker run --rm --entrypoint htpasswd registry:2.6.2 -Bbn myuser mypasswd > $1/auth/htpasswd
 fi
 
 kubectl create secret tls certs-secret --cert=$1/certs/tls.crt --key=$1/certs/tls.key
