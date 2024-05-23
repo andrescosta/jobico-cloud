@@ -7,6 +7,7 @@ machines.txt
 *.swp
 *.bak
 *.log
+**/certs
 **/log
 **/cloud-init-lb.cfg
 **/cloud-init-node.cfg

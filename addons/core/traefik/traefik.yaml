@@ -80,6 +80,7 @@ spec:
           args:
             - --api.insecure
             - --providers.kubernetesingress
+            - --providers.kubernetesingress.ingressendpoint.publishedservice=default/registry
           ports:
             - name: web
               containerPort: 80

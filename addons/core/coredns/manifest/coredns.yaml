@@ -74,11 +74,15 @@ data:
         header {
           response set ra
         }
-        k8s_external jobico.org
+        #k8s_external jobico.org
         loop
-        forward . 8.8.8.8
+        #forward . 8.8.8.8
+        forward . /etc/resolv.conf
         reload
         loadbalance
+    }
+    jobico.org:53 {
+        forward . 8.8.8.8 8.8.4.4
     }
 ---
 apiVersion: apps/v1
@@ -194,28 +198,28 @@ spec:
     port: 9153
     protocol: TCP
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: dns
-  namespace: kube-system
-  labels:
-    k8s-app: kube-dns
-    kubernetes.io/cluster-service: "true"
-    kubernetes.io/name: "CoreDNS"
-spec:
-  selector:
-    k8s-app: kube-dns
-  type: LoadBalancer
-  loadBalancerIP: 192.168.122.23 
-  ports:
-  - name: dns
-    port: 53
-    protocol: UDP
-  - name: dns-tcp
-    port: 53
-    protocol: TCP
-  - name: metrics
-    port: 9153
-    protocol: TCP
+#---
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: dns
+#  namespace: kube-system
+#  labels:
+#    k8s-app: kube-dns
+#    kubernetes.io/cluster-service: "true"
+#    kubernetes.io/name: "CoreDNS"
+#spec:
+#  selector:
+#    k8s-app: kube-dns
+#  type: LoadBalancer
+#  loadBalancerIP: 192.168.122.23 
+#  ports:
+#  - name: dns
+#    port: 53
+#    protocol: UDP
+#  - name: dns-tcp
+#    port: 53
+#    protocol: TCP
+#  - name: metrics
+#    port: 9153
+#    protocol: TCP
