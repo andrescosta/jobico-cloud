@@ -2,7 +2,7 @@ kube::haproxy::gen_cfg(){
     local vip=$(kube::dao::cluster::lb 1)
     cp ${EXTRAS_DIR}/configs/haproxy.cfg.tmpl ${WORK_DIR}/haproxy.cfg
     local servers=""
-    while read IP FQDN HOST SUBNET TYPE; do
+    while read IP FQDN HOST SUBNET TYPE SCH; do
         if [ "${TYPE}" == "server" ]; then
             servers="${servers}    server ${HOST} ${IP}:6443 check fall 3 rise 2\n"
         fi

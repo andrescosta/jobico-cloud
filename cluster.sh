@@ -21,7 +21,7 @@ set_trap_err
 . ${SCRIPTS}/kvm.sh 
 
 new() {
-    local exec_dir="" cpl lb nodes addons_dir="" skip_addons=false
+    local exec_dir="" cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --nodes )
@@ -75,6 +75,9 @@ new() {
                     exit 1
                 fi
                 ;;
+            --schedulable-server )
+                schedulable_server=true
+                ;;
             --addons )
                 if [ -n "${1-}" ]; then
                     addons_dir="$1"
@@ -117,13 +120,21 @@ new() {
     cpl=${cpl:-$DEFAULT_CPL}
     lb=${lb:-$DEFAULT_LB}
     addons_dir=${addons_dir:-$ADDONS_DIR}
+    if [[ $nodes == 0 ]]; then
+       echo "Warning: No worker nodes are created. The control plane nodes are schedulable."
+       schedulable_server=true 
+    fi
     if [[ $cpl > 1 ]]; then  
         echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balancer(s) ..."
     else
-        echo "The K8s Cluster is being created with $nodes node(s)."
+        if [[ $nodes != 0 ]]; then
+            echo "The K8s Cluster is being created with $nodes node(s)."
+        else
+            echo "The K8s Cluster is being created with $cpl node/server."
+        fi
     fi
     DRY_RUN echo ">> Dryn run << "
-    kube::cluster $nodes $cpl $lb 
+    kube::cluster $nodes $cpl $lb $schedulable_server
     addons $skip_addons $addons_dir
     NOT_DRY_RUN exec_dir $exec_dir
 
@@ -380,6 +391,8 @@ display_help_for_new(){
   echo "            Skip the instalation of addons"
   echo "     --exec-dir dir_name"
   echo "            After the cluster is created successfully, the scripts in this directory will be executed in alphabetical order." 
+  echo "     --schedulable-server"
+  echo "            The control plane nodes will be available to schedule pods. The default is false(tainted)."
   echo "     --dry-run"
   echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
   echo "     --debug [ s | d ]"

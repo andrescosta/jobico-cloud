@@ -1,16 +1,10 @@
 kube::init(){
     kube::local::init_fs
-    kube::do_init "$@"
-}
-kube::do_init(){
-    if ! grep -q "doinit" "${STATUS_FILE}"; then
-        local number_of_nodes=$1
-        local number_of_cpl_nodes=$2
-        local number_of_lbs=$3
-        kube::dao::gen_databases $number_of_nodes $number_of_cpl_nodes $number_of_lbs
+    if ! grep -q "init" "${STATUS_FILE}"; then
+        kube::dao::gen_databases "$@"
         NOT_DRY_RUN kube::local::download_deps
         NOT_DRY_RUN kube::local::install_kubectl
-        kube::set_done "doinit"
+        kube::set_done "init"
     fi
 }
 kube::create_machines(){
@@ -48,7 +42,6 @@ kube::create_cluster(){
     # Kubeconfig
     if ! grep -q "kubeconfig" ${STATUS_FILE}; then
         kube::kubeconfig::gen_for_nodes
-        kube::kubeconfig::gen_for_server
         kube::kubeconfig::gen_for_controlplane
         kube::kubeconfig::gen_for_kube_admin
         NOT_DRY_RUN kube::kubeconfig::deploy_to_nodes
@@ -76,10 +69,6 @@ kube::create_cluster(){
     if ! grep -q "deploy_server" ${STATUS_FILE}; then
         NOT_DRY_RUN kube::cluster::deploy_to_server
         kube::set_done "deploy_server"
-    fi
-    if ! grep -q "deploy_node_server" ${STATUS_FILE}; then
-        NOT_DRY_RUN kube::cluster::deploy_node_to_server
-        kube::set_done "deploy_node_server"
     fi
     # Nodes deployment
     if ! grep -q "deploy_nodes" ${STATUS_FILE}; then
@@ -206,7 +195,7 @@ kube::wait_for_vms_ssh() {
     
     echo "Waiting for servers to start..."
     
-    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
           echo "Waiting for $IP to start listening on port $port..."
           start_time=$(date +%s)
           while ! nc -z "$IP" "$port" >/dev/null 2>&1; do

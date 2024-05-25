@@ -1,49 +1,24 @@
 kube::kubeconfig::gen_for_nodes(){
-    local workers=($(kube::dao::cpl::get worker))
     local lb=$(kube::dao::cluster::lb 2)
-    for host in ${workers[@]}; do
+    kube::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
         kubectl config set-cluster ${CLUSTER_NAME} \
         --certificate-authority=${WORK_DIR}/ca.crt \
         --embed-certs=true \
         --server=https://${lb}:6443 \
-        --kubeconfig=${WORK_DIR}/${host}.kubeconfig
+        --kubeconfig=${WORK_DIR}/${HOST}.kubeconfig
         
-        kubectl config set-credentials system:node:${host} \
-        --client-certificate=${WORK_DIR}/${host}.crt \
-        --client-key=${WORK_DIR}/${host}.key \
+        kubectl config set-credentials system:node:${HOST} \
+        --client-certificate=${WORK_DIR}/${HOST}.crt \
+        --client-key=${WORK_DIR}/${HOST}.key \
         --embed-certs=true \
-        --kubeconfig=${WORK_DIR}/${host}.kubeconfig
+        --kubeconfig=${WORK_DIR}/${HOST}.kubeconfig
         
         kubectl config set-context default \
         --cluster=${CLUSTER_NAME} \
-        --user=system:node:${host} \
-        --kubeconfig=${WORK_DIR}/${host}.kubeconfig
+        --user=system:node:${HOST} \
+        --kubeconfig=${WORK_DIR}/${HOST}.kubeconfig
         
-        kubectl config use-context default --kubeconfig=${WORK_DIR}/${host}.kubeconfig
-    done
-}
-kube::kubeconfig::gen_for_server(){
-    local servers=($(kube::dao::cluster::get server 3))
-    local lb=$(kube::dao::cluster::lb 2)
-    for host in ${servers[@]}; do
-        kubectl config set-cluster ${CLUSTER_NAME} \
-        --certificate-authority=${WORK_DIR}/ca.crt \
-        --embed-certs=true \
-        --server=https://${lb}:6443 \
-        --kubeconfig=${WORK_DIR}/${host}.kubeconfig
-        
-        kubectl config set-credentials system:node:${host} \
-        --client-certificate=${WORK_DIR}/${host}.crt \
-        --client-key=${WORK_DIR}/${host}.key \
-        --embed-certs=true \
-        --kubeconfig=${WORK_DIR}/${host}.kubeconfig
-        
-        kubectl config set-context default \
-        --cluster=${CLUSTER_NAME} \
-        --user=system:node:${host} \
-        --kubeconfig=${WORK_DIR}/${host}.kubeconfig
-        
-        kubectl config use-context default --kubeconfig=${WORK_DIR}/${host}.kubeconfig
+        kubectl config use-context default --kubeconfig=${WORK_DIR}/${HOST}.kubeconfig
     done
 }
 kube::kubeconfig::gen_for_controlplane(){
@@ -89,13 +64,12 @@ kube::kubeconfig::gen_for_kube_admin(){
 }
 
 kube::kubeconfig::deploy_to_nodes(){
-    local workers=($(kube::dao::cpl::get worker))
-    for host in ${workers[@]}; do
-        SSH root@$host "mkdir -p /var/lib/{kube-proxy,kubelet}"
+    kube::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
+        SSH -n root@$HOST "mkdir -p /var/lib/{kube-proxy,kubelet}"
         SCP ${WORK_DIR}/kube-proxy.kubeconfig \
-        root@$host:/var/lib/kube-proxy/kubeconfig
-        SCP ${WORK_DIR}/${host}.kubeconfig \
-        root@$host:/var/lib/kubelet/kubeconfig
+        root@$HOST:/var/lib/kube-proxy/kubeconfig
+        SCP ${WORK_DIR}/${HOST}.kubeconfig \
+        root@$HOST:/var/lib/kubelet/kubeconfig
     done
 }
 
@@ -106,13 +80,6 @@ kube::kubeconfig::deploy_to_server(){
         ${WORK_DIR}/kube-controller-manager.kubeconfig \
         ${WORK_DIR}/kube-scheduler.kubeconfig \
             root@$host:~/
-
-        SSH root@$host "mkdir -p /var/lib/{kube-proxy,kubelet}"
-        SCP ${WORK_DIR}/kube-proxy.kubeconfig \
-        root@$host:/var/lib/kube-proxy/kubeconfig
-        SCP ${WORK_DIR}/${host}.kubeconfig \
-        root@$host:/var/lib/kubelet/kubeconfig
-
     done
 }
 

@@ -35,13 +35,14 @@ kube::cluster(){
     local number_of_nodes=$1
     local number_of_cpl_nodes=$2
     local number_of_lbs=$3
+    local schedulable_server=$4
     if [[ $(kube::dao::cluster::is_locked) == true ]]; then
         echo "A cluster already exists."
         exit 1
     fi
     kube::plugins::load ${PLUGINS_CONF_FILE}
     clear_dhcp
-    kube::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs
+    kube::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server
     DEBUG kube::debug::print
     kube::create_machines "machines"
     kube::create_cluster
