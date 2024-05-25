@@ -63,19 +63,24 @@ EOF
 ## Nodes deployment
 
 kube::cluster::deploy_to_nodes(){
-    kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
+     kube::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
         sed "s|SUBNET|${SUBNET}|g" \
         ${EXTRAS_DIR}/configs/10-bridge.conf > ${WORK_DIR}/10-bridge.conf
-        
-        sed "s|SUBNET|${SUBNET}|g" \
-        ${EXTRAS_DIR}/configs/kubelet-config.yaml > ${WORK_DIR}/kubelet-config.yaml
+
+        if [[ "$TYPE" == "server" && "$SCH" == "$TAINTED" ]]; then
+            cp ${EXTRAS_DIR}/configs/kubelet-config-tainted.yaml ${WORK_DIR}/kubelet-config.yaml
+        else
+            cp ${EXTRAS_DIR}/configs/kubelet-config.yaml ${WORK_DIR}/kubelet-config.yaml
+        fi
+
+        sed -i "s|SUBNET|${SUBNET}|g" ${WORK_DIR}/kubelet-config.yaml
         
         SCP ${WORK_DIR}/10-bridge.conf \
         ${WORK_DIR}/kubelet-config.yaml \
         root@${IP}:~/
     done
     
-    kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
+     kube::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
         SCP ${DOWNLOADS_DIR}/runc.amd64 \
         ${DOWNLOADS_DIR}/crictl-v1.28.0-linux-amd64.tar.gz \
         ${DOWNLOADS_DIR}/cni-plugins-linux-amd64-v1.3.0.tgz \
@@ -91,7 +96,7 @@ kube::cluster::deploy_to_nodes(){
         ${EXTRAS_DIR}/units/kube-proxy.service root@${IP}:~/
     done
     
-    kube::dao::cluster::nodes | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
         SSH root@${IP} \
 << 'EOF'
 
@@ -131,8 +136,8 @@ EOF
         
     done
 }
-kube::cluster::deploy_node_to_server(){
-    kube::dao::cluster::servers | while read IP FQDN HOST SUBNET TYPE; do
+kube::cluster::deploy_node_to_server1(){
+    kube::dao::cluster::servers | while read IP FQDN HOST SUBNET TYPE SCH; do
         sed "s|SUBNET|${SUBNET}|g" \
         ${EXTRAS_DIR}/configs/10-bridge.conf > ${WORK_DIR}/10-bridge.conf
         
@@ -147,7 +152,7 @@ kube::cluster::deploy_node_to_server(){
  
     done
     
-    kube::dao::cluster::servers | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::servers | while read IP FQDN HOST SUBNET TYPE SCH; do
         SCP ${DOWNLOADS_DIR}/runc.amd64 \
         ${DOWNLOADS_DIR}/crictl-v1.28.0-linux-amd64.tar.gz \
         ${DOWNLOADS_DIR}/cni-plugins-linux-amd64-v1.3.0.tgz \
@@ -163,7 +168,7 @@ kube::cluster::deploy_node_to_server(){
         ${EXTRAS_DIR}/units/kube-proxy.service root@${IP}:~/
     done
     
-    kube::dao::cluster::servers | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::servers | while read IP FQDN HOST SUBNET TYPE SCH; do
         SSH root@${IP} \
 << 'EOF'
 

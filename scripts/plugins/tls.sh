@@ -19,7 +19,7 @@ kube::tls::gen_ca_conf(){
     local ips=""
     local dns=""
     local i=1
-    while read IP FQDN HOST SUBNET TYPE; do
+    while read IP FQDN HOST SUBNET TYPE SCH; do
         if [ "${TYPE}" == "server" ]; then
             ips="${ips}IP.${i}=${IP}\n"
             dns="${dns}DNS.${i}=${FQDN}\n"
@@ -51,7 +51,6 @@ kube::tls::gen_ca(){
     -config ${CA_CONF}\
     -out ${WORK_DIR}/ca.crt
 }
-
 kube::tls::gen_certs(){
     local comps=($(kube::dao::cpl::get gencert 3))
     for component in ${comps[@]}; do
@@ -69,22 +68,18 @@ kube::tls::gen_certs(){
         -out "${WORK_DIR}/${component}.crt"
     done
 }
-
 kube::tls::deploy_to_nodes(){
-    local nodes=($(kube::dao::cluster::get node 3))
-    for host in ${nodes[@]}; do
-        SSH root@$host mkdir -p /var/lib/kubelet/
+    while read IP FQDN HOST SUBNET TYPE SCH; do
         
-        SCP ${WORK_DIR}/ca.crt root@$host:/var/lib/kubelet/
+        SSH -n root@$HOST mkdir -p /var/lib/kubelet
         
-        SCP ${WORK_DIR}/$host.crt \
-        root@$host:/var/lib/kubelet/kubelet.crt
+        SCP ${WORK_DIR}/ca.crt root@$HOST:/var/lib/kubelet/
         
-        SCP ${WORK_DIR}/$host.key \
-        root@$host:/var/lib/kubelet/kubelet.key
-    done
+        SCP ${WORK_DIR}/$HOST.crt root@$HOST:/var/lib/kubelet/kubelet.crt
+        
+        SCP ${WORK_DIR}/$HOST.key root@$HOST:/var/lib/kubelet/kubelet.key
+    done < <(kube::dao::cluster::members)
 }
-
 kube::tls::deploy_to_server(){
     local servers=($(kube::dao::cluster::get server 1))
     for host in ${servers[@]}; do
@@ -94,20 +89,6 @@ kube::tls::deploy_to_server(){
         ${WORK_DIR}/service-accounts.key ${WORK_DIR}/service-accounts.crt \
         ${WORK_DIR}/etcd-server.key ${WORK_DIR}/etcd-server.crt \
         root@$host:~/
-
-    done
-
-    servers=($(kube::dao::cluster::get server 3))
-    for host in ${servers[@]}; do
-        SSH root@$host mkdir -p /var/lib/kubelet/
-        
-        SCP ${WORK_DIR}/ca.crt root@$host:/var/lib/kubelet/
-        
-        SCP ${WORK_DIR}/$host.crt \
-        root@$host:/var/lib/kubelet/kubelet.crt
-        
-        SCP ${WORK_DIR}/$host.key \
-        root@$host:/var/lib/kubelet/kubelet.key
     done
 }
 

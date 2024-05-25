@@ -21,12 +21,20 @@ kube::debug::print(){
     local curr_workers=($(kube::dao::cpl::curr_workers))
     local curr_nodes_cluster=($(kube::dao::cluster::curr_nodes))
     echo "------------all--------------"
-    kube::dao::cluster::all | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::all | while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
     done 
     echo "---------all nodes-------------"
-    kube::dao::cluster::all_nodes | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::all_nodes | while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
+    done 
+    echo "------------members--------------"
+    kube::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
+        if [[ -z $HOST ]]; then
+            echo "ll"
+        else
+            echo "$HOST"
+        fi
     done 
     echo "---------cpl-----------------"
     print_array ${ccpl[@]}
@@ -39,11 +47,11 @@ kube::debug::print(){
     echo "---------- nodes ------------"
     print_array "${nodes[@]}"
     echo "-----curr node cluster-------"
-    kube::dao::cluster::curr_nodes | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::curr_nodes | while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
     done 
     echo "----------notvip------------"
-    kube::dao::cluster::get_type_is "server" | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::get_type_is "server" | while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
     done 
     echo "---------- certss ------------"
@@ -69,7 +77,7 @@ kube::debug::print(){
     echo "--------servers host--------"
     print_array ${servershost[@]}
     echo "---------servers ip---------"
-    while read IP FQDN HOST SUBNET TYPE; do
+    while read IP FQDN HOST SUBNET TYPE SCH; do
         if [ "${TYPE}" == "server" ]; then
             echo "IP:$IP FQDN:$FQDN HOST:$HOST SUBNET:$SUBNET TYPE:$TYPE"
         fi
@@ -79,7 +87,7 @@ kube::debug::print(){
     echo "--------kubeconfig----------"
     print_array ${kubeconfig[@]}
     echo "---------cluster------------"
-    while read IP FQDN HOST SUBNET TYPE; do
+    while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "IP:$IP FQDN:$FQDN HOST:$HOST SUBNET:$SUBNET TYPE:$TYPE"
     done < ${JOBICO_CLUSTER_TBL}
     echo "---------routes------------"
