@@ -21,7 +21,7 @@ set_trap_err
 . ${SCRIPTS}/kvm.sh 
 
 new() {
-    local exec_dir="" cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
+    local post_dir="" cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --nodes )
@@ -61,16 +61,12 @@ new() {
             --no-addons )
                 skip_addons=true
                 ;;
-            --exec-dir )
+            --post )
                 shift
                 if [ -n "${1-}" ]; then
-                    exec_dir="$1"
-                    if [ ! -d "$exec_dir" ]; then
-                        echo "The directory ${exec_dir} does not exist." >&2
-                        exit 1
-                    fi
+                    post_dir="$1"
                 else
-                    echo "With --exec-dir a directory name must be passed."
+                    echo "With --post at least one directory name must be passed."
                     display_help
                     exit 1
                 fi
@@ -136,8 +132,7 @@ new() {
     DRY_RUN echo ">> Dryn run << "
     kube::cluster $nodes $cpl $lb $schedulable_server
     addons $skip_addons $addons_dir
-    NOT_DRY_RUN exec_dir $exec_dir
-
+    exec_post_dirs $post_dir
     NOT_DRY_RUN echo "The K8s Cluster was created."
 }
 addons(){
@@ -151,34 +146,38 @@ addons(){
         fi
     fi
 }
-exec_dir(){
-    if [[ $# > 0 ]]; then
-        local exec_dir=$1
-        if [ "$exec_dir" != "" ]; then
-            if [ -d $exec_dir ]; then
-                DRY_RUN echo "Warning: --dry-run option was provided. The scripts in $exec_dir are not executed."
-                NOT_DRY_RUN exec $exec_dir
-            else
-                echo "Warning: $exec_dir does not exist"
-            fi
-        fi 
+exec_post_dirs(){
+    if [[ $# == 0 ]]; then
+        return
     fi
+    DRY_RUN echo "Warning: --dry-run option was provided. The scripts are not executed."
+    if [ $(IS_DRY_RUN) == true ]; then
+        return
+    fi
+    local dirs=(${1//,/ })
+    for d in "${dirs[@]}"; do
+        dir="./post/$d"
+        if [ -d $dir ]; then
+            exec $dir
+        else
+            echo "Warning: $dir does not exist"
+        fi
+    done
 }
 exec(){
     echo "- Executing $1"
     local dir=$1
-    local files=$(ls -p -v $1 | grep -v '/$')
+    if [ ! -f "$dir/main.sh" ]; then
+        echo "Waning: $dir/main.sh does not exit"
+        return
+    fi
     local err=0
-    for script in $files; do
-        echo ">Executing $script ..."
-        local output=$(bash "$dir/$script" 2>&1) || err=$?
-        echo "> Result of $script:"
-        echo ">> $output"
-        if [[ $err != 0 ]]; then
-            echo "> Warning $script returned an error $err"
-            break
-        fi
-    done
+    local output=$(bash "$dir/main.sh" 2>&1) || err=$?
+    echo "> Result of $dir/main.sh:"
+    echo ">> $output"
+    if [[ $err != 0 ]]; then
+        echo "> Warning $script returned an error $err"
+    fi
     echo "- Finished $1"
 }
 add(){
@@ -431,8 +430,8 @@ display_help_for_new(){
   echo "            Specify a different directory name for the addons. Default: $ADDONS_DIR"
   echo "     --no-addons"
   echo "            Skip the instalation of addons"
-  echo "     --exec-dir dir_name"
-  echo "            After the cluster is created successfully, the scripts in this directory will be executed in alphabetical order." 
+  echo "     --post dir_name,[dir_name]"
+  echo "            After the cluster is created successfully, the main.sh script from each of these comma separated directores will be executed." 
   echo "     --schedulable-server"
   echo "            The control plane nodes will be available to schedule pods. The default is false(tainted)."
   echo "     --dry-run"
