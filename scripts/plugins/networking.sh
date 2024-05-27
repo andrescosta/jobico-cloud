@@ -18,7 +18,7 @@ EOF
         done
     done
     kube::dao::cluster::all_nodes | while read IP1 FQDN1 HOST1 SUBNET1 TYPE1 SCH1; do
-        kube::dao::cluster::nodes | while read IP2 FQDN2 HOST2 SUBNET2 TYPE2 SCH2; do
+         kube::dao::cluster::members | while read IP2 FQDN2 HOST2 SUBNET2 TYPE2 SCH2; do
             if [ "${IP1}" != "${IP2}" ]; then
                 SSH root@${IP1} \
 <<EOF 

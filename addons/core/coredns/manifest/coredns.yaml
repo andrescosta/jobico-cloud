@@ -94,7 +94,7 @@ metadata:
     k8s-app: kube-dns
     kubernetes.io/name: "CoreDNS"
 spec:
-  replicas: 1
+  replicas: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -109,10 +109,10 @@ spec:
     spec:
       priorityClassName: system-cluster-critical
       serviceAccountName: coredns
-        #tolerations:
-        #- key: "CriticalAddonsOnly"
-        #operator: "Exists"
-        #effect: "NoSchedule"
+      tolerations:
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"
+          effect: "NoSchedule"
       nodeSelector:
         kubernetes.io/os: linux
       containers:
@@ -197,29 +197,3 @@ spec:
   - name: metrics
     port: 9153
     protocol: TCP
-
-#---
-#apiVersion: v1
-#kind: Service
-#metadata:
-#  name: dns
-#  namespace: kube-system
-#  labels:
-#    k8s-app: kube-dns
-#    kubernetes.io/cluster-service: "true"
-#    kubernetes.io/name: "CoreDNS"
-#spec:
-#  selector:
-#    k8s-app: kube-dns
-#  type: LoadBalancer
-#  loadBalancerIP: 192.168.122.23 
-#  ports:
-#  - name: dns
-#    port: 53
-#    protocol: UDP
-#  - name: dns-tcp
-#    port: 53
-#    protocol: TCP
-#  - name: metrics
-#    port: 9153
-#    protocol: TCP
