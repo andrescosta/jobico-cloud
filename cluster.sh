@@ -325,6 +325,27 @@ cfg(){
     sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-lb.cfg
     sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-server.cfg
 }
+start_cluster(){
+   kube::start_cluster  
+}
+shutdown_cluster(){
+   kube::shutdown_cluster 
+}
+resume_cluster(){
+   kube::resume_cluster 
+}
+suspend_cluster(){
+   kube::suspend_cluster 
+}
+state_cluster(){
+   kube::state_cluster 
+}
+info_cluster(){
+   kube::info_cluster 
+}
+list(){
+   kube::list
+}
 display_help() {
     echo "Usage: "
     echo "       $0 <command> [arguments]"
@@ -334,6 +355,13 @@ display_help() {
     echo "          add"
     echo "          destroy"
     echo "          addons"
+    echo "          start"
+    echo "          shutdown"
+    echo "          suspend"
+    echo "          resume"
+    echo "          info"
+    echo "          state"
+    echo "          list"
     echo "          local"
     echo "          kvm"
     echo "          cfg"
@@ -361,6 +389,12 @@ display_help_command(){
     kvm)
       display_help_for_kvm
       ;;
+    info|state|list)
+      display_help_for_cluster_info
+      ;;
+  start)
+      display_help_for_start
+      ;; 
     cfg)
       display_help_for_cfg
       ;;
@@ -371,6 +405,14 @@ display_help_command(){
       ;;
   esac
 } 
+display_help_for_cluster_info(){
+    echo "Usage: $0 <info|state|list>"
+    echo "Display information about the cluster's VM(s)."
+}
+display_help_for_start(){
+    echo "Usage: $0 start"
+    echo "Starts the cluster's VMs"
+}
 display_help_for_addons(){
   echo "Usage: $0 addons [arguments]"
   echo "Install the addons from the folder ./addons or the one specified by --dir."
@@ -461,6 +503,27 @@ main(){
     kvm)
       shift 
       kvm "$@"    
+      ;;
+    start)
+      start_cluster 
+      ;;
+    shutdown)
+      shutdown_cluster 
+      ;;
+    suspend)
+      suspend_cluster 
+      ;;
+    resume)
+      resume_cluster 
+      ;;
+    info)
+      info_cluster 
+      ;;
+    state)
+      state_cluster 
+      ;;
+    list)
+      list
       ;;
     cfg)
       shift 

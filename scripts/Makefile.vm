@@ -1,6 +1,7 @@
 VM_NAME=ikjumpbox
 VM_IP=192.168.122.6
 DESIRED_SIZE=20G
+CMD=start
 mac_vm:=$(shell bash -c 'printf "02:%02x:%02x:%02x:%02x:%02x" $$((RANDOM%256)) $$((RANDOM%256)) $$((RANDOM%256)) $$((RANDOM%256)) $$((RANDOM%256))')
 curr_mac=$(shell virsh -q domifaddr ${VM_NAME} --source arp | awk '{print $$2}')
 
@@ -23,7 +24,7 @@ deploy-node: vm/debian-12.qcow2 extras/cfg/cloud-init-node.cfg iso/cloud-init-no
 	sudo cp iso/cloud-init-node.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
 
 
-deploy-server: vm/debian-12.qcow2 extras/cfg/cloud-init-server.cfg iso/cloud-init-server.iso
+deploy-server: vm/debian-12.qcow2 extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso
 	sudo cp vm/debian-12.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
 	sudo cp iso/cloud-init-server.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
 
@@ -43,9 +44,11 @@ vm/debian-12.qcow2:
 	qemu-img resize \
   		vm/debian-12.qcow2 \
   		${DESIRED_SIZE} 
+cmd-vm:
+	-virsh ${CMD} ${VM_NAME}
 
-extras/cfg/cloud-init-server.cfg iso/cloud-init-server.iso: 
-	sudo cloud-localds iso/cloud-init-server.iso extras/cfg/cloud-init-server.cfg
+list:
+	-virsh list --all
 
 extras/cfg/cloud-init-lb.cfg iso/cloud-init-lb.iso: 
 	sudo cloud-localds iso/cloud-init-lb.iso extras/cfg/cloud-init-lb.cfg
