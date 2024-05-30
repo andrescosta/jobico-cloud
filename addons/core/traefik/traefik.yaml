@@ -2,7 +2,6 @@ kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: traefik-role
-
 rules:
   - apiGroups:
       - ""
@@ -55,7 +54,6 @@ subjects:
     namespace: default 
 
 ---
-
 kind: Deployment
 apiVersion: apps/v1
 metadata:
@@ -78,12 +76,19 @@ spec:
         - name: traefik
           image: traefik:v3.0
           args:
+            - --log.level=DEBUG
             - --api.insecure
-            - --providers.kubernetesingress
-            - --providers.kubernetesingress.ingressendpoint.publishedservice=default/registry
+            - --entryPoints.websecure.address=:443
+            - --entryPoints.web.address=:80
+            - --entryPoints.websecure.http.tls
+            - --serversTransport.insecureSkipVerify=true
+            - --providers.kubernetesingress=true
+            - --providers.kubernetesingress.ingressendpoint.publishedservice=default/traefik-web-service
           ports:
             - name: web
               containerPort: 80
+            - name: websecure
+              containerPort: 443
             - name: dashboard
               containerPort: 8080
 ---
@@ -108,8 +113,12 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-    - targetPort: web
+    - name: web
+      targetPort: web
       port: 80
+    - name: websecure
+      targetPort: websecure
+      port: 443
   selector:
     app: traefik
 
