@@ -29,5 +29,12 @@ write_files:
  - path: /etc/modules-load.d/k8s.conf
    content: |
     br_netfilter
+ - path: /etc/systemd/resolved.conf.d/jobico.conf
+   content: |
+    [Resolve]
+    DNS=192.168.122.23
+    Domains=jobico.org
+   permissions: '0644'
 runcmd:
  - modprobe br_netfilter
+ - systemctl restart systemd-resolved
