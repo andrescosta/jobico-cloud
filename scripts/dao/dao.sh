@@ -204,12 +204,18 @@ kube::dao::cluster::get(){
 }
 kube::dao::cluster::curr_nodes(){
     local result=$(awk '$5 == "node" {print $0}' ${MACHINES_DB})
-    echo "$result"
+    if [[ ! -z "$result" ]]; then
+        echo "$result"
+    fi
 }
 kube::dao::cluster::count(){
     local db=$(kube::dao::cluster::curr_db)
     local value=$(awk -v value="$1" '$5 == value {count++} END {print count}' ${db})
-    echo "$value"
+    if [ ! -z "$value" ]; then
+        echo "$value"
+    else
+        echo "0"
+    fi
 }
 kube::dao::cpl::curr_db(){
     if [ -f ${WORK_DIR}/db_patch.txt ]; then
