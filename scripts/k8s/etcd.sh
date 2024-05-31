@@ -3,52 +3,43 @@ kube::etcd::get_etcd_cluster(){
     local i=0
     local n_servers=$(kube::dao::cluster::count server)
     if [ ${n_servers} -eq 1 ]; then
-       while read IP FQDN HOST SUBNET TYPE; do
-            if [ "${TYPE}" == "server" ]; then
-                cluster="${HOST}=https://${IP}:2380"
-                break
-            fi
-       done < ${WORK_DIR}/cluster.txt
+       while read IP FQDN HOST SUBNET TYPE SCH; do
+            cluster="${HOST}=https://${IP}:2380"
+        done < <(kube::dao::cluster::servers)
     else
-       while read IP FQDN HOST SUBNET TYPE; do
-            if [ "${TYPE}" == "server" ]; then
-                if [ -n "$cluster" ]; then
-                    cluster="${cluster},"
-                fi
-                cluster="${cluster}server-${i}=https://${IP}:2380"
-                ((i=i+1))
-            fi
-        done < ${WORK_DIR}/cluster.txt
+        while read IP FQDN HOST SUBNET TYPE SCH; do
+           if [ -n "$cluster" ]; then
+                 cluster="${cluster},"
+           fi
+           cluster="${cluster}server-${i}=https://${IP}:2380"
+           ((i=i+1))
+        done < <(kube::dao::cluster::servers)
     fi
     echo "${cluster}"
 }
 kube::etcd::get_etcd_servers(){
     local cluster=""
     local i=0
-    while read IP FQDN HOST SUBNET TYPE; do
-        if [ "${TYPE}" == "server" ]; then
+    while read IP FQDN HOST SUBNET TYPE SCH; do
             if [ -n "$cluster" ]; then
                 cluster="${cluster},"
             fi
             cluster="${cluster}https://${IP}:2379"
             ((i=i+1))
-        fi
-    done < ${WORK_DIR}/cluster.txt
+    done < <(kube::dao::cluster::servers)
     echo "${cluster}"
 }
 kube::etcd::gen_etcd_service(){
     local cluster=$(kube::etcd::get_etcd_cluster)
     local clustere=$(escape ${cluster})
     local i=0
-    while read IP FQDN HOST SUBNET TYPE; do
-        if [ "${TYPE}" == "server" ]; then
-            file=${WORK_DIR}/etcd-${IP}.service
-            cp ${EXTRAS_DIR}/units/etcd.service.tmpl ${file}
-            sed -i "s/{IP}/${IP}/g" "${file}"
-            sed -i "s/{ETCD_NAME}/${HOST}/g" "${file}" 
-            sed -i "s/{CLUSTER}/$clustere/g" "${file}"
-        fi
-    done < ${WORK_DIR}/cluster.txt
+    while read IP FQDN HOST SUBNET TYPE SCH; do
+        file=${WORK_DIR}/etcd-${IP}.service
+        cp ${EXTRAS_DIR}/units/etcd.service.tmpl ${file}
+        sed -i "s/{IP}/${IP}/g" "${file}"
+        sed -i "s/{ETCD_NAME}/${HOST}/g" "${file}" 
+        sed -i "s/{CLUSTER}/$clustere/g" "${file}"
+    done < <(kube::dao::cluster::servers)
 }
 kube::etcd::deploy(){
     local i=0

@@ -31,6 +31,9 @@ NOT_DRY_RUN(){
         $@
     fi
 } 
+IS_DRY_RUN(){
+    echo ${_DRY_RUN}
+}
 escape() {
     escaped_result=$(printf '%s\n' "$1" | sed -e 's/[]\/$*.^[]/\\&/g')
     echo "${escaped_result}"

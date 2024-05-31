@@ -1,3 +1,3 @@
 kubectl create deployment nginx \
-  --image=nginx:latest
+  --image=nginx:latest -r=2
 

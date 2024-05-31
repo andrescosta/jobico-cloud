@@ -11,6 +11,7 @@ DEFAULT_CPL=1
 DEFAULT_LB=2
 DIR=$(dirname "$0")
 SCRIPTS="${DIR}/scripts"
+ADDONS_DIR="${DIR}/addons"
 
 . ${SCRIPTS}/support/exception.sh
 set_trap_err
@@ -20,7 +21,7 @@ set_trap_err
 . ${SCRIPTS}/kvm.sh 
 
 new() {
-    local exec_dir="" cpl lb nodes
+    local post_dir="" cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --nodes )
@@ -57,16 +58,31 @@ new() {
                 DRY_RUNON
                 DEBUGON
                 ;;
-            --exec-dir )
+            --no-addons )
+                skip_addons=true
+                ;;
+            --post )
                 shift
                 if [ -n "${1-}" ]; then
-                    exec_dir="$1"
-                    if [ ! -d "$exec_dir" ]; then
-                        echo "The directory ${exec_dir} does not exist." >&2
+                    post_dir="$1"
+                else
+                    echo "With --post at least one directory name must be passed."
+                    display_help
+                    exit 1
+                fi
+                ;;
+            --schedulable-server )
+                schedulable_server=true
+                ;;
+            --addons )
+                if [ -n "${1-}" ]; then
+                    addons_dir="$1"
+                    if [ ! -d "$addons_dir" ]; then
+                        echo "The directory ${addons_dir} does not exist." >&2
                         exit 1
                     fi
                 else
-                    echo "With --exec-dir a directory name must be passed."
+                    echo "With --addons a directory name must be passed."
                     display_help
                     exit 1
                 fi
@@ -99,36 +115,69 @@ new() {
     nodes=${nodes:-$DEFAULT_NODES}
     cpl=${cpl:-$DEFAULT_CPL}
     lb=${lb:-$DEFAULT_LB}
+    addons_dir=${addons_dir:-$ADDONS_DIR}
+    if [[ $nodes == 0 ]]; then
+       echo "Warning: No worker nodes are created. The control plane nodes are schedulable."
+       schedulable_server=true 
+    fi
     if [[ $cpl > 1 ]]; then  
         echo "The K8s Cluster is being created with $nodes node(s), $cpl control plane node(s) and ${lb} load balancer(s) ..."
     else
-        echo "The K8s Cluster is being created with $nodes node(s)."
+        if [[ $nodes != 0 ]]; then
+            echo "The K8s Cluster is being created with $nodes node(s)."
+        else
+            echo "The K8s Cluster is being created with $cpl node/server."
+        fi
     fi
     DRY_RUN echo ">> Dryn run << "
-    
-    kube::cluster $nodes $cpl $lb 
-    
-    if [ "$exec_dir" != "" ]; then
-        DRY_RUN echo "Warning: --dry-run option was provided. The scripts in $exec_dir are not executed."
-        NOT_DRY_RUN exec $exec_dir
-    fi 
+    kube::cluster $nodes $cpl $lb $schedulable_server
+    addons $skip_addons $addons_dir
+    exec_post_dirs $post_dir
     NOT_DRY_RUN echo "The K8s Cluster was created."
+}
+addons(){
+    local skip_addons=$1
+    local base_dir=$2
+    if [ $skip_addons == false ]; then
+        if [ -d $base_dir ]; then
+            kube::addons $base_dir
+        else
+            echo "No addons available to install at $base_dir"
+        fi
+    fi
+}
+exec_post_dirs(){
+    if [[ $# == 0 ]]; then
+        return
+    fi
+    DRY_RUN echo "Warning: --dry-run option was provided. The scripts are not executed."
+    if [ $(IS_DRY_RUN) == true ]; then
+        return
+    fi
+    local dirs=(${1//,/ })
+    for d in "${dirs[@]}"; do
+        dir="./post/$d"
+        if [ -d $dir ]; then
+            exec $dir
+        else
+            echo "Warning: $dir does not exist"
+        fi
+    done
 }
 exec(){
     echo "- Executing $1"
     local dir=$1
-    local files=$(ls -p -v $1 | grep -v '/$')
+    if [ ! -f "$dir/main.sh" ]; then
+        echo "Waning: $dir/main.sh does not exit"
+        return
+    fi
     local err=0
-    for script in $files; do
-        echo ">Executing $script ..."
-        local output=$(bash "$dir/$script" 2>&1) || err=$?
-        echo "> Result of $script:"
-        echo ">> $output"
-        if [[ $err != 0 ]]; then
-            echo "> Warning $script returned an error $err"
-            break
-        fi
-    done
+    local output=$(bash "$dir/main.sh" 2>&1) || err=$?
+    echo "> Result of $dir/main.sh:"
+    echo ">> $output"
+    if [[ $err != 0 ]]; then
+        echo "> Warning $script returned an error $err"
+    fi
     echo "- Finished $1"
 }
 add(){
@@ -275,6 +324,27 @@ cfg(){
     sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-lb.cfg
     sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-server.cfg
 }
+start_cluster(){
+   kube::start_cluster  
+}
+shutdown_cluster(){
+   kube::shutdown_cluster 
+}
+resume_cluster(){
+   kube::resume_cluster 
+}
+suspend_cluster(){
+   kube::suspend_cluster 
+}
+state_cluster(){
+   kube::state_cluster 
+}
+info_cluster(){
+   kube::info_cluster 
+}
+list(){
+   kube::list
+}
 display_help() {
     echo "Usage: "
     echo "       $0 <command> [arguments]"
@@ -283,6 +353,14 @@ display_help() {
     echo "          new"
     echo "          add"
     echo "          destroy"
+    echo "          addons"
+    echo "          start"
+    echo "          shutdown"
+    echo "          suspend"
+    echo "          resume"
+    echo "          info"
+    echo "          state"
+    echo "          list"
     echo "          local"
     echo "          kvm"
     echo "          cfg"
@@ -300,13 +378,22 @@ display_help_command(){
       ;;
     destroy)
       display_help_for_destroy
-    ;;
+      ;;
+    addons)
+      display_help_for_addons
+      ;;
     local)
       display_help_for_local
       ;;
     kvm)
       display_help_for_kvm
       ;;
+    info|state|list)
+      display_help_for_cluster_info
+      ;;
+  start)
+      display_help_for_start
+      ;; 
     cfg)
       display_help_for_cfg
       ;;
@@ -317,7 +404,18 @@ display_help_command(){
       ;;
   esac
 } 
-
+display_help_for_cluster_info(){
+    echo "Usage: $0 <info|state|list>"
+    echo "Display information about the cluster's VM(s)."
+}
+display_help_for_start(){
+    echo "Usage: $0 start"
+    echo "Starts the cluster's VMs"
+}
+display_help_for_addons(){
+  echo "Usage: $0 addons [arguments]"
+  echo "Install the addons from the folder ./addons or the one specified by --dir."
+}
 display_help_for_new(){
   echo "Usage: $0 new [arguments]"
   echo "Create the VMs and deploys Kubernetes cluster into them."
@@ -328,8 +426,14 @@ display_help_for_new(){
   echo "            Specify the number of control planed nodes to be created. The default value is 1. "
   echo "     --lb n"
   echo "            Specify the number of load balancers to be created in case --cpl is greater than 1. The default value is 2. "
-  echo "     --exec-dir dir_name"
-  echo "            After the cluster is created successfully, the scripts in this directory will be executed in alphabetical order." 
+  echo "     --addons dir_name"
+  echo "            Specify a different directory name for the addons. Default: $ADDONS_DIR"
+  echo "     --no-addons"
+  echo "            Skip the instalation of addons"
+  echo "     --post dir_name,[dir_name]"
+  echo "            After the cluster is created successfully, the main.sh script from each of these comma separated directores will be executed." 
+  echo "     --schedulable-server"
+  echo "            The control plane nodes will be available to schedule pods. The default is false(tainted)."
   echo "     --dry-run"
   echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
   echo "     --debug [ s | d ]"
@@ -388,6 +492,9 @@ main(){
       shift
       destroy "$@"
       ;;
+    addons)
+      addons false $ADDONS_DIR
+      ;;
     local)
       shift
       clocal "$@"
@@ -395,6 +502,27 @@ main(){
     kvm)
       shift 
       kvm "$@"    
+      ;;
+    start)
+      start_cluster 
+      ;;
+    shutdown)
+      shutdown_cluster 
+      ;;
+    suspend)
+      suspend_cluster 
+      ;;
+    resume)
+      resume_cluster 
+      ;;
+    info)
+      info_cluster 
+      ;;
+    state)
+      state_cluster 
+      ;;
+    list)
+      list
       ;;
     cfg)
       shift 

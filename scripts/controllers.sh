@@ -1,16 +1,10 @@
 kube::init(){
     kube::local::init_fs
-    kube::do_init "$@"
-}
-kube::do_init(){
-    if ! grep -q "doinit" "${STATUS_FILE}"; then
-        local number_of_nodes=$1
-        local number_of_cpl_nodes=$2
-        local number_of_lbs=$3
-        kube::dao::gen_databases $number_of_nodes $number_of_cpl_nodes $number_of_lbs
+    if ! grep -q "init" "${STATUS_FILE}"; then
+        kube::dao::gen_databases "$@"
         NOT_DRY_RUN kube::local::download_deps
         NOT_DRY_RUN kube::local::install_kubectl
-        kube::set_done "doinit"
+        kube::set_done "init"
     fi
 }
 kube::create_machines(){
@@ -157,11 +151,42 @@ kube::local(){
 kube::destroy_machines(){
     NOT_DRY_RUN kube::machine::destroy
 }
-
 kube::restore_local_env(){
     NOT_DRY_RUN kube::host::restore_local_etc_hosts
 }
-
+kube::install_all_addons(){
+    local action=$1
+    local base_dir=$2
+    if ! grep -q $action ${STATUS_FILE}; then
+        kube::install_addons $base_dir/core
+        kube::install_addons $base_dir/extras
+        kube::set_done $action
+        echo "Finished installing addons."
+    fi
+}
+kube::install_addons(){
+        local addons_dir=$1
+        local dirs=$(find $addons_dir -mindepth 1 -maxdepth 1 -type d)
+        local err=0
+        for dir in $dirs; do
+            local script="${dir}/main.sh"
+            if [ -f $script ]; then
+                echo "[*] Installing addon with $script ..."
+                if [[ $(IS_DRY_RUN) == false ]]; then
+                    local output=$(bash $script ${dir} 2>&1) || err=$?
+                    echo "Addon result:"
+                    echo "$output"
+                    if [[ $err != 0 ]]; then
+                        echo "Warning: the addon $script returned an error $err"
+                    fi
+                    echo "[*] Addon: $script installed."
+                    echo ""
+                fi
+            else
+                echo "Warning: no main.sh in $dir"
+            fi
+        done
+}
 kube::wait_for_vms_ssh() {
     local port=22
     local timeout=120 
@@ -170,7 +195,7 @@ kube::wait_for_vms_ssh() {
     
     echo "Waiting for servers to start..."
     
-    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE; do
+    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
           echo "Waiting for $IP to start listening on port $port..."
           start_time=$(date +%s)
           while ! nc -z "$IP" "$port" >/dev/null 2>&1; do
@@ -206,3 +231,4 @@ kube::add_was_executed(){
         echo false
     fi
 }
+
