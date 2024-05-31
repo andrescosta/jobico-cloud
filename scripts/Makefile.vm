@@ -26,7 +26,7 @@ deploy-node: vm/debian-12.qcow2 extras/cfg/cloud-init-node.cfg iso/cloud-init-no
 
 deploy-server: vm/debian-12.qcow2 extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso
 	sudo cp vm/debian-12.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
-	sudo cp iso/cloud-init-server.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
+	sudo cp iso/cloud-init-node.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
 
 deploy-lb: vm/debian-12.qcow2 extras/cfg/cloud-init-lb.cfg iso/cloud-init-lb.iso
 	sudo cp vm/debian-12.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
