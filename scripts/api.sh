@@ -35,18 +35,46 @@ kube::cluster(){
     local number_of_nodes=$1
     local number_of_cpl_nodes=$2
     local number_of_lbs=$3
+    local schedulable_server=$4
     if [[ $(kube::dao::cluster::is_locked) == true ]]; then
         echo "A cluster already exists."
         exit 1
     fi
     kube::plugins::load ${PLUGINS_CONF_FILE}
     clear_dhcp
-    kube::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs
+    kube::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server
     DEBUG kube::debug::print
     kube::create_machines "machines"
     kube::create_cluster
 }
-
+kube::start_cluster(){
+    kube::plugins::load ${PLUGINS_CONF_FILE}
+    kube::machine::cmd start
+}
+kube::shutdown_cluster(){
+    kube::plugins::load ${PLUGINS_CONF_FILE}
+    kube::machine::cmd shutdown
+}
+kube::resume_cluster(){
+    kube::plugins::load ${PLUGINS_CONF_FILE}
+    kube::machine::cmd resume
+}
+kube::suspend_cluster(){
+    kube::plugins::load ${PLUGINS_CONF_FILE}
+    kube::machine::cmd suspend 
+}
+kube::state_cluster(){
+    kube::plugins::load ${PLUGINS_CONF_FILE}
+    kube::machine::cmd domstate
+}
+kube::list(){
+    kube::plugins::load ${PLUGINS_CONF_FILE}
+    kube::machine::list
+}
+kube::info_cluster(){
+    kube::plugins::load ${PLUGINS_CONF_FILE}
+    kube::machine::cmd dominfo
+}
 kube::destroy_cluster(){
     if [[ $(kube::dao::cluster::is_locked) == false ]]; then
         if [ ! -e ${MACHINES_DB} ]; then
@@ -67,6 +95,7 @@ kube::destroy_cluster(){
 kube::gen_local_env(){
     kube::local
 }
+
 kube::add(){
     if [[ $(kube::dao::cluster::is_locked) == true ]]; then
         echo "Error: The cluster is locked. Use --force to add nodes"
@@ -86,4 +115,13 @@ kube::add(){
     DEBUG kube::debug::print
     kube::create_machines "add_machines"
     kube::add_nodes
+}
+
+kube::addons(){
+    local addonsdir=$1
+    if [ ! -d $addonsdir ]; then
+        echo "Error: The addons diresctory does not exits."
+        exit 1
+    fi
+    kube::install_all_addons "addons" $addonsdir
 }
