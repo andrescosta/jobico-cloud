@@ -49,7 +49,7 @@ kube::dao::gen_add_cluster_db(){
     local workers=($(kube::dao::cpl::get worker))
     local total=$(wc -l < $MACHINES_DB)
     ((host_1=total + FROM_HOST))
-    ((host_2=total_nodes))
+    ((host_2=total_nodes + 1))
     for wkr in "${workers[@]}"; do
         echo "192.168.122.${host_1} ${wkr}.kubernetes.local ${wkr} 10.200.${host_2}.0/24 node $SCHEDULABLE" >> ${MACHINES_NEW_DB}
         ((host_1=host_1+1))
@@ -204,6 +204,10 @@ kube::dao::cluster::get(){
 }
 kube::dao::cluster::curr_nodes(){
     local result=$(awk '$5 == "node" {print $0}' ${MACHINES_DB})
+    if [[ ! -z "$result" ]]; then
+        echo "$result"
+    fi
+    local result=$(awk '$5 == "server" {print $0}' ${MACHINES_DB})
     if [[ ! -z "$result" ]]; then
         echo "$result"
     fi
