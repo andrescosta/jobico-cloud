@@ -1,7 +1,6 @@
 debian-12.qcow2
 *.iso
 machines.txt
-**/downloads
 /tmp
 **/work*
 *.swp

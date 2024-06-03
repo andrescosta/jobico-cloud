@@ -345,6 +345,9 @@ info_cluster(){
 list(){
    kube::list
 }
+debug(){
+    kube::debug::print
+}
 display_help() {
     echo "Usage: "
     echo "       $0 <command> [arguments]"
@@ -527,6 +530,9 @@ main(){
     cfg)
       shift 
       cfg "$@"
+      ;;
+    debug)
+      debug
       ;;
     help)
       if [ $# -gt 1 ]; then
