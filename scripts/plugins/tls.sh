@@ -2,18 +2,10 @@ kube::tls::gen_ca_conf(){
     cp ${EXTRAS_DIR}/tls/ca.conf.tmpl ${CA_CONF}
     local workers=($(kube::dao::cpl::get worker))
     local new_ca=""
-    for e in "${workers[@]}"; do
-        node_req=$(sed "s/{NAME}/${e}/g" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl")
+    while read IP FQDN HOST SUBNET TYPE SCH; do
+        node_req=$(sed "s/{NAME}/${HOST}/g; s/{IP}/${IP}/g;" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl")
         new_ca="${new_ca}\n\n${node_req}"
-    done
-    echo -e "${new_ca}">>${CA_CONF}
-
-    servers=($(kube::dao::cluster::get server 3))
-    new_ca=""
-    for e in "${servers[@]}"; do
-        node_req=$(sed "s/{NAME}/${e}/g" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl")
-        new_ca="${new_ca}\n\n${node_req}"
-    done
+    done < <(kube::dao::cluster::members)
     echo -e "${new_ca}">>${CA_CONF}
 
     local ips=""
@@ -38,10 +30,10 @@ kube::tls::gen_ca_conf(){
 kube::tls::add_nodes_to_ca_conf(){
     local workers=($(kube::dao::cpl::get worker))
     local new_ca=""
-    for e in "${workers[@]}"; do
-        node_req=$(sed "s/{NAME}/${e}/g" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl")
+    while read IP FQDN HOST SUBNET TYPE SCH; do
+        node_req=$(sed "s/{NAME}/${HOST}/g; s/{IP}/${IP}/g;" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl")
         new_ca="${new_ca}\n\n${node_req}"
-    done
+    done < <(kube::dao::cluster::nodes)
     echo -e "${new_ca}">>${CA_CONF}
 }
 kube::tls::gen_ca(){
