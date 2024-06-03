@@ -1,8 +1,0 @@
-- Execute post action by name
-- Post action for Jobico:
-    - Check if the directory exists
-        - No: Download from github
-    - Desploy the operator in Kubernetes:
-        - Compile artifacts
-        - Push them to reg.jobico.org
-        - Create all the objects
