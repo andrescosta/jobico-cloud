@@ -10,11 +10,16 @@ kube::machine::destroy(){
     done 
 }
 kube::machine::cmd(){
-    kube::dao::cluster::unlock
-    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
-        make -f scripts/Makefile.vm cmd-vm CMD=$1 VM_NAME=${HOST}
-    done 
-    kube::dao::cluster::lock
+    if [ kube::dao::cluster::is_locked == true ]; then
+        kube::dao::cluster::unlock
+        kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
+            make -f scripts/Makefile.vm cmd-vm CMD=$1 VM_NAME=${HOST}
+        done 
+        kube::dao::cluster::lock
+        echo true
+    else
+        echo false
+    fi
 }
 
 kube::machine::list(){

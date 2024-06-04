@@ -37,7 +37,7 @@ kube::dao::gen_db(){
     done
 }
 kube::dao::gen_add_db(){
-    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt)
+    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt || true)
     local total_workers=$1
     ((total_workers=total_workers + total_nodes))
     for ((i=total_nodes;i<total_workers;i++)); do
@@ -45,7 +45,7 @@ kube::dao::gen_add_db(){
     done
 }
 kube::dao::gen_add_cluster_db(){
-    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt)
+    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt || true) 
     local workers=($(kube::dao::cpl::get worker))
     local total=$(wc -l < $MACHINES_DB)
     ((host_1=total + FROM_HOST))
