@@ -112,6 +112,7 @@ metadata:
 
 spec:
   type: LoadBalancer
+  loadBalancerIP: 192.168.122.24
   ports:
     - name: web
       targetPort: web

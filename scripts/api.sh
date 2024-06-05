@@ -71,7 +71,7 @@ kube::info_cluster(){
 kube::exec_cmd() {
     kube::plugins::load ${PLUGINS_CONF_FILE}
     ret=$(kube::machine::cmd $1)
-    if [ $ret == false ]; then
+    if [[ $ret == false ]]; then
         echo "Error: The cluster was not created."
         exit 1
     fi
