@@ -244,7 +244,7 @@ kube::dao::cluster::unlock(){
     fi
 }
 kube::dao::cluster::is_locked(){
-    if [ -f ${MACHINES_DB_LOCK} ]; then
+    if [ -f "${MACHINES_DB_LOCK}" ]; then
         echo true
     else
         echo false

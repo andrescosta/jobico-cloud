@@ -1,0 +1,6 @@
+app:
+  ingress:
+    enabled: true
+    useDefaultIngressClass: true
+    hosts:
+      - dashboard.jobico.org

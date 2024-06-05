@@ -18,7 +18,6 @@ set_trap_err
 . ${SCRIPTS}/api.sh 
 . ${SCRIPTS}/support/utils.sh 
 . ${SCRIPTS}/support/ssh.sh 
-. ${SCRIPTS}/kvm.sh 
 
 new() {
     local post_dir="" cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
