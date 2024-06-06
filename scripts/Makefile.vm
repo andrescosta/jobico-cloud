@@ -7,16 +7,16 @@ curr_mac=$(shell virsh -q domifaddr ${VM_NAME} --source arp | awk '{print $$2}')
 
 ## New VM
 
-new-vm-node: iso vm deploy-node mac virt 
+new-vm-node: iso vm deploy-node mac virt-node 
 
 iso: 
 	mkdir -p iso
 vm:
 	mkdir -p vm
 
-new-vm-server: iso vm deploy-server mac virt 
+new-vm-server: iso vm deploy-server mac virt-node 
 
-new-vm-lb: iso vm deploy-lb mac virt 
+new-vm-lb: iso vm deploy-lb mac virt-lb 
 
 
 deploy-node: vm/debian-12.qcow2 extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso
@@ -56,7 +56,22 @@ extras/cfg/cloud-init-lb.cfg iso/cloud-init-lb.iso:
 extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso: 
 	sudo cloud-localds iso/cloud-init-node.iso extras/cfg/cloud-init-node.cfg
 
-virt:
+virt-node:
+	sudo virt-install \
+ 		--name ${VM_NAME} \
+ 		--ram 4096 \
+ 		--vcpus=2 \
+ 		--cpu host \
+ 		--disk /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2,device=disk,bus=virtio \
+ 		--hvm \
+ 		--disk /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso,device=cdrom \
+ 		--os-variant debian10 \
+ 		--virt-type kvm \
+ 		--graphics none \
+ 		--network network=default,model=virtio,mac=${mac_vm}\
+ 		--import \
+ 		--noautoconsole
+virt-lb:
 	sudo virt-install \
  		--name ${VM_NAME} \
  		--ram 2048 \
