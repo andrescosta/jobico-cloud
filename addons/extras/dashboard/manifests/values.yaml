@@ -4,3 +4,7 @@ app:
     useDefaultIngressClass: true
     hosts:
       - dashboard.jobico.org
+kong:
+  proxy:
+    http:
+      enabled: true
