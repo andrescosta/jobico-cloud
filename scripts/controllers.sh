@@ -174,7 +174,8 @@ kube::install_addons(){
         local err=0
         for dir in $dirs; do
             local script="${dir}/main.sh"
-            if [ -f $script ]; then
+            local disabled="${dir}/disabled"
+            if [[ -f $script && ! -f $disabled ]]; then
                 echo "[*] Installing addon with $script ..."
                 if [[ $(IS_DRY_RUN) == false ]]; then
                     local output=$(bash $script ${dir} 2>&1) || err=$?
@@ -187,7 +188,7 @@ kube::install_addons(){
                     echo ""
                 fi
             else
-                echo "Warning: no main.sh in $dir"
+                echo "Warning: $dir was not installed."
             fi
         done
 }
