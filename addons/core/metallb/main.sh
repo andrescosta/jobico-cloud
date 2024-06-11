@@ -23,4 +23,4 @@ kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.5/confi
 # It waits until the pods are running because creating the creation of a custom resource calls a webooks for validation.
 wait_for_pod
 echo ">> All pods ready <<"
-kubectl apply -f $1/manifest/metalb.yaml
+kubectl apply -f $1/metalb.yaml
