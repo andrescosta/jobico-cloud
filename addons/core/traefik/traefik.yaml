@@ -124,3 +124,20 @@ spec:
     app: traefik
 
 
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: traeffik-dashboard-ingress
+spec:
+    rules:
+    - host: traefik.jobico.org
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: traefik-dashboard-service
+              port:
+                number: 8080 

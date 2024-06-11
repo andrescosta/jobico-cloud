@@ -308,20 +308,15 @@ cfg(){
     read -p "Authorized key file for root  :" -e -i "$auth_key_def" auth_key_root
     local key_root="- $(escape "$(<"$auth_key_root")")"
     cp extras/cfg/cloud-init-lb.cfg.tmpl extras/cfg/cloud-init-lb.cfg 
-    cp extras/cfg/cloud-init-server.cfg.tmpl extras/cfg/cloud-init-server.cfg 
     cp extras/cfg/cloud-init-node.cfg.tmpl extras/cfg/cloud-init-node.cfg 
     sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-lb.cfg
     sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-lb.cfg
     sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-node.cfg
     sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-node.cfg
-    sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-server.cfg
-    sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-server.cfg
-    sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-server.cfg
     sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-node.cfg
     sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-node.cfg
     sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-lb.cfg
     sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-lb.cfg
-    sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-server.cfg
 }
 start_cluster(){
    kube::start_cluster  
@@ -366,6 +361,7 @@ display_help() {
     echo "          local"
     echo "          kvm"
     echo "          cfg"
+    echo "          debug"
     echo ""
     echo "Additional help: $0 help <command>"
 }
