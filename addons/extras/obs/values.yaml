@@ -1,0 +1,7 @@
+grafana:
+  ingress:
+    enabled: true
+    hosts: 
+      - grafana.jobico.org
+  sidecar:
+    skipTlsVerify: true

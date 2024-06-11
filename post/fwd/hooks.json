@@ -1,0 +1,13 @@
+{
+    "server": {
+
+        "interface": "virbr0",
+        "private_ip": "192.168.122.24",
+        "port_map": {
+            "tcp": [
+                443, 
+                80
+            ]
+        }
+    }
+}

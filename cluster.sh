@@ -18,7 +18,6 @@ set_trap_err
 . ${SCRIPTS}/api.sh 
 . ${SCRIPTS}/support/utils.sh 
 . ${SCRIPTS}/support/ssh.sh 
-. ${SCRIPTS}/kvm.sh 
 
 new() {
     local post_dir="" cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
@@ -309,20 +308,15 @@ cfg(){
     read -p "Authorized key file for root  :" -e -i "$auth_key_def" auth_key_root
     local key_root="- $(escape "$(<"$auth_key_root")")"
     cp extras/cfg/cloud-init-lb.cfg.tmpl extras/cfg/cloud-init-lb.cfg 
-    cp extras/cfg/cloud-init-server.cfg.tmpl extras/cfg/cloud-init-server.cfg 
     cp extras/cfg/cloud-init-node.cfg.tmpl extras/cfg/cloud-init-node.cfg 
     sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-lb.cfg
     sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-lb.cfg
     sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-node.cfg
     sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-node.cfg
-    sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-server.cfg
-    sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-server.cfg
-    sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-server.cfg
     sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-node.cfg
     sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-node.cfg
     sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-lb.cfg
     sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-lb.cfg
-    sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-server.cfg
 }
 start_cluster(){
    kube::start_cluster  
@@ -345,6 +339,9 @@ info_cluster(){
 list(){
    kube::list
 }
+debug(){
+    kube::debug::print
+}
 display_help() {
     echo "Usage: "
     echo "       $0 <command> [arguments]"
@@ -364,6 +361,7 @@ display_help() {
     echo "          local"
     echo "          kvm"
     echo "          cfg"
+    echo "          debug"
     echo ""
     echo "Additional help: $0 help <command>"
 }
@@ -527,6 +525,9 @@ main(){
     cfg)
       shift 
       cfg "$@"
+      ;;
+    debug)
+      debug
       ;;
     help)
       if [ $# -gt 1 ]; then

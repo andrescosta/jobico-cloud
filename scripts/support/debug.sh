@@ -42,6 +42,8 @@ kube::debug::print(){
     print_array ${all_workers[@]}
     echo "---------curr workers--------"
     print_array ${curr_workers[@]}
+    echo "---------curr nodes----------"
+    print_array ${curr_nodes_cluster[@]}
     echo "---------workers------------"
     print_array ${workers[@]}
     echo "---------- nodes ------------"
