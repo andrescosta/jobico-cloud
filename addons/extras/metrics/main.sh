@@ -1,2 +1,1 @@
-
-kubectl apply -f $1/manifests/components.yaml
+kubectl apply -f $1/components.yaml
