@@ -1,2 +1,2 @@
-kubectl apply -f $1/manifest/coredns.yaml
-kubectl apply -f $1/manifest/excoredns.yaml
+kubectl apply -f $1/coredns.yaml
+kubectl apply -f $1/excoredns.yaml

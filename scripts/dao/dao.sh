@@ -37,7 +37,7 @@ kube::dao::gen_db(){
     done
 }
 kube::dao::gen_add_db(){
-    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt)
+    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt || true)
     local total_workers=$1
     ((total_workers=total_workers + total_nodes))
     for ((i=total_nodes;i<total_workers;i++)); do
@@ -45,11 +45,11 @@ kube::dao::gen_add_db(){
     done
 }
 kube::dao::gen_add_cluster_db(){
-    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt)
+    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt || true) 
     local workers=($(kube::dao::cpl::get worker))
     local total=$(wc -l < $MACHINES_DB)
     ((host_1=total + FROM_HOST))
-    ((host_2=total_nodes))
+    ((host_2=total_nodes + 1))
     for wkr in "${workers[@]}"; do
         echo "192.168.122.${host_1} ${wkr}.kubernetes.local ${wkr} 10.200.${host_2}.0/24 node $SCHEDULABLE" >> ${MACHINES_NEW_DB}
         ((host_1=host_1+1))
@@ -207,6 +207,10 @@ kube::dao::cluster::curr_nodes(){
     if [[ ! -z "$result" ]]; then
         echo "$result"
     fi
+    local result=$(awk '$5 == "server" {print $0}' ${MACHINES_DB})
+    if [[ ! -z "$result" ]]; then
+        echo "$result"
+    fi
 }
 kube::dao::cluster::count(){
     local db=$(kube::dao::cluster::curr_db)
@@ -240,7 +244,7 @@ kube::dao::cluster::unlock(){
     fi
 }
 kube::dao::cluster::is_locked(){
-    if [ -f ${MACHINES_DB_LOCK} ]; then
+    if [ -f "${MACHINES_DB_LOCK}" ]; then
         echo true
     else
         echo false

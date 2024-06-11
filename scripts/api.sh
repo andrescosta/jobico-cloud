@@ -44,36 +44,37 @@ kube::cluster(){
     clear_dhcp
     kube::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server
     DEBUG kube::debug::print
-    kube::create_machines "machines"
     kube::create_cluster
 }
 kube::start_cluster(){
-    kube::plugins::load ${PLUGINS_CONF_FILE}
-    kube::machine::cmd start
+    kube::exec_cmd start
 }
 kube::shutdown_cluster(){
-    kube::plugins::load ${PLUGINS_CONF_FILE}
-    kube::machine::cmd shutdown
+    kube::exec_cmd shutdown
 }
 kube::resume_cluster(){
-    kube::plugins::load ${PLUGINS_CONF_FILE}
-    kube::machine::cmd resume
+    kube::exec_cmd resume
 }
 kube::suspend_cluster(){
-    kube::plugins::load ${PLUGINS_CONF_FILE}
-    kube::machine::cmd suspend 
+    kube::exec_cmd suspend 
 }
 kube::state_cluster(){
-    kube::plugins::load ${PLUGINS_CONF_FILE}
-    kube::machine::cmd domstate
+    kube::exec_cmd domstate
 }
 kube::list(){
     kube::plugins::load ${PLUGINS_CONF_FILE}
     kube::machine::list
 }
 kube::info_cluster(){
+    kube::exec_cmd dominfo
+}
+kube::exec_cmd() {
     kube::plugins::load ${PLUGINS_CONF_FILE}
-    kube::machine::cmd dominfo
+    ret=$(kube::machine::cmd $1)
+    if [[ $ret == false ]]; then
+        echo "Error: The cluster was not created."
+        exit 1
+    fi
 }
 kube::destroy_cluster(){
     if [[ $(kube::dao::cluster::is_locked) == false ]]; then
@@ -113,7 +114,6 @@ kube::add(){
     kube::plugins::load ${PLUGINS_CONF_FILE}
     kube::init_for_add $number_of_nodes
     DEBUG kube::debug::print
-    kube::create_machines "add_machines"
     kube::add_nodes
 }
 

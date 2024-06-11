@@ -7,14 +7,13 @@ kube::init(){
         kube::set_done "init"
     fi
 }
-kube::create_machines(){
-    if ! grep -q $1 ${STATUS_FILE}; then
+kube::create_cluster(){
+    # Machines
+    if ! grep -q "machines" ${STATUS_FILE}; then
         NOT_DRY_RUN kube::machine::create
         NOT_DRY_RUN kube::wait_for_vms_ssh
-        kube::set_done $1
+        kube::set_done "machines"
     fi
-}
-kube::create_cluster(){
     # DNS
     if ! grep -q "host" ${STATUS_FILE}; then
         kube::host::gen_hostsfile
@@ -87,6 +86,11 @@ kube::create_cluster(){
     fi
 }
 kube::add_nodes(){
+    if ! grep -q "add_machines" ${STATUS_FILE}; then
+        NOT_DRY_RUN kube::machine::create
+        NOT_DRY_RUN kube::wait_for_vms_ssh
+        kube::set_done "add_machines"
+    fi
     # DNS
     if ! grep -q "add_host" ${STATUS_FILE}; then
         kube::host::add_new_nodes_to_hostsfile
@@ -117,7 +121,7 @@ kube::add_nodes(){
     # Routes
     if ! grep -q "add_routes" ${STATUS_FILE}; then
         NOT_DRY_RUN kube::net::init
-        NOT_DRY_RUN kube::net::add_routes
+        #NOT_DRY_RUN kube::net::add_routes
         NOT_DRY_RUN kube::net::add_routes_to_added_node
         kube::set_done "add_routes"
     fi
@@ -170,7 +174,8 @@ kube::install_addons(){
         local err=0
         for dir in $dirs; do
             local script="${dir}/main.sh"
-            if [ -f $script ]; then
+            local disabled="${dir}/disabled"
+            if [[ -f $script && ! -f $disabled ]]; then
                 echo "[*] Installing addon with $script ..."
                 if [[ $(IS_DRY_RUN) == false ]]; then
                     local output=$(bash $script ${dir} 2>&1) || err=$?
@@ -183,7 +188,7 @@ kube::install_addons(){
                     echo ""
                 fi
             else
-                echo "Warning: no main.sh in $dir"
+                echo "Warning: $dir was not installed."
             fi
         done
 }
