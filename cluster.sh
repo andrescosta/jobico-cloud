@@ -130,16 +130,17 @@ new() {
   fi
   DRY_RUN echo ">> Dryn run << "
   jobico::new_cluster $nodes $cpl $lb $schedulable_server
-  addons $skip_addons $addons_dir
+  addons $skip_addons $addons_dir "new"
   exec_post_dirs $post_dir
   NOT_DRY_RUN echo "The K8s Cluster was created."
 }
 addons() {
   local skip_addons=$1
   local base_dir=$2
+  local op=$3
   if [ $skip_addons == false ]; then
     if [ -d $base_dir ]; then
-      jobico::addons $base_dir
+      jobico::addons $base_dir $op
     else
       echo "No addons available to install at $base_dir"
     fi
@@ -180,7 +181,7 @@ exec() {
   echo "- Finished $1"
 }
 add() {
-  local force=false nodes
+  local force=false nodes addons_dir="" skip_addons=false 
   while [[ $# -gt 0 ]]; do
     case "$1" in
     --nodes)
@@ -212,6 +213,22 @@ add() {
     --force)
       force=true
       ;;
+    --no-addons)
+      skip_addons=true
+      ;;
+    --addons)
+      if [ -n "${1-}" ]; then
+        addons_dir="$1"
+        if [ ! -d "$addons_dir" ]; then
+          echo "The directory ${addons_dir} does not exist." >&2
+          exit 1
+        fi
+      else
+        echo "With --addons a directory name must be passed."
+        display_help
+        exit 1
+      fi
+      ;;
     -*)
       echo "Unrecognized or incomplete option: $1" >&2
       display_help
@@ -226,6 +243,7 @@ add() {
     shift
   done
   nodes=${nodes:-$DEFAULT_NODES_ADD}
+  addons_dir=${addons_dir:-$ADDONS_DIR}
 
   echo "$nodes node(s) are being added ...  "
 
@@ -238,7 +256,7 @@ add() {
     fi
   fi
   jobico::add_nodes $nodes
-
+  addons $skip_addons $addons_dir "add"
   echo "The node(s) were added."
 }
 destroy() {

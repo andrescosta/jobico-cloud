@@ -120,9 +120,10 @@ jobico::add_nodes() {
 
 jobico::addons() {
     local addonsdir=$1
+    local op=$2
     if [ ! -d $addonsdir ]; then
         echo "Error: The addons diresctory does not exits."
         exit 1
     fi
-    jobico::install_all_addons "addons" $addonsdir
+    jobico::install_all_addons "${op}_addons" $addonsdir $op
 }
