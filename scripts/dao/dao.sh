@@ -58,7 +58,6 @@ jobico::dao::gen_add_cluster_db() {
 }
 jobico::dao::merge_dbs() {
     cat ${MACHINES_NEW_DB} >>${MACHINES_DB}
-    rm ${MACHINES_NEW_DB}
     cat ${WORK_DIR}/db_patch.txt >>${WORK_DIR}/db.txt
     rm ${MACHINES_NEW_DB} ${WORK_DIR}/db_patch.txt
 }
