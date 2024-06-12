@@ -1,12 +1,11 @@
-
 DIR=$(dirname "$0")
 PLUGINS_DIR=${DIR}/scripts/plugins
 
-. $(dirname "$0")/scripts/support/debug.sh 
+. $(dirname "$0")/scripts/support/debug.sh
 
-kube::plugins::load(){
+jobico::plugin::load() {
     local plugins_conf=$1
-    while IFS='=' read -r func plugin; do 
+    while IFS='=' read -r func plugin; do
         DEBUG echo "Plugin $plugin($func)"
         if [ "${plugin}" == "" ]; then
             throw "Illegal format: The plugin ${plugin} is empty."
@@ -21,5 +20,5 @@ kube::plugins::load(){
         else
             throw "The plugin ${plugin_file} was not found."
         fi
-    done < "${plugins_conf}"
+    done <"${plugins_conf}"
 }

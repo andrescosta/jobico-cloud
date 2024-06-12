@@ -1,37 +1,53 @@
-kube::machine::create(){
-     kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
+jobico::vm::create() {
+    jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
         make -f scripts/Makefile.vm new-vm-${TYPE} VM_IP=${IP} VM_NAME=${HOST}
-    done 
+    done
 }
 
-kube::machine::destroy(){
-    kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
+jobico::vm::destroy() {
+    jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
         make -f scripts/Makefile.vm destroy-vm VM_IP=${IP} VM_NAME=${HOST}
-    done 
+    done
 }
-kube::machine::cmd(){
-if [ $(kube::dao::cluster::is_locked) == true ]; then
-        kube::dao::cluster::unlock
-        kube::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
+jobico::vm::cmd() {
+    if [ $(jobico::dao::cluster::is_locked) == true ]; then
+        jobico::dao::cluster::unlock
+        jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
             make -f scripts/Makefile.vm cmd-vm CMD=$1 VM_NAME=${HOST}
-        done 
-        kube::dao::cluster::lock
+        done
+        jobico::dao::cluster::lock
         echo true
     else
         echo false
     fi
 }
-
-kube::machine::list(){
-    make -f scripts/Makefile.vm list 
+jobico::vm::list() {
+    make -f scripts/Makefile.vm list
 }
+jobico::vm::wait_until_all_up() {
+    local port=22
+    local timeout=120
+    local delay=5
+    local elapsed_time=0
 
-kube::kvm::install_kvm(){
-  sudo apt update
-  sudo apt install -y qemu-kvm virt-manager libvirt-daemon-system virtinst libvirt-clients bridge-utils
-  sudo apt install cloud-utils whois -y
-  sudo systemctl enable --now libvirtd
-  sudo systemctl start libvirtd
-  sudo usermod -aG kvm $USER
-  sudo usermod -aG libvirt $USER
+    echo "Waiting for servers to start..."
+
+    jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
+        echo "Waiting for $IP to start listening on port $port..."
+        start_time=$(date +%s)
+        while ! nc -z "$IP" "$port" >/dev/null 2>&1; do
+            current_time=$(date +%s)
+            elapsed_time=$((current_time - start_time))
+            if [ "$elapsed_time" -ge "$timeout" ]; then
+                echo "Timeout exceeded for $IP"
+                break
+            fi
+
+            sleep "$delay"
+        done
+
+        if [ "$elapsed_time" -lt "$timeout" ]; then
+            echo "$IP is now listening on port $port"
+        fi
+    done
 }

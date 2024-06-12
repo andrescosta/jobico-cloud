@@ -1,5 +1,5 @@
-kube::haproxy::gen_cfg(){
-    local vip=$(kube::dao::cluster::lb 1)
+jobico::haproxy::gen_cfg(){
+    local vip=$(jobico::dao::cluster::lb 1)
     cp ${EXTRAS_DIR}/configs/haproxy.cfg.tmpl ${WORK_DIR}/haproxy.cfg
     local servers=""
     while read IP FQDN HOST SUBNET TYPE SCH; do
@@ -8,7 +8,7 @@ kube::haproxy::gen_cfg(){
         fi
     done < ${WORK_DIR}/cluster.txt
     sed -i "s/{LB_IPS}/${servers}/g" "${WORK_DIR}/haproxy.cfg" 
-    servers=($(kube::dao::cluster::get lb 1))
+    servers=($(jobico::dao::cluster::get lb 1))
     for ip1 in ${servers[@]}; do
         file="${WORK_DIR}/keepalived${ip1}.conf"
         cp  ${EXTRAS_DIR}/configs/keepalived.conf.tmpl ${file} 
@@ -24,8 +24,8 @@ kube::haproxy::gen_cfg(){
     done
 }
 
-kube::haproxy::deploy(){
-    local servers=($(kube::dao::cluster::get lb 1))
+jobico::haproxy::deploy(){
+    local servers=($(jobico::dao::cluster::get lb 1))
     for ip in ${servers[@]}; do
         SCP ${WORK_DIR}/haproxy.cfg root@${ip}:~/ 
         SCP ${WORK_DIR}/keepalived${ip}.conf root@${ip}:~/keepalived.conf

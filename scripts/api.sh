@@ -16,68 +16,69 @@ readonly BEGIN_HOSTS_FILE="#B> Kubernetes Cluster"
 readonly END_HOSTS_FILE="#E> Kubernetes Cluster"
 readonly PLUGINS_CONF_FILE=${CURR_DIR}/plugins.conf
 
-. ${SCRIPTS}/support/plugins.sh 
-. ${SCRIPTS}/support/utils.sh 
-. ${SCRIPTS}/support/debug.sh 
-. ${SCRIPTS}/dao/dao.sh 
-. ${SCRIPTS}/machine/host.sh 
-. ${SCRIPTS}/machine/local.sh 
-. ${SCRIPTS}/k8s/kubeconfig.sh 
-. ${SCRIPTS}/k8s/encryption.sh 
-. ${SCRIPTS}/k8s/etcd.sh 
-. ${SCRIPTS}/k8s/cpl.sh 
-. ${SCRIPTS}/k8s/cluster.sh 
-. ${SCRIPTS}/controllers.sh 
+. ${SCRIPTS}/support/plugin.sh
+. ${SCRIPTS}/support/utils.sh
+. ${SCRIPTS}/support/debug.sh
+. ${SCRIPTS}/dao/dao.sh
+. ${SCRIPTS}/dao/cpl.sh
+. ${SCRIPTS}/dao/cluster.sh
+. ${SCRIPTS}/vm/host.sh
+. ${SCRIPTS}/vm/local.sh
+. ${SCRIPTS}/k8s/kubeconfig.sh
+. ${SCRIPTS}/k8s/encryption.sh
+. ${SCRIPTS}/k8s/etcd.sh
+. ${SCRIPTS}/k8s/cpl.sh
+. ${SCRIPTS}/k8s/cluster.sh
+. ${SCRIPTS}/controller.sh
 
 # Public API
-
-kube::cluster(){
+jobico::new_cluster() {
     local number_of_nodes=$1
     local number_of_cpl_nodes=$2
     local number_of_lbs=$3
     local schedulable_server=$4
-    if [[ $(kube::dao::cluster::is_locked) == true ]]; then
+    if [[ $(jobico::dao::cluster::is_locked) == true ]]; then
         echo "A cluster already exists."
         exit 1
     fi
-    kube::plugins::load ${PLUGINS_CONF_FILE}
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
     clear_dhcp
-    kube::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server
-    DEBUG kube::debug::print
-    kube::create_cluster
+    jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server
+    DEBUG jobico::debug::print
+    jobico::create_cluster
 }
-kube::start_cluster(){
-    kube::exec_cmd start
+jobico::start_cluster() {
+    jobico::exec_cmd start
 }
-kube::shutdown_cluster(){
-    kube::exec_cmd shutdown
+jobico::shutdown_cluster() {
+    jobico::exec_cmd shutdown
 }
-kube::resume_cluster(){
-    kube::exec_cmd resume
+jobico::resume_cluster() {
+    jobico::exec_cmd resume
 }
-kube::suspend_cluster(){
-    kube::exec_cmd suspend 
+jobico::suspend_cluster() {
+    jobico::exec_cmd suspend
 }
-kube::state_cluster(){
-    kube::exec_cmd domstate
+jobico::state_cluster() {
+    jobico::exec_cmd domstate
 }
-kube::list(){
-    kube::plugins::load ${PLUGINS_CONF_FILE}
-    kube::machine::list
+jobico::list_vms() {
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
+    jobico::vm::list
 }
-kube::info_cluster(){
-    kube::exec_cmd dominfo
+jobico::info_cluster() {
+    jobico::exec_cmd dominfo
 }
-kube::exec_cmd() {
-    kube::plugins::load ${PLUGINS_CONF_FILE}
-    ret=$(kube::machine::cmd $1)
+jobico::exec_cmd() {
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
+    ret=$(jobico::vm::cmd $1)
     if [[ $ret == false ]]; then
         echo "Error: The cluster was not created."
         exit 1
     fi
 }
-kube::destroy_cluster(){
-    if [[ $(kube::dao::cluster::is_locked) == false ]]; then
+jobico::destroy_cluster() {
+    if [[ $(jobico::dao::cluster::is_locked) == false ]]; then
         if [ ! -e ${MACHINES_DB} ]; then
             echo "Error: The cluster was not created."
             exit 1
@@ -87,18 +88,18 @@ kube::destroy_cluster(){
         echo "Error: The cluster was not created."
         exit 1
     fi
-    kube::plugins::load ${PLUGINS_CONF_FILE}
-    kube::dao::cluster::unlock
-    kube::destroy_machines
-    kube::restore_local_env
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
+    jobico::dao::cluster::unlock
+    jobico::destroy_vms
+    jobico::restore_local_env
 }
 
-kube::gen_local_env(){
-    kube::local
+jobico::gen_local_env() {
+    jobico::local
 }
 
-kube::add(){
-    if [[ $(kube::dao::cluster::is_locked) == true ]]; then
+jobico::add_nodes() {
+    if [[ $(jobico::dao::cluster::is_locked) == true ]]; then
         echo "Error: The cluster is locked. Use --force to add nodes"
         exit 1
     fi
@@ -111,17 +112,17 @@ kube::add(){
         exit 1
     fi
     local number_of_nodes=$1
-    kube::plugins::load ${PLUGINS_CONF_FILE}
-    kube::init_for_add $number_of_nodes
-    DEBUG kube::debug::print
-    kube::add_nodes
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
+    jobico::init_for_add $number_of_nodes
+    DEBUG jobico::debug::print
+    jobico::create_nodes
 }
 
-kube::addons(){
+jobico::addons() {
     local addonsdir=$1
     if [ ! -d $addonsdir ]; then
         echo "Error: The addons diresctory does not exits."
         exit 1
     fi
-    kube::install_all_addons "addons" $addonsdir
+    jobico::install_all_addons "addons" $addonsdir
 }
