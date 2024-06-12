@@ -161,24 +161,30 @@ jobico::restore_local_env() {
 jobico::install_all_addons() {
     local action=$1
     local base_dir=$2
+    local op=$3
     if [ $(jobico::was_done $action) == false ]; then
-        jobico::install_addons $base_dir/core
-        jobico::install_addons $base_dir/extras
+        jobico::install_addons $base_dir/core $op
+        jobico::install_addons $base_dir/extras $op
         jobico::set_done $action
         echo "Finished installing addons."
     fi
 }
 jobico::install_addons() {
     local addons_dir=$1
+    local op=$2
     local dirs=$(find $addons_dir -mindepth 1 -maxdepth 1 -type d)
     local err=0
+    local command="main.sh"
+    if [ $op == "add" ]; then
+        command="main_add.sh"
+    fi
     for dir in $dirs; do
-        local script="${dir}/main.sh"
+        local script="${dir}/$command"
         local disabled="${dir}/disabled"
         if [[ -f $script && ! -f $disabled ]]; then
             echo "[*] Installing addon with $script ..."
             if [[ $(IS_DRY_RUN) == false ]]; then
-                local output=$(bash $script ${dir} 2>&1) || err=$?
+                local output=$(bash $script ${dir} ${op} 2>&1) || err=$?
                 echo "Addon result:"
                 echo "$output"
                 if [[ $err != 0 ]]; then
@@ -188,7 +194,7 @@ jobico::install_addons() {
                 echo ""
             fi
         else
-            echo "Warning: $dir was not installed."
+            echo "Warning: $dir not added."
         fi
     done
 }
