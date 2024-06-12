@@ -80,10 +80,6 @@ jobico::create_cluster() {
         NOT_DRY_RUN jobico::net::add_routes
         jobico::set_done "routes"
     fi
-    if [ $(jobico::was_done "lock") == false ]; then
-        NOT_DRY_RUN jobico::dao::cluster::lock
-        jobico::set_done "lock"
-    fi
 }
 jobico::create_nodes() {
     if [ $(jobico::was_done "add_machines") == false ]; then
@@ -124,24 +120,6 @@ jobico::create_nodes() {
         #NOT_DRY_RUN jobico::net::add_routes
         NOT_DRY_RUN jobico::net::add_routes_to_added_node
         jobico::set_done "add_routes"
-    fi
-    # Merge DBs
-    if [ $(jobico::was_done "add_merge_db") == false ]; then
-        NOT_DRY_RUN jobico::dao::merge_dbs
-        jobico::set_done "add_merge_db"
-    fi
-    # Lock
-    if [ $(jobico::was_done "add_lock") == false ]; then
-        NOT_DRY_RUN jobico::dao::cluster::lock
-        jobico::set_done "add_lock"
-    fi
-}
-jobico::init_for_add() {
-    local number_of_nodes=$1
-    if [ $(jobico::was_done "add_init") == false ]; then
-        jobico::dao::gen_add_db ${number_of_nodes}
-        jobico::dao::gen_add_cluster_db
-        jobico::set_done "add_init"
     fi
 }
 jobico::local() {

@@ -129,22 +129,9 @@ new() {
     fi
   fi
   DRY_RUN echo ">> Dryn run << "
-  jobico::new_cluster $nodes $cpl $lb $schedulable_server
-  addons $skip_addons $addons_dir "new"
+  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons $addons_dir
   exec_post_dirs $post_dir
   NOT_DRY_RUN echo "The K8s Cluster was created."
-}
-addons() {
-  local skip_addons=$1
-  local base_dir=$2
-  local op=$3
-  if [ $skip_addons == false ]; then
-    if [ -d $base_dir ]; then
-      jobico::addons $base_dir $op
-    else
-      echo "No addons available to install at $base_dir"
-    fi
-  fi
 }
 exec_post_dirs() {
   if [[ $# == 0 ]]; then
@@ -255,8 +242,7 @@ add() {
       jobico::unlock_cluster
     fi
   fi
-  jobico::add_nodes $nodes
-  addons $skip_addons $addons_dir "add"
+  jobico::add_nodes $nodes $skip_addons $addons_dir
   echo "The node(s) were added."
 }
 destroy() {
@@ -517,7 +503,7 @@ main() {
     destroy "$@"
     ;;
   addons)
-    addons false $ADDONS_DIR
+    jobico::addons_post $ADDONS_DIR "ex" false
     ;;
   local)
     shift
