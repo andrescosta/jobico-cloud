@@ -6,7 +6,7 @@ if [ ! -d $1/certs ]; then
 fi
 if [ ! -d $1/auth ]; then
     mkdir $1/auth
-    docker run --rm --entrypoint htpasswd registry:2.6.2 -Bbn myuser mypasswd > $1/auth/htpasswd
+    docker run --rm --entrypoint htpasswd registry:2.6.2 -Bbn jobico jobico123 > $1/auth/htpasswd
 fi
 
 kubectl create secret tls certs-secret --cert=$1/certs/tls.crt --key=$1/certs/tls.key
@@ -36,4 +36,4 @@ EOF
 
 done
 
-kubectl create secret docker-registry reg-cred-secret --docker-server=$REGISTRY_NAME --docker-username=myuser --docker-password=mypasswd
+kubectl create secret docker-registry reg-cred-secret --docker-server=$REGISTRY_NAME --docker-username=jobico --docker-password=jobico123

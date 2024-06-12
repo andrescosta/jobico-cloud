@@ -1,5 +1,5 @@
 
-kube::encryption::gen_key(){
+jobico::encryption::gen_key(){
     cat > ${WORK_DIR}/encryption-config.yaml \
 <<EOF
   kind: EncryptionConfig
@@ -16,8 +16,8 @@ kube::encryption::gen_key(){
 EOF
 }
 
-kube::encryption::deploy(){
-    local servers=($(kube::dao::cluster::get server 1))
+jobico::encryption::deploy(){
+    local servers=($(jobico::dao::cluster::get server 1))
     for host in ${servers[@]}; do
         SCP ${WORK_DIR}/encryption-config.yaml root@$host:~/
     done

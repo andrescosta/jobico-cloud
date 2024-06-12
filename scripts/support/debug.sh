@@ -1,41 +1,40 @@
-
-kube::debug::print(){
-    local n_servers=$(kube::dao::cluster::count server)
-    local comps=($(kube::dao::cpl::get gencert 3))
-    local workers=($(kube::dao::cpl::get worker))
-    local vip=$(kube::dao::cluster::lb 1)
-    local vipdns=$(kube::dao::cluster::lb 2)
-    local viphost=$(kube::dao::cluster::lb 3)
-    local cluster=$(kube::etcd::get_etcd_cluster)
-    local serversip=($(kube::dao::cluster::get server 1))
-    local nodes=($(kube::dao::cluster::get node 3))
-    local serversfqdn=($(kube::dao::cluster::get server 2))
-    local servershost=($(kube::dao::cluster::get server 3))
-    local lbs=($(kube::dao::cluster::get lb 1))
-    local servers=($(kube::dao::cpl::get control_plane))
-    local gencert=($(kube::dao::cpl::get gencert 3))
-    local kubeconfig=($(kube::dao::cpl::get genkubeconfig 4))
-    local etcd_servers=$(kube::etcd::get_etcd_servers)
-    local ccpl=($(kube::dao::cpl::control_plane))
-    local all_workers=($(kube::dao::cpl::all_workers))
-    local curr_workers=($(kube::dao::cpl::curr_workers))
-    local curr_nodes_cluster=($(kube::dao::cluster::curr_nodes))
+jobico::debug::print() {
+    local n_servers=$(jobico::dao::cluster::count server)
+    local comps=($(jobico::dao::cpl::get gencert 3))
+    local workers=($(jobico::dao::cpl::get worker))
+    local vip=$(jobico::dao::cluster::lb 1)
+    local vipdns=$(jobico::dao::cluster::lb 2)
+    local viphost=$(jobico::dao::cluster::lb 3)
+    local cluster=$(jobico::etcd::get_cluster)
+    local serversip=($(jobico::dao::cluster::get server 1))
+    local nodes=($(jobico::dao::cluster::get node 3))
+    local serversfqdn=($(jobico::dao::cluster::get server 2))
+    local servershost=($(jobico::dao::cluster::get server 3))
+    local lbs=($(jobico::dao::cluster::get lb 1))
+    local servers=($(jobico::dao::cpl::get control_plane))
+    local gencert=($(jobico::dao::cpl::get gencert 3))
+    local kubeconfig=($(jobico::dao::cpl::get genkubeconfig 4))
+    local etcd_servers=$(jobico::etcd::get_servers)
+    local ccpl=($(jobico::dao::cpl::control_plane))
+    local all_workers=($(jobico::dao::cpl::all_workers))
+    local curr_workers=($(jobico::dao::cpl::curr_workers))
+    local curr_nodes_cluster=($(jobico::dao::cluster::curr_nodes))
     echo "------------all--------------"
-    kube::dao::cluster::all | while read IP FQDN HOST SUBNET TYPE SCH; do
+    jobico::dao::cluster::all | while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
-    done 
+    done
     echo "---------all nodes-------------"
-    kube::dao::cluster::all_nodes | while read IP FQDN HOST SUBNET TYPE SCH; do
+    jobico::dao::cluster::all_nodes | while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
-    done 
+    done
     echo "------------members--------------"
-    kube::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
+    jobico::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
         if [[ -z $HOST ]]; then
             echo "ll"
         else
             echo "$HOST"
         fi
-    done 
+    done
     echo "---------cpl-----------------"
     print_array ${ccpl[@]}
     echo "---------all workers---------"
@@ -49,13 +48,13 @@ kube::debug::print(){
     echo "---------- nodes ------------"
     print_array "${nodes[@]}"
     echo "-----curr node cluster-------"
-    kube::dao::cluster::curr_nodes | while read IP FQDN HOST SUBNET TYPE SCH; do
+    jobico::dao::cluster::curr_nodes | while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
-    done 
+    done
     echo "----------notvip------------"
-    kube::dao::cluster::get_type_is "server" | while read IP FQDN HOST SUBNET TYPE SCH; do
+    jobico::dao::cluster::get_type_is "server" | while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "$IP $FQDN $HOST $SUBNET $TYPE"
-    done 
+    done
     echo "---------- certss ------------"
     print_array "${comps[@]}"
     echo "---------- etcd ------------"
@@ -83,7 +82,7 @@ kube::debug::print(){
         if [ "${TYPE}" == "server" ]; then
             echo "IP:$IP FQDN:$FQDN HOST:$HOST SUBNET:$SUBNET TYPE:$TYPE"
         fi
-    done < ${WORK_DIR}/cluster.txt
+    done <${WORK_DIR}/cluster.txt
     echo "------certificates----------"
     print_array ${gencert[@]}
     echo "--------kubeconfig----------"
@@ -91,14 +90,14 @@ kube::debug::print(){
     echo "---------cluster------------"
     while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "IP:$IP FQDN:$FQDN HOST:$HOST SUBNET:$SUBNET TYPE:$TYPE"
-    done < ${JOBICO_CLUSTER_TBL}
+    done <${JOBICO_CLUSTER_TBL}
     echo "---------routes------------"
-    
+
     for worker1 in "${workers[@]}"; do
         for worker2 in "${workers[@]}"; do
             if [ "$worker1" != "$worker2" ]; then
                 node_ip=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 1)
-                node_subnet=$(grep ${worker2}  ${MACHINES_DB} | cut -d " " -f 4)
+                node_subnet=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 4)
                 echo "SSH root at ${worker1}"
                 echo "to add route ${node_subnet} via ${node_ip}"
             fi
