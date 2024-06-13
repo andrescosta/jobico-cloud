@@ -1,201 +1,152 @@
-jobico::init() {
-    jobico::local::init_fs
-    if [ $(jobico::was_done "init") == false ]; then
-        jobico::dao::gen_databases "$@"
-        NOT_DRY_RUN jobico::local::download_deps
-        NOT_DRY_RUN jobico::local::install_kubectl
-        jobico::set_done "init"
+readonly CURR_DIR=$(dirname "$0")
+readonly SCRIPTS="${CURR_DIR}/scripts"
+readonly WORK_DIR="${CURR_DIR}/work"
+readonly DOWNLOADS_DIR="${WORK_DIR}/downloads"
+readonly EXTRAS_DIR="${CURR_DIR}/extras"
+readonly HOSTSFILE="${WORK_DIR}/hosts"
+readonly CA_CONF="${WORK_DIR}/ca.conf"
+readonly MAKE=make
+readonly STATUS_FILE=${WORK_DIR}/jobico_status
+readonly CLUSTER_NAME=jobico-cloud
+readonly WORKER_NAME=node
+readonly SERVER_NAME=server
+readonly LB_NAME=lb
+readonly ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
+readonly BEGIN_HOSTS_FILE="#B> Kubernetes Cluster"
+readonly END_HOSTS_FILE="#E> Kubernetes Cluster"
+readonly PLUGINS_CONF_FILE=${CURR_DIR}/plugins.conf
+
+. ${SCRIPTS}/support/plugin.sh
+. ${SCRIPTS}/support/utils.sh
+. ${SCRIPTS}/support/debug.sh
+. ${SCRIPTS}/dao/dao.sh
+. ${SCRIPTS}/dao/cpl.sh
+. ${SCRIPTS}/dao/cluster.sh
+. ${SCRIPTS}/vm/host.sh
+. ${SCRIPTS}/vm/local.sh
+. ${SCRIPTS}/k8s/kubeconfig.sh
+. ${SCRIPTS}/k8s/encryption.sh
+. ${SCRIPTS}/k8s/etcd.sh
+. ${SCRIPTS}/k8s/cpl.sh
+. ${SCRIPTS}/k8s/cluster.sh
+. ${SCRIPTS}/api.sh
+
+# Public API
+jobico::new_cluster() {
+    local number_of_nodes=$1
+    local number_of_cpl_nodes=$2
+    local number_of_lbs=$3
+    local schedulable_server=$4
+    local skip_addons=$5
+    local base_dir=$6
+    if [[ $(jobico::dao::cluster::is_locked) == true ]]; then
+        echo "A cluster already exists."
+        exit 1
+    fi
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
+    clear_dhcp
+    jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server
+    DEBUG jobico::debug::print
+    jobico::create_cluster
+    NOT_DRY_RUN jobico::addons $base_dir "new" $skip_addons
+    NOT_DRY_RUN jobico::dao::cluster::lock
+}
+jobico::start_cluster() {
+    jobico::exec_cmd start
+}
+jobico::shutdown_cluster() {
+    jobico::exec_cmd shutdown
+}
+jobico::resume_cluster() {
+    jobico::exec_cmd resume
+}
+jobico::suspend_cluster() {
+    jobico::exec_cmd suspend
+}
+jobico::state_cluster() {
+    jobico::exec_cmd domstate
+}
+jobico::list_vms() {
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
+    jobico::vm::list
+}
+jobico::info_cluster() {
+    jobico::exec_cmd dominfo
+}
+jobico::exec_cmd() {
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
+    ret=$(jobico::vm::cmd $1)
+    if [[ $ret == false ]]; then
+        echo "Error: The cluster was not created."
+        exit 1
     fi
 }
-jobico::create_cluster() {
-    # Machines
-    if [ $(jobico::was_done "machines") == false ]; then
-        NOT_DRY_RUN jobico::vm::create
-        NOT_DRY_RUN jobico::vm::wait_until_all_up
-        jobico::set_done "machines"
-    fi
-    # DNS
-    if [ $(jobico::was_done "host") == false ]; then
-        jobico::host::gen_hostsfile
-        NOT_DRY_RUN jobico::host::update_local_etc_hosts
-        NOT_DRY_RUN jobico::host::update_local_known_hosts
-        NOT_DRY_RUN jobico::host::set_machines_hostname
-        NOT_DRY_RUN jobico::host::update_machines_etc_hosts
-        jobico::set_done "host"
-    fi
-    # TLS
-    if [ $(jobico::was_done "tls_certs") == false ]; then
-        jobico::tls::gen_ca_conf
-        jobico::tls::gen_ca
-        jobico::tls::gen_certs
-        NOT_DRY_RUN jobico::tls::deploy_to_nodes
-        NOT_DRY_RUN jobico::tls::deploy_to_server
-        jobico::set_done "tls_certs"
-    fi
-    # HAProxy
-    if [ $(jobico::was_done "haproxy") == false ]; then
-        jobico::haproxy::gen_cfg
-        NOT_DRY_RUN jobico::haproxy::deploy
-        jobico::set_done "haproxy"
-    fi
-    # Kubeconfig
-    if [ $(jobico::was_done "kubeconfig") == false ]; then
-        jobico::kubeconfig::gen_for_nodes
-        jobico::kubeconfig::gen_for_controlplane
-        jobico::kubeconfig::gen_for_kube_admin
-        NOT_DRY_RUN jobico::kubeconfig::deploy_to_nodes
-        NOT_DRY_RUN jobico::kubeconfig::deploy_to_servers
-        jobico::set_done "kubeconfig"
-    fi
-    # Gen key for encryption at rest
-    if [ $(jobico::was_done "encatrest") == false ]; then
-        jobico::encryption::gen_key
-        NOT_DRY_RUN jobico::encryption::deploy
-        jobico::set_done "encatrest"
-    fi
-    # Etcd
-    if [ $(jobico::was_done "etcddb") == false ]; then
-        jobico::etcd::gen_service
-        NOT_DRY_RUN jobico::etcd::deploy
-        jobico::set_done "etcddb"
-    fi
-    # Control plane components
-    if [ $(jobico::was_done "cpl") == false ]; then
-        jobico::cpl::gen_kubeapiserver_service
-        jobico::set_done "cpl"
-    fi
-    # Control Plane deployment
-    if [ $(jobico::was_done "deploy_server") == false ]; then
-        NOT_DRY_RUN jobico::cluster::deploy_to_servers
-        jobico::set_done "deploy_server"
-    fi
-    # Nodes deployment
-    if [ $(jobico::was_done "deploy_nodes") == false ]; then
-        NOT_DRY_RUN jobico::cluster::deploy_to_nodes
-        jobico::set_done "deploy_nodes"
-    fi
-    # Routes
-    if [ $(jobico::was_done "routes") == false ]; then
-        NOT_DRY_RUN jobico::net::init
-        NOT_DRY_RUN jobico::net::add_routes
-        jobico::set_done "routes"
-    fi
-}
-jobico::create_nodes() {
-    if [ $(jobico::was_done "add_machines") == false ]; then
-        NOT_DRY_RUN jobico::vm::create
-        NOT_DRY_RUN jobico::vm::wait_until_all_up
-        jobico::set_done "add_machines"
-    fi
-    # DNS
-    if [ $(jobico::was_done "add_host") == false ]; then
-        jobico::host::add_new_nodes_to_hostsfile
-        NOT_DRY_RUN jobico::host::update_local_etc_hosts
-        NOT_DRY_RUN jobico::host::update_local_known_hosts
-        NOT_DRY_RUN jobico::host::set_machines_hostname
-        NOT_DRY_RUN jobico::host::update_machines_etc_hosts
-        jobico::set_done "add_host"
-    fi
-    # TLS
-    if [ $(jobico::was_done "add_tls") == false ]; then
-        jobico::tls::add_nodes_to_ca_conf
-        jobico::tls::gen_certs
-        NOT_DRY_RUN jobico::tls::deploy_to_nodes
-        jobico::set_done "add_tls"
-    fi
-    # Kubeconfig
-    if [ $(jobico::was_done "add_kubeconfig") == false ]; then
-        jobico::kubeconfig::gen_for_nodes
-        NOT_DRY_RUN jobico::kubeconfig::deploy_to_nodes
-        jobico::set_done "add_kubeconfig"
-    fi
-    # Deployment
-    if [ $(jobico::was_done "add_deploy_nodes") == false ]; then
-        NOT_DRY_RUN jobico::cluster::deploy_to_nodes
-        jobico::set_done "add_deploy_nodes"
-    fi
-    # Routes
-    if [ $(jobico::was_done "add_routes") == false ]; then
-        NOT_DRY_RUN jobico::net::init
-        #NOT_DRY_RUN jobico::net::add_routes
-        NOT_DRY_RUN jobico::net::add_routes_to_added_node
-        jobico::set_done "add_routes"
-    fi
-}
-jobico::local() {
-    if [ $(jobico::was_done "locals") == false ]; then
-        jobico::local::download_local_deps
-        jobico::local::install_kubectl
-        jobico::kubeconfig::gen_for_kube_admin
-        jobico::set_done "locals"
-    fi
-}
-jobico::destroy_vms() {
-    NOT_DRY_RUN jobico::vm::destroy
-}
-jobico::restore_local_env() {
-    NOT_DRY_RUN jobico::host::restore_local_etc_hosts
-}
-jobico::install_all_addons() {
-    local action=$1
-    local base_dir=$2
-    local op=$3
-    if [ $(jobico::was_done $action) == false ]; then
-        jobico::install_addons $base_dir/core $op
-        jobico::install_addons $base_dir/extras $op
-        jobico::set_done $action
-        echo "Finished installing addons."
-    fi
-}
-jobico::install_addons() {
-    local addons_dir=$1
-    local op=$2
-    local dirs=$(find $addons_dir -mindepth 1 -maxdepth 1 -type d)
-    local err=0
-    local command="main.sh"
-    if [ $op == "add" ]; then
-        command="main_add.sh"
-    fi
-    for dir in $dirs; do
-        local script="${dir}/$command"
-        local disabled="${dir}/disabled"
-        if [[ -f $script && ! -f $disabled ]]; then
-            echo "[*] Installing addon with $script ..."
-            if [[ $(IS_DRY_RUN) == false ]]; then
-                local output=$(bash $script ${dir} ${op} 2>&1) || err=$?
-                echo "Addon result:"
-                echo "$output"
-                if [[ $err != 0 ]]; then
-                    echo "Warning: the addon $script returned an error $err"
-                fi
-                echo "[*] Addon: $script installed."
-                echo ""
-            fi
-        else
-            echo "Warning: $dir not added."
+jobico::destroy_cluster() {
+    if [[ $(jobico::dao::cluster::is_locked) == false ]]; then
+        if [ ! -e ${MACHINES_DB} ]; then
+            echo "Error: The cluster was not created."
+            exit 1
         fi
-    done
+    fi
+    if [ ! -e ${WORK_DIR}/db.txt ]; then
+        echo "Error: The cluster was not created."
+        exit 1
+    fi
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
+    jobico::dao::cluster::unlock
+    jobico::destroy_vms
+    jobico::restore_local_env
 }
-jobico::set_done() {
-    echo "|$1|" >>${STATUS_FILE}
+
+jobico::gen_local_env() {
+    jobico::local
 }
-jobico::was_done() {
-    if grep -q $1 ${STATUS_FILE}; then
-        echo true
+
+jobico::add_nodes() {
+    if [[ $(jobico::dao::cluster::is_locked) == true ]]; then
+        echo "Error: The cluster is locked. Use --force to add nodes"
+        exit 1
+    fi
+    if [ ! -e ${MACHINES_DB} ]; then
+        echo "Error: The cluster was not created."
+        exit 1
+    fi
+    if [ ! -e ${WORK_DIR}/db.txt ]; then
+        echo "Error: The cluster was not created."
+        exit 1
+    fi
+    local number_of_nodes=$1
+    local skip_addons=$2
+    local base_dir=$3
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
+    jobico::prepare_db $number_of_nodes
+    DEBUG jobico::debug::print
+    jobico::create_nodes
+    NOT_DRY_RUN jobico::addons $base_dir "add" $skip_addons
+    NOT_DRY_RUN jobico::dao::merge_dbs
+    NOT_DRY_RUN jobico::dao::cluster::lock
+}
+jobico::prepare_db() {
+    local number_of_nodes=$1
+    jobico::dao::gen_add_db ${number_of_nodes}
+    jobico::dao::gen_add_cluster_db
+}
+jobico::addons() {
+    local addonsdir=$1
+    local op=$2
+    local skip_addons=$3
+    if [ $skip_addons == false ]; then
+        if [ -d $addonsdir ]; then
+            jobico::install_all_addons "${op}_addons" $addonsdir $op
+        else
+            echo "Error: The addons diresctory does not exits."
+        fi
     else
-        echo false
+        echo "Skipping adddons installation"
     fi
 }
-jobico::add_cmd_was_done() {
-    if grep -q '^|add_' ${STATUS_FILE}; then
-        echo true
-    else
-        echo false
-    fi
-}
-kuve::remove_add_commands() {
-    sed -i '/^|add_/d' ${STATUS_FILE}
-}
-jobico::unlock_cluster() {
-    NOT_DRY_RUN jobico::dao::cluster::unlock
+jobico::addons_post(){
+    jobico::dao::cluster::unlock
+    jobico::addons "$@"
+    jobico::dao::cluster::lock
 }

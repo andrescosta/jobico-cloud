@@ -15,7 +15,7 @@ ADDONS_DIR="${DIR}/addons"
 
 . ${SCRIPTS}/support/exception.sh
 set_trap_err
-. ${SCRIPTS}/api.sh
+. ${SCRIPTS}/controller.sh
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/ssh.sh
 
@@ -293,16 +293,6 @@ clocal() {
   jobico::gen_local_env
 }
 
-kvm() {
-  sudo apt update
-  sudo apt install -y qemu-kvm virt-manager libvirt-daemon-system virtinst libvirt-clients bridge-utils
-  sudo apt install cloud-utils whois -y
-  sudo systemctl enable --now libvirtd
-  sudo systemctl start libvirtd
-  sudo usermod -aG kvm $USER
-  sudo usermod -aG libvirt $USER
-}
-
 cfg() {
   local salt_def="SALT12345678"
   local auth_key_def=$(ls ~/.ssh/*.pub 2>/dev/null | head -n 1)
@@ -508,10 +498,6 @@ main() {
   local)
     shift
     clocal "$@"
-    ;;
-  kvm)
-    shift
-    kvm "$@"
     ;;
   start)
     start_cluster
