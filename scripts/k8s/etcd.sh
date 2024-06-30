@@ -1,11 +1,11 @@
-kube::etcd::get_etcd_cluster(){
+jobico::etcd::get_cluster(){
     local cluster=""
     local i=0
-    local n_servers=$(kube::dao::cluster::count server)
+    local n_servers=$(jobico::dao::cluster::count server)
     if [ ${n_servers} -eq 1 ]; then
        while read IP FQDN HOST SUBNET TYPE SCH; do
             cluster="${HOST}=https://${IP}:2380"
-        done < <(kube::dao::cluster::servers)
+        done < <(jobico::dao::cluster::servers)
     else
         while read IP FQDN HOST SUBNET TYPE SCH; do
            if [ -n "$cluster" ]; then
@@ -13,11 +13,11 @@ kube::etcd::get_etcd_cluster(){
            fi
            cluster="${cluster}server-${i}=https://${IP}:2380"
            ((i=i+1))
-        done < <(kube::dao::cluster::servers)
+        done < <(jobico::dao::cluster::servers)
     fi
     echo "${cluster}"
 }
-kube::etcd::get_etcd_servers(){
+jobico::etcd::get_servers(){
     local cluster=""
     local i=0
     while read IP FQDN HOST SUBNET TYPE SCH; do
@@ -26,11 +26,11 @@ kube::etcd::get_etcd_servers(){
             fi
             cluster="${cluster}https://${IP}:2379"
             ((i=i+1))
-    done < <(kube::dao::cluster::servers)
+    done < <(jobico::dao::cluster::servers)
     echo "${cluster}"
 }
-kube::etcd::gen_etcd_service(){
-    local cluster=$(kube::etcd::get_etcd_cluster)
+jobico::etcd::gen_service(){
+    local cluster=$(jobico::etcd::get_cluster)
     local clustere=$(escape ${cluster})
     local i=0
     while read IP FQDN HOST SUBNET TYPE SCH; do
@@ -39,11 +39,11 @@ kube::etcd::gen_etcd_service(){
         sed -i "s/{IP}/${IP}/g" "${file}"
         sed -i "s/{ETCD_NAME}/${HOST}/g" "${file}" 
         sed -i "s/{CLUSTER}/$clustere/g" "${file}"
-    done < <(kube::dao::cluster::servers)
+    done < <(jobico::dao::cluster::servers)
 }
-kube::etcd::deploy(){
+jobico::etcd::deploy(){
     local i=0
-    local servers=($(kube::dao::cluster::get server 1))
+    local servers=($(jobico::dao::cluster::get server 1))
     for host in ${servers[*]}; do
         file=${WORK_DIR}/etcd-${host}.service
         SCP ${file} root@${host}:~/etcd.service 
