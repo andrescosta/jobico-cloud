@@ -149,7 +149,7 @@ Commands:
           debug
 
 Additional help: ./cluster.sh help <command>
-
+```
 ```
 Usage: ./cluster.sh new [arguments]
 Create the VMs and deploys Kubernetes cluster into them.
