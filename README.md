@@ -128,6 +128,29 @@ This folder contains utilities libraries used by the different components of the
 
 # Cluster.sh command reference
 ```
+Usage: 
+       ./cluster.sh <command> [arguments]
+Commands:
+          help
+          new
+          add
+          destroy
+          addons
+          start
+          shutdown
+          suspend
+          resume
+          info
+          state
+          list
+          local
+          kvm
+          cfg
+          debug
+
+Additional help: ./cluster.sh help <command>
+
+```
 Usage: ./cluster.sh new [arguments]
 Create the VMs and deploys Kubernetes cluster into them.
 The arguments that define how the cluster will be created:
