@@ -10,45 +10,40 @@ The following sections outline the various topologies that the tool can create, 
 
 ### Single Control Plane Configuration
 
-![one cpl](img/onecpl.png)
-
-In this setup, there is one dedicated control plane server managing one or more worker nodes, offering a straightforward configuration often used in small-scale deployments.
-
-- Command Line
 ```bash
 cluster.sh new 
 # `new` will create a cluster using the defaults values which are 1 control plane server and 2 nodes.
 ```
-(*) Before running this script, complete the prerequisites.
+
+
+![one cpl](img/onecpl.png)
+
+In this setup, there is one dedicated control plane server managing one or more worker nodes, offering a straightforward configuration often used in small-scale deployments.
 
 ### High Availability Configuration
 
-![ha](img/ha.png)
-
-Also known as HA, this topology features multiple control plane servers and one or more worker nodes, designed to ensure redundancy and fault tolerance in production environments.
-
-- Command Line
 ```bash
 cluster.sh new --cpl 2 --lb 2
 # `--cpl` is used to specify the number of control plane servers to create, in this case 2.
 # `--lb` is used to specify the number of load balancers to create, 2 for this example.
 ```
-(*) Before running this script, complete the prerequisites.
+
+![ha](img/ha.png)
+
+Also known as HA, this topology features multiple control plane servers and one or more worker nodes, designed to ensure redundancy and fault tolerance in production environments.
 
 ### Single Node Configuration
+
+```bash
+cluster.sh new --nodes 0
+# `new` is the command used to create a new cluster
+# --nodes is used to specify the number of worker nodes to create.
+```
+
 
 ![zernode](img/zeronode.png)
 
 This topology involves a single server that fulfills both the control plane and worker node roles, providing a basic setup typically used for learning and testing purposes.
-
-```bash
-
-cluster.sh new --nodes 0
-# `new` is the command used to create a new cluster
-# --nodes is used to specify the number of worker nodes to create.
-
-```
-(*) Before running this script, complete the prerequisites.
 
 ## TLS
 
