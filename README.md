@@ -122,6 +122,7 @@ This folder contains utilities libraries used by the different components of the
 
 - SSH
 - OpenSSL
+- [Cloud-init](https://cloud-init.io/)
 - [KVM](https://ubuntu.com/blog/kvm-hyphervisor): The VMs run on KVM, and KVM along with its dependencies can be installed by running the script [here](https://github.com/andrescosta/jobico-cloud/hacks/kvm.sh).
 - [Helm](https://helm.sh/): Several add-ons are installed using Helm charts.
 
