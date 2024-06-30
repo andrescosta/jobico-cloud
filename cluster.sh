@@ -397,12 +397,19 @@ display_help_command() {
   cfg)
     display_help_for_cfg
     ;;
+  debug)
+    display_help_for_debug
+    ;;
   *)
     echo "Invalid command: $1" >&2
     display_help
     exit 1
     ;;
   esac
+}
+display_help_for_debug(){
+    echo "Usage: $0 debug"
+    echo "Prints the content of the internal databases using the dao scripts."
 }
 display_help_for_cluster_info() {
   echo "Usage: $0 <info|state|list>"
