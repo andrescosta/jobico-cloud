@@ -20,10 +20,10 @@ manifests(){
 }
 
 deploy(){
-    jobico::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
-        ssh root@${IP} mkdir -p /etc/containerd/certs.d/$REGISTRY_NAME 
-        scp $1/certs/tls.crt root@${IP}:/etc/containerd/certs.d/$REGISTRY_NAME/ca.crt 
-        ssh root@${IP} \
+    while read IP FQDN HOST SUBNET TYPE SCH; do
+        SSH -n root@${IP} mkdir -p /etc/containerd/certs.d/$REGISTRY_NAME 
+        SCP $1/certs/tls.crt root@${IP}:/etc/containerd/certs.d/$REGISTRY_NAME/ca.crt 
+        SSH root@${IP} \
 << 'EOF'
 echo  '
 [plugins."io.containerd.grpc.v1.cri".registry]
@@ -34,7 +34,6 @@ echo  '
 '>> /etc/containerd/config.toml
 sudo systemctl restart containerd
 EOF
-    done
+    done < <(jobico::dao::cluster::members)
 }
-
 
