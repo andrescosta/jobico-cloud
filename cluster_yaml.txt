@@ -1,3 +1,18 @@
+Platform standardization:
+- Database
+- Secrets Store
+- Observability (logs, metrics, etc.)
+- Kubernetes management (dashboard)
+- Identity (AuthN/AuthZ)
+- Storage
+- Object Storage
+- DNS
+- API Management
+- Developer Portal (Cluster by request, Application Lifecycle)
+
+Application lifecycle management
+- Database
+
 cluster:
 	cidr:192.168.122.8/24
 	tls: ...
@@ -21,7 +36,7 @@ cluster:
 		- vault
 		- dashboard
 		- coredns
-		- ...
+		- database
 	platform:
 		- jobico
 	dashboard:
