@@ -361,7 +361,6 @@ display_help() {
   echo "          state"
   echo "          list"
   echo "          local"
-  echo "          kvm"
   echo "          cfg"
   echo "          debug"
   echo ""
@@ -384,9 +383,6 @@ display_help_command() {
     ;;
   local)
     display_help_for_local
-    ;;
-  kvm)
-    display_help_for_kvm
     ;;
   info | state | list)
     display_help_for_cluster_info
@@ -474,10 +470,6 @@ display_help_for_cfg() {
 display_help_for_local() {
   echo "Usage: $0 local"
   echo "Prepares the local enviroment. It creates the kubeconfig and installs kubectl."
-}
-display_help_for_kvm() {
-  echo "Usage: $0 kvm"
-  echo "Install kvm and its dependencies locally."
 }
 main() {
   DEBUGOFF
