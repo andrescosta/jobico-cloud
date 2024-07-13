@@ -479,6 +479,15 @@ display_help_for_kvm() {
   echo "Usage: $0 kvm"
   echo "Install kvm and its dependencies locally."
 }
+yaml() {
+    if [ ! -f "${SCRIPTS}/support/parse_yaml.sh" ]; then
+        wget https://raw.githubusercontent.com/andrescosta/parse_yaml/master/src/parse_yaml.sh -P ${SCRIPTS}/support >/dev/null 2>&1 
+    fi
+    source ${SCRIPTS}/support/parse_yaml.sh
+    echo "Start processing $1"
+    eval $(parse_yaml $1 "yaml_")
+    echo $yaml_cluster_name
+}
 main() {
   DEBUGOFF
   DRY_RUNOFF
@@ -490,6 +499,10 @@ main() {
   new)
     shift
     new "$@"
+    ;;
+  yaml)
+    shift
+    yaml "$@"
     ;;
   add)
     shift

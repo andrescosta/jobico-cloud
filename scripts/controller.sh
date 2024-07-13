@@ -1,7 +1,7 @@
 readonly CURR_DIR=$(dirname "$0")
 readonly SCRIPTS="${CURR_DIR}/scripts"
 readonly WORK_DIR="${CURR_DIR}/work"
-readonly DOWNLOADS_DIR="${WORK_DIR}/downloads"
+readonly DOWNLOADS_DIR="./downloads"
 readonly EXTRAS_DIR="${CURR_DIR}/extras"
 readonly HOSTSFILE="${WORK_DIR}/hosts"
 readonly CA_CONF="${WORK_DIR}/ca.conf"
