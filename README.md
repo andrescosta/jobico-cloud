@@ -8,13 +8,20 @@ The following sections outline the various topologies that the tool can create, 
 
 ## Topologies
 
+### Prerequisites
+
+Before creating a clouster the cfg files for cloud-init must be created:
+
+```bash
+$ ./cluster.sh cfg
+```
+
 ### Single Control Plane Configuration
 
 ```bash
 cluster.sh new 
 # `new` will create a cluster using the defaults values which are 1 control plane server and 2 nodes.
 ```
-
 
 ![one cpl](img/onecpl.png)
 
