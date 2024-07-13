@@ -10,12 +10,21 @@ The following sections outline the various topologies that the tool can create, 
 
 ### Prerequisites
 
-Before creating a clouster the cfg files for cloud-init must be created:
+#### Libraries
+
+- SSH
+- OpenSSL
+- [Cloud-init](https://cloud-init.io/)
+- [KVM](https://ubuntu.com/blog/kvm-hyphervisor): The VMs run on KVM, and KVM along with its dependencies can be installed by running the script [here](https://github.com/andrescosta/jobico-cloud/hacks/deps.sh).
+- [Helm](https://helm.sh/): Several add-ons are installed using Helm charts.
+
+#### cloud-init cfg files
+
+Before creating a cluster the cfg files for cloud-init must be created:
 
 ```bash
 $ ./cluster.sh cfg
 ```
-
 ### Single Control Plane Configuration
 
 ```bash
@@ -124,14 +133,6 @@ This folder contains utilities libraries used by the different components of the
 - kvm.sh: It enables the creation, removal, and administration of virtual machines (VMs).
 - net.sh: It includes functionality for configuring new routes for the cluster's virtual machines (VMs).
 - tls.sh: It implements the functionality for generating the Certificate Authority (CA), issuing certificates, and deploying them.
-
-## Prerequisites
-
-- SSH
-- OpenSSL
-- [Cloud-init](https://cloud-init.io/)
-- [KVM](https://ubuntu.com/blog/kvm-hyphervisor): The VMs run on KVM, and KVM along with its dependencies can be installed by running the script [here](https://github.com/andrescosta/jobico-cloud/hacks/kvm.sh).
-- [Helm](https://helm.sh/): Several add-ons are installed using Helm charts.
 
 # Cluster.sh command reference
 ```
