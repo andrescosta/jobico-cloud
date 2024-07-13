@@ -10,8 +10,7 @@ machines.txt
 **/certs
 **/auth
 **/log
-**/cloud-init-lb.cfg.bkp
-**/cloud-init-node.cfg.bkp
-**/cloud-init-server.cfg.bkp
 downloads/
 scripts/support/parse_yaml.sh
+**/cloud-init-lb.cfg
+**/cloud-init-node.cfg
