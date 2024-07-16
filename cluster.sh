@@ -12,6 +12,7 @@ DEFAULT_LB=2
 DIR=$(dirname "$0")
 SCRIPTS="${DIR}/scripts"
 ADDONS_DIR="${DIR}/addons"
+POST_DIR="${DIR}/post"
 
 . ${SCRIPTS}/support/exception.sh
 set_trap_err
@@ -20,7 +21,7 @@ set_trap_err
 . ${SCRIPTS}/support/ssh.sh
 
 new() {
-  local post_dir="" cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
+  local do_install_post_dir=false cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
   while [[ $# -gt 0 ]]; do
     case "$1" in
     --nodes)
@@ -61,14 +62,7 @@ new() {
       skip_addons=true
       ;;
     --post)
-      shift
-      if [ -n "${1-}" ]; then
-        post_dir="$1"
-      else
-        echo "With --post at least one directory name must be passed."
-        display_help
-        exit 1
-      fi
+      do_install_post_dir=true
       ;;
     --schedulable-server)
       schedulable_server=true
@@ -130,26 +124,20 @@ new() {
   fi
   DRY_RUN echo ">> Dryn run << "
   jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons $addons_dir
-  exec_post_dirs $post_dir
+  if [ $do_install_post_dir == true ]; then
+    install_post_dir
+  fi
   NOT_DRY_RUN echo "The K8s Cluster was created."
 }
-exec_post_dirs() {
-  if [[ $# == 0 ]]; then
-    return
-  fi
+install_post_dir() {
   DRY_RUN echo "Warning: --dry-run option was provided. The scripts are not executed."
   if [ $(IS_DRY_RUN) == true ]; then
     return
   fi
-  local dirs=(${1//,/ })
-  for d in "${dirs[@]}"; do
-    dir="./post/$d"
-    if [ -d $dir ]; then
-      exec $dir
-    else
-      echo "Warning: $dir does not exist"
-    fi
-  done
+  echo "Waiting for the cluster to be created ..."
+  wait_all
+  jobico::install_from_dir $POST_DIR/core "new"
+  jobico::install_from_dir $POST_DIR/extras "new"
 }
 wait_all() {
     local timeout=4096
@@ -366,6 +354,7 @@ display_help() {
   echo "          list"
   echo "          local"
   echo "          cfg"
+  echo "          post"
   echo "          debug"
   echo ""
   echo "Additional help: $0 help <command>"
@@ -437,8 +426,8 @@ display_help_for_new() {
   echo "            Specify a different directory name for the addons. Default: $ADDONS_DIR"
   echo "     --no-addons"
   echo "            Skip the instalation of addons"
-  echo "     --post dir_name,[dir_name]"
-  echo "            After the cluster is created successfully, the main.sh script from each of these comma separated directores will be executed."
+  echo "     --post"
+  echo "            Waiting for the cluster to be created and then runs the scripts on the post directory."
   echo "     --schedulable-server"
   echo "            The control plane nodes will be available to schedule pods. The default is false(tainted)."
   echo "     --dry-run"
@@ -510,6 +499,9 @@ main() {
     ;;
   addons)
     jobico::addons_post $ADDONS_DIR "ex" false
+    ;;
+  post)
+    install_post_dir
     ;;
   local)
     shift

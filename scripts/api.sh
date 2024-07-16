@@ -141,21 +141,21 @@ jobico::install_all_addons() {
     local base_dir=$2
     local op=$3
     if [ $(jobico::was_done $action) == false ]; then
-        jobico::install_addons_from_dir $base_dir/core $op
-        jobico::install_addons_from_dir $base_dir/extras $op
+        jobico::install_from_dir $base_dir/core $op
+        jobico::install_from_dir $base_dir/extras $op
         jobico::set_done $action
         echo "Finished installing addons."
     fi
 }
-jobico::install_addons_from_dir(){
-    local addons_dir=$1
+jobico::install_from_dir(){
+    local install_dir=$1
     local op=$2
-    local dirs=$(find $addons_dir -mindepth 1 -maxdepth 1 -type d)
+    local dirs=$(find $install_dir -mindepth 1 -maxdepth 1 -type d)
     for dir in $dirs; do
-        jobico::install_addon $dir $op
+        jobico::install $dir $op
     done
 }
-jobico::install_addon() {
+jobico::install() {
     local dir=$1
     local op=$2
     local err=0
@@ -166,19 +166,19 @@ jobico::install_addon() {
     local script="${dir}/$command"
     local disabled="${dir}/disabled"
     if [[ -f $script && ! -f $disabled ]]; then
-        echo "[*] Installing addon $script ..."
+        echo "[*] Installing $script ..."
         if [[ $(IS_DRY_RUN) == false ]]; then
              local output=$(bash $script ${dir} ${op} 2>&1) || err=$?
-             echo "Addon result:"
+             echo "Instalation result:"
              echo "$output"
              if [[ $err != 0 ]]; then
-                  echo "Warning: the addon $script returned an error $err"
+                  echo "Warning: the $script returned an error $err"
              fi
-             echo "[*] Addon: $script installed."
+             echo "[*] $script installed."
              echo ""
         fi
     else
-        echo "Warning: $dir not added."
+        echo "Warning: $dir not installed."
     fi
 }
 jobico::set_done() {
