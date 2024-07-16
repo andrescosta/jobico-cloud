@@ -24,6 +24,11 @@ jobico::vm::cmd() {
 jobico::vm::list() {
     make -f scripts/Makefile.vm list
 }
+jobico::vm::clear_dhcp() {
+    jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
+        eval "$(virsh -q net-dhcp-leases default | grep $HOST | awk '{split($5, ip, "/"); print "dhcp_release virbr0",ip[1],$3}')"
+    done
+}
 jobico::vm::wait_until_all_up() {
     local port=22
     local timeout=120
