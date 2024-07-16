@@ -151,6 +151,10 @@ exec_post_dirs() {
     fi
   done
 }
+wait_all() {
+    local timeout=4096
+    kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout="${timeout}s"
+}
 exec() {
   echo "- Executing $1"
   local dir=$1

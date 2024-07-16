@@ -13,7 +13,6 @@ wait_for_pod() {
         fi
         sleep 2
     done
-    echo=
     if ! kubectl wait --namespace "$namespace" --for=condition=ready pod -l "$label_selector" --timeout="${timeout}s" &>/dev/null; then
         echo "Error: Pod for label selector '$label_selector' in namespace '$namespace' did not become ready."
         exit 1

@@ -82,7 +82,7 @@ jobico::cluster::deploy_to_nodes(){
      jobico::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
         SCP ${DOWNLOADS_DIR}/runc.amd64 \
         ${DOWNLOADS_DIR}/crictl-v1.28.0-linux-amd64.tar.gz \
-        ${DOWNLOADS_DIR}/cni-plugins-linux-amd64-v1.3.0.tgz \
+        ${DOWNLOADS_DIR}/cni-plugins-linux-amd64-v1.5.1.tgz \
         ${DOWNLOADS_DIR}/containerd-1.7.8-linux-amd64.tar.gz \
         ${DOWNLOADS_DIR}/kubectl \
         ${DOWNLOADS_DIR}/kubelet \
@@ -112,7 +112,7 @@ jobico::cluster::deploy_to_nodes(){
   mkdir -p containerd
   tar -xvf crictl-v1.28.0-linux-amd64.tar.gz
   tar -xvf containerd-1.7.8-linux-amd64.tar.gz -C containerd
-  tar -xvf cni-plugins-linux-amd64-v1.3.0.tgz -C /opt/cni/bin/
+  tar -xvf cni-plugins-linux-amd64-v1.5.1.tgz -C /opt/cni/bin/
   mv runc.amd64 runc
   chmod +x crictl kubectl kube-proxy kubelet runc
   mv crictl kubectl kube-proxy kubelet runc /usr/local/bin/
