@@ -44,7 +44,6 @@ jobico::new_cluster() {
         exit 1
     fi
     jobico::plugin::load ${PLUGINS_CONF_FILE}
-    clear_dhcp
     jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server
     DEBUG jobico::debug::print
     jobico::create_cluster

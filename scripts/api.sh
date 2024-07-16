@@ -132,6 +132,7 @@ jobico::local() {
 }
 jobico::destroy_vms() {
     NOT_DRY_RUN jobico::vm::destroy
+    NOT_DRY_RUN jobico::vm::clear_dhcp
 }
 jobico::restore_local_env() {
     NOT_DRY_RUN jobico::host::restore_local_etc_hosts
