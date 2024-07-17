@@ -138,22 +138,26 @@ jobico::restore_local_env() {
     NOT_DRY_RUN jobico::host::restore_local_etc_hosts
 }
 jobico::install_all_addons() {
-    local action=$1
-    local base_dir=$2
-    local op=$3
+    local op=$1
+    local addons_list=$2
+    DEBUG echo $addons_list
+    local action="${op}_addons"
     if [ $(jobico::was_done $action) == false ]; then
-        jobico::install_from_dir $base_dir/core $op
-        jobico::install_from_dir $base_dir/extras $op
+        jobico::install_addons $op $addons_list
         jobico::set_done $action
         echo "Finished installing addons."
     fi
 }
-jobico::install_from_dir(){
-    local install_dir=$1
-    local op=$2
-    local dirs=$(find $install_dir -mindepth 1 -maxdepth 1 -type d)
-    for dir in $dirs; do
-        jobico::install $dir $op
+jobico::install_addons(){
+    local op=$1
+    local addons_list=$2
+    local addons=() addon
+    local SAVEIFS=$IFS
+    IFS=';'
+    read -ra addons <<< $addons_list
+    IFS=$SAVEIFS
+    for addon in ${addons[@]}; do
+        jobico::install $addon $op
     done
 }
 jobico::install() {
@@ -165,8 +169,8 @@ jobico::install() {
         command="main_add.sh"
     fi
     local script="${dir}/$command"
-    local disabled="${dir}/disabled"
-    if [[ -f $script && ! -f $disabled ]]; then
+    DEBUG echo "Addon script:>>>$script<<<"
+    if [[ -f $script ]]; then
         echo "[*] Installing $script ..."
         if [[ $(IS_DRY_RUN) == false ]]; then
              local output=$(bash $script ${dir} ${op} 2>&1) || err=$?
@@ -179,7 +183,7 @@ jobico::install() {
              echo ""
         fi
     else
-        echo "Warning: $dir not installed."
+        echo "Warning: $script not found."
     fi
 }
 jobico::set_done() {
