@@ -20,6 +20,8 @@ set_trap_err
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/ssh.sh
 
+# Cluster creation
+## "new" command. It creates a new cluster using the provided commnad line flags.
 new() {
   local do_install_post_dir=false cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
   while [[ $# -gt 0 ]]; do
@@ -123,42 +125,78 @@ new() {
     fi
   fi
   DRY_RUN echo ">> Dryn run << "
-  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons $addons_dir
+  local addons_list=$(find "$addons_dir/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list"
+  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons "$addons_list"
   if [ $do_install_post_dir == true ]; then
     install_post_dir
   fi
   NOT_DRY_RUN echo "The K8s Cluster was created."
 }
-install_post_dir() {
-  DRY_RUN echo "Warning: --dry-run option was provided. The scripts are not executed."
-  if [ $(IS_DRY_RUN) == true ]; then
-    return
-  fi
-  echo "Waiting for the cluster to be created ..."
-  wait_all
-  jobico::install_from_dir $POST_DIR/core "new"
-  jobico::install_from_dir $POST_DIR/extras "new"
+## "yaml" command. It creates a new cluster using the provided yaml as template.
+yaml() {
+    if [ ! -f "${SCRIPTS}/support/parse_yaml.sh" ]; then
+        wget https://raw.githubusercontent.com/andrescosta/parse_yaml/master/src/parse_yaml.sh -P ${SCRIPTS}/support >/dev/null 2>&1 
+    fi
+    source ${SCRIPTS}/support/parse_yaml.sh
+    echo "Start processing $1"
+    eval $(parse_yaml $1 "yaml_")
+    local nodes=$DEFAULT_NODES cpl=$DEFAULT_CPL lb=$DEFAULT_LB schedulable_server=false skip_addons=false 
+    local dir="" addons_list_str_yaml="" addons_list_yaml=() addons_list=""
+    local services_list_str_yaml="" services_list_yaml=() services_list=""
+    for f in $yaml_cluster_addons_ ; do
+        dir="${f}_dir"
+        addons_list_str_yaml="${f}_list_"
+        addons_list_yaml=${!addons_list_str_yaml}
+        for addon in ${addons_list_yaml[@]}; do
+            if [[ $addons_list != "" ]]; then
+                addons_list+=";"
+            fi
+            addons_list+="./addons/${!dir}/${!addon}"
+        done 
+    done
+    if [[ -v yaml_cluster_node_size ]]; then
+        nodes=$yaml_cluster_node_size
+    fi
+    if [[ -v yaml_cluster_cpl_size ]]; then
+        cpl=$yaml_cluster_cpl_size
+    fi
+    if [[ $cpl > 1 ]]; then
+        if [[ -v yaml_cluster_cpl_lb_size ]]; then
+            lb=$yaml_cluster_cpl_lb_size
+        fi
+    fi
+    if [ $nodes == 0 ]; then
+        schedulable_server=true
+    else
+        if [[ -v yaml_cluster_cpl_schedulable ]]; then
+            schedulable_server=$yaml_cluster_cpl_schedulable
+        fi
+    fi
+    DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list"
+    jobico::new_cluster $nodes $cpl $lb $schedulable_server false "$addons_list"
+    for f in $yaml_cluster_services_ ; do
+        dir="${f}_dir"
+        services_list_str_yaml="${f}_list_"
+        services_list_yaml=${!services_list_str_yaml}
+        for svc in ${services_list_yaml[@]}; do
+            if [[ $services_list != "" ]]; then
+                services_list+=";"
+            fi
+            services_list+="./post/${!dir}/${!svc}"
+        done 
+    done
+    if [[ $services_list != "" ]]; then
+        echo "Waiting for the cluster to be created ..."
+        NOT_DRY_RUN wait_all_pods
+        echo ${services_list}
+        NOT_DRY_RUN jobico::install_all_addons "newpost" "${services_list}"
+    fi
+    NOT_DRY_RUN echo "The K8s Cluster was created."
 }
-wait_all() {
-    local timeout=4096
-    kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout="${timeout}s"
-}
-exec() {
-  echo "- Executing $1"
-  local dir=$1
-  if [ ! -f "$dir/main.sh" ]; then
-    echo "Waning: $dir/main.sh does not exit"
-    return
-  fi
-  local err=0
-  local output=$(bash "$dir/main.sh" 2>&1) || err=$?
-  echo "> Result of $dir/main.sh:"
-  echo ">> $output"
-  if [[ $err != 0 ]]; then
-    echo "> Warning $script returned an error $err"
-  fi
-  echo "- Finished $1"
-}
+
+# Add new node to the current cluster
 add() {
   local force=false nodes addons_dir="" skip_addons=false 
   while [[ $# -gt 0 ]]; do
@@ -234,9 +272,13 @@ add() {
       jobico::unlock_cluster
     fi
   fi
-  jobico::add_nodes $nodes $skip_addons $addons_dir
+  local addons_list=$(find "$addons_dir/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  jobico::add_nodes $nodes $skip_addons $addons_list
   echo "The node(s) were added."
 }
+
+# Destroy the current cluster.
 destroy() {
   local ask=true response
   while [[ $# -gt 0 ]]; do
@@ -281,6 +323,7 @@ do_destroy() {
     echo "Command execution cancelled."
   fi
 }
+
 clocal() {
   jobico::gen_local_env
 }
@@ -336,6 +379,25 @@ list() {
 debug() {
   jobico::debug::print
 }
+
+# Helpers functions
+install_post_dir() {
+  DRY_RUN echo "Warning: --dry-run option was provided. The scripts are not executed."
+  if [ $(IS_DRY_RUN) == true ]; then
+    return
+  fi
+  echo "Waiting for the cluster to be created ..."
+  wait_all_pods
+  local post_list=$(find "$POST_DIR/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  post_list+=$(find "$POST_DIR/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  jobico::install_all_addons "newpost" "${post_list}"
+}
+wait_all_pods() {
+    local timeout=4096
+    kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout="${timeout}s"
+}
+
+# Help releated functions
 display_help() {
   echo "Usage: "
   echo "       $0 <command> [arguments]"
@@ -464,15 +526,8 @@ display_help_for_local() {
   echo "Usage: $0 local"
   echo "Prepares the local enviroment. It creates the kubeconfig and installs kubectl."
 }
-yaml() {
-    if [ ! -f "${SCRIPTS}/support/parse_yaml.sh" ]; then
-        wget https://raw.githubusercontent.com/andrescosta/parse_yaml/master/src/parse_yaml.sh -P ${SCRIPTS}/support >/dev/null 2>&1 
-    fi
-    source ${SCRIPTS}/support/parse_yaml.sh
-    echo "Start processing $1"
-    eval $(parse_yaml $1 "yaml_")
-    echo $yaml_cluster_name
-}
+
+# Entry point. It process the commnad line commands.
 main() {
   DEBUGOFF
   DRY_RUNOFF

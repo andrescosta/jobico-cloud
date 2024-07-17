@@ -38,7 +38,7 @@ jobico::new_cluster() {
     local number_of_lbs=$3
     local schedulable_server=$4
     local skip_addons=$5
-    local base_dir=$6
+    local addons_list=$6
     if [[ $(jobico::dao::cluster::is_locked) == true ]]; then
         echo "A cluster already exists."
         exit 1
@@ -47,7 +47,11 @@ jobico::new_cluster() {
     jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server
     DEBUG jobico::debug::print
     jobico::create_cluster
-    NOT_DRY_RUN jobico::addons $base_dir "new" $skip_addons
+    if [ $skip_addons == false ]; then
+        NOT_DRY_RUN jobico::install_all_addons "new" ${addons_list}
+    else
+        echo "Skipping adddons installation"
+    fi
     NOT_DRY_RUN jobico::dao::cluster::lock
 }
 jobico::start_cluster() {
@@ -116,12 +120,16 @@ jobico::add_nodes() {
     fi
     local number_of_nodes=$1
     local skip_addons=$2
-    local base_dir=$3
+    local addons_list=$3
     jobico::plugin::load ${PLUGINS_CONF_FILE}
     jobico::prepare_db $number_of_nodes
     DEBUG jobico::debug::print
     jobico::create_nodes
-    NOT_DRY_RUN jobico::addons $base_dir "add" $skip_addons
+    if [ $skip_addons == false ]; then
+        NOT_DRY_RUN jobico::install_all_addons "add" ${addons_list}
+    else
+        echo "Skipping adddons installation"
+    fi
     NOT_DRY_RUN jobico::dao::merge_dbs
     NOT_DRY_RUN jobico::dao::cluster::lock
 }
@@ -129,20 +137,6 @@ jobico::prepare_db() {
     local number_of_nodes=$1
     jobico::dao::gen_add_db ${number_of_nodes}
     jobico::dao::gen_add_cluster_db
-}
-jobico::addons() {
-    local addonsdir=$1
-    local op=$2
-    local skip_addons=$3
-    if [ $skip_addons == false ]; then
-        if [ -d $addonsdir ]; then
-            jobico::install_all_addons "${op}_addons" $addonsdir $op
-        else
-            echo "Error: The addons diresctory does not exits."
-        fi
-    else
-        echo "Skipping adddons installation"
-    fi
 }
 jobico::addons_post(){
     jobico::dao::cluster::unlock
