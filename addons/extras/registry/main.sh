@@ -7,5 +7,6 @@ install(){
     security "$@"
     manifests "$@"
     deploy "$@"
+    deploy_docker "$@"
 }
 install "$@"
