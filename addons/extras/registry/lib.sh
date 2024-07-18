@@ -37,3 +37,8 @@ EOF
     done < <(jobico::dao::cluster::members)
 }
 
+deploy_docker(){
+    sudo mkdir -p /etc/docker/certs.d/reg.jobico.org/
+    sudo cp $1/certs/tls.crt /etc/docker/certs.d/reg.jobico.org/ca.crt
+    sudo systemctl restart docker
+}

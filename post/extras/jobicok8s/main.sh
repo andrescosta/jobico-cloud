@@ -6,4 +6,5 @@ fi
 git clone git@github.com:/andrescosta/jobicok8s.git $temp_dir/jobicok8s
 cd $temp_dir/jobicok8s
 echo "Installing from: $(pwd)"
+docker login --username jobico --password jobico123 https://reg.jobico.org
 make deploy-all
