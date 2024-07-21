@@ -9,8 +9,8 @@ cluster:
   addons:
     - dir: core
       list:
-        - metallb
-        - coredns
+        - lb
+        - dns
         - storage 
     - dir: extras
       list:
