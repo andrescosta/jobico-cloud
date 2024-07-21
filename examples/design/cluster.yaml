@@ -23,8 +23,8 @@ cluster:
   addons:
     - dir: core
       list:
-        - metallb
-        - coredns
+        - lb
+        - dns
     - dir: extras
       list:
         - obs
