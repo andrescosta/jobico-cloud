@@ -11,11 +11,9 @@ type: kubernetes.io/basic-auth
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: cluster-example
+  name: cluster-jobico
 spec:
   instances: 1 
-    #  postgresUID: 1001
-    #postgresGID: 1001
   storage:
     size: 1Gi
   enableSuperuserAccess: true

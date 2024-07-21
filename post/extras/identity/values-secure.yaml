@@ -7,7 +7,7 @@ zitadel:
       Enabled: false
     Database:
       Postgres:
-        Host: cluster-example-rw
+        Host: cluster-jobico-rw
         Port: 5432
         Database: zitadel
         MaxOpenConns: 20
@@ -30,6 +30,5 @@ zitadel:
         Admin:
           Password: abc
 
-  dbSslCaCrtSecret: cluster-example-ca 
-  dbSslAdminCrtSecret: cluster-example-server
-    #dbSslUserCrtSecret: zitadel-cert
+  dbSslCaCrtSecret: cluster-jobico-ca 
+  dbSslAdminCrtSecret: cluster-jobico-server
