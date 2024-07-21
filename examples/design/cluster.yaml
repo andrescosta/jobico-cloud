@@ -1,4 +1,8 @@
 cluster:
+  users:
+    - name: jobico
+      ssh_authorized_keys:
+      - ssh-ed25519 ...
   cidr: 192.168.122.8/24
   tls: ...
   name: aaa

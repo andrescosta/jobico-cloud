@@ -418,6 +418,7 @@ display_help() {
   echo "          cfg"
   echo "          post"
   echo "          debug"
+  echo "          wait"
   echo ""
   echo "Additional help: $0 help <command>"
 }
@@ -589,6 +590,9 @@ main() {
     ;;
   debug)
     debug
+    ;;
+  wait)
+    wait_all_pods  
     ;;
   help)
     if [ $# -gt 1 ]; then
