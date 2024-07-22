@@ -78,11 +78,11 @@ cluster:
     schedulable: [true if the server is tainted.]
     size: 0
   addons:
-    - dir: [Addons directory name]
+    - dir: [Subdirectory of addons]
       list:
       [List of addons]
   services:
-    - dir: [Service directory name]
+    - dir: [Subdirectory of services]
       list:
       [List of services]
 ```
@@ -197,9 +197,7 @@ The following command stops and deletes the VMs that form a cluster:
 
 # Kubernetes Configuration & Add-Ons
 
-During the cluster creation process, a series of add-ons are installed. To omit the deployment of a specific one, create a file named `disabled` in its directory.
-Some add-ons require a locally installed Helm chart for deployment. Please refer to the requirements section for details.
-
+During the cluster creation process from command line(cluster.sh new), a series of add-ons are installed. To omit the deployment of a specific one, create a file named `disabled` in its directory.
 
 # Addons
 
@@ -281,8 +279,8 @@ Usage: ./cluster.sh destroy
 Destroy the Kubernetes cluster and the VMs
 ```
 ```
-Usage: ./cluster.sh addons [arguments]
-Install the addons from the folder ./addons or the one specified by --dir.
+Usage: ./cluster.sh addons [dir]
+Install the addons from the folder ./addons or the one passed as argument.
 ```
 ```
 Usage: ./cluster.sh cfg
@@ -372,7 +370,7 @@ This folder contains utilities libraries used by the different parts of the syst
 - net.sh: It includes functionality for configuring new routes for the cluster's virtual machines (VMs).
 - tls.sh: It implements the functionality for generating the Certificate Authority (CA), issuing certificates, and deploying them.
 
-### Prerequisites
+# Prerequisites
 
 The following packages must be installed locally before creating a cluster::
 

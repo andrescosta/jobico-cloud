@@ -352,6 +352,7 @@ cfg() {
 }
 addons(){
   local addons_dir=$1
+  addons_dir=${addons_dir:-$ADDONS_DIR}
   local addons_list=$(find "$addons_dir/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   jobico::addons_post ${addons_list}
@@ -473,8 +474,8 @@ display_help_for_start() {
   echo "Starts the cluster's VMs"
 }
 display_help_for_addons() {
-  echo "Usage: $0 addons [arguments]"
-  echo "Install the addons from the folder ./addons or the one specified by --dir."
+  echo "Usage: $0 addons [dir]"
+  echo "Install the addons from the folder ./addons or the one passed as argument."
 }
 display_help_for_new() {
   echo "Usage: $0 new [arguments]"
@@ -553,7 +554,8 @@ main() {
     destroy "$@"
     ;;
   addons)
-    addons $ADDONS_DIR 
+    shift
+    addons "$@"
     ;;
   services)
     install_services_dir
