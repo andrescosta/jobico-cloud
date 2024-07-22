@@ -490,7 +490,7 @@ display_help_for_new() {
   echo "     --no-addons"
   echo "            Skip the instalation of addons"
   echo "     --post"
-  echo "            Waiting for the cluster to be created and then runs the scripts on the post directory."
+  echo "            Waits for the cluster to be created and then runs the scripts on the post directory."
   echo "     --schedulable-server"
   echo "            The control plane nodes will be available to schedule pods. The default is false(tainted)."
   echo "     --dry-run"
