@@ -74,15 +74,15 @@ data:
         header {
           response set ra
         }
-        #k8s_external jobico.org
         loop
-        #forward . 8.8.8.8
         forward . /etc/resolv.conf
         reload
         loadbalance
     }
     jobico.org:53 {
-        forward . 8.8.8.8 8.8.4.4
+        errors
+        cache 30
+        forward . 192.168.122.23 
     }
 ---
 apiVersion: apps/v1

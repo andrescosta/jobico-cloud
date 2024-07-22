@@ -88,13 +88,9 @@ virt-lb:
  		--noautoconsole
 ## Destroy the VM
 
-destroy-vm: dhcp-release delete-mac delete-key
+destroy-vm: delete-mac delete-key
 	-virsh destroy ${VM_NAME} 
 	-virsh undefine ${VM_NAME} --remove-all-storage
-
-dhcp-release:
-	-dhcp_release virbr0 ${VM_IP} ${curr_mac}
-
 
 delete-mac:
 	-virsh net-update default delete ip-dhcp-host \

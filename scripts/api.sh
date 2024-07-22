@@ -132,49 +132,59 @@ jobico::local() {
 }
 jobico::destroy_vms() {
     NOT_DRY_RUN jobico::vm::destroy
+    NOT_DRY_RUN jobico::vm::clear_dhcp
 }
 jobico::restore_local_env() {
     NOT_DRY_RUN jobico::host::restore_local_etc_hosts
 }
 jobico::install_all_addons() {
-    local action=$1
-    local base_dir=$2
-    local op=$3
+    local op=$1
+    local addons_list=$2
+    DEBUG echo $addons_list
+    local action="${op}_addons"
     if [ $(jobico::was_done $action) == false ]; then
-        jobico::install_addons $base_dir/core $op
-        jobico::install_addons $base_dir/extras $op
+        jobico::install_addons $op $addons_list
         jobico::set_done $action
         echo "Finished installing addons."
     fi
 }
-jobico::install_addons() {
-    local addons_dir=$1
+jobico::install_addons(){
+    local op=$1
+    local addons_list=$2
+    local addons=() addon
+    local SAVEIFS=$IFS
+    IFS=';'
+    read -ra addons <<< $addons_list
+    IFS=$SAVEIFS
+    for addon in ${addons[@]}; do
+        jobico::install $addon $op
+    done
+}
+jobico::install() {
+    local dir=$1
     local op=$2
-    local dirs=$(find $addons_dir -mindepth 1 -maxdepth 1 -type d)
     local err=0
     local command="main.sh"
     if [ $op == "add" ]; then
         command="main_add.sh"
     fi
-    for dir in $dirs; do
-        local script="${dir}/$command"
-        local disabled="${dir}/disabled"
-        if [[ -f $script && ! -f $disabled ]]; then
-            echo "[*] Installing addon with $script ..."
-            if [[ $(IS_DRY_RUN) == false ]]; then
-                local output=$(bash $script ${dir} ${op} 2>&1) || err=$?
-                echo "Addon result:"
-                echo "$output"
-                if [[ $err != 0 ]]; then
-                    echo "Warning: the addon $script returned an error $err"
-                fi
-                echo "[*] Addon: $script installed."
-                echo ""
-            fi
-        else
-            echo "Warning: $dir not added."
+    local script="${dir}/$command"
+    DEBUG echo "Addon script:>>>$script<<<"
+    if [[ -f $script ]]; then
+        echo "[*] Installing $script ..."
+        if [[ $(IS_DRY_RUN) == false ]]; then
+             local output=$(bash $script ${dir} ${op} 2>&1) || err=$?
+             echo "Instalation result:"
+             echo "$output"
+             if [[ $err != 0 ]]; then
+                  echo "Warning: the $script returned an error $err"
+             fi
+             echo "[*] $script installed."
+             echo ""
         fi
-    done
+    else
+        echo "Warning: $script not found."
+    fi
 }
 jobico::set_done() {
     echo "|$1|" >>${STATUS_FILE}

@@ -1,0 +1,43 @@
+cluster:
+  users:
+    - name: jobico
+      ssh_authorized_keys:
+      - ssh-ed25519 ...
+  cidr: 192.168.122.8/24
+  tls: ...
+  name: aaa
+  domain: jobico.org
+  node:
+    image: aaaa
+    size: 0
+  cpl:
+    schedulable: true
+    cird: 111
+    image: ssss
+    size: 0
+    etcd:
+      type: internal
+      size: 11
+    lb:
+      size: 10
+  addons:
+    - dir: core
+      list:
+        - lb
+        - dns
+    - dir: extras
+      list:
+        - obs
+        - dashboard
+  services:
+    - identity
+    - vault
+    - database
+  platform:
+    - jobico
+  dashboard:
+    subdomain: dashboard
+  identity:
+    subdomain: id
+  coredns:
+    ip: iii 

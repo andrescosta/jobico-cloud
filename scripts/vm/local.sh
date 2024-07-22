@@ -5,8 +5,10 @@ jobico::local::init_fs() {
     touch ${STATUS_FILE}
 }
 jobico::local::download_deps() {
-    mkdir -p ${DOWNLOADS_DIR}
-    wget -q --https-only -P ${DOWNLOADS_DIR} -i ${DOWNLOADS_TBL}
+    if [ ! -d ${DOWNLOADS_DIR} ]; then
+        mkdir -p ${DOWNLOADS_DIR}
+        wget -q --https-only -P ${DOWNLOADS_DIR} -i ${DOWNLOADS_TBL}
+    fi
 }
 jobico::local::download_local_deps() {
     mkdir -p ${DOWNLOADS_DIR}
