@@ -139,7 +139,8 @@ jobico::prepare_db() {
     jobico::dao::gen_add_cluster_db
 }
 jobico::addons_post(){
+    local addons_list=$1
     jobico::dao::cluster::unlock
-    jobico::addons "$@"
+    NOT_DRY_RUN jobico::install_all_addons "new" ${addons_list}
     jobico::dao::cluster::lock
 }
