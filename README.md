@@ -58,11 +58,11 @@ $ ./cluster.sh cfg
 ./cluster.sh new --nodes 3 --cpl 2 --services
 ```
 
-For more information, check [The cluster.sh commands reference](clustersh-command-reference)
+For more information, check [The cluster.sh commands reference](#clustersh-command-reference)
 
 ### Using a YAML file
 
-The cluster description can be also specified by in a YAML file to faciliate the automation scripts:
+The cluster description can also be specified in a YAML file to facilitate automation scripts:
 
 ```bash
 ./cluster.sh yaml [FILE NAME]
