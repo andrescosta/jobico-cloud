@@ -16,7 +16,7 @@ In this setup, there is one dedicated control plane server managing one or more 
 
 ![ha](img/ha.png)
 
-This topology features multiple control plane servers and one or more worker nodes, designed to ensure redundancy and fault tolerance in production environments.
+This topology features multiple control plane servers and one or more worker nodes, designed to ensure redundancy and fault tolerance in production environments. It leverages **HAProxy** and **Keepalived** to implement a highly available **load balancer** setup.
 
 ### Single Node Configuration
 
