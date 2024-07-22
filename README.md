@@ -6,43 +6,13 @@ This educational project, inspired by [Kubernetes the Hard Way](https://github.c
 
 The following sections outline the various topologies that the tool can create, based on the different command-line options available. Each subsection provides detailed information on the specific configurations and their corresponding command-line parameters.
 
-## Topologies
-
-### Prerequisites
-
-#### Libraries
-
-- SSH
-- OpenSSL
-- [Cloud-init](https://cloud-init.io/)
-- [KVM](https://ubuntu.com/blog/kvm-hyphervisor): The VMs run on KVM, and KVM along with its dependencies can be installed by running the script [here](https://github.com/andrescosta/jobico-cloud/hacks/deps.sh).
-- [Helm](https://helm.sh/): Several add-ons are installed using Helm charts.
-
-#### cloud-init cfg files
-
-Before creating a cluster the cfg files for cloud-init must be created:
-
-```bash
-$ ./cluster.sh cfg
-```
-### Single Control Plane Configuration
-
-```bash
-cluster.sh new 
-# `new` will create a cluster using the defaults values which are 1 control plane server and 2 nodes.
-```
+## Single Control Plane Configuration
 
 ![one cpl](img/onecpl.png)
 
 In this setup, there is one dedicated control plane server managing one or more worker nodes, offering a straightforward configuration often used in small-scale deployments.
 
-### High Availability Configuration
-
-```bash
-cluster.sh new --cpl 2 --lb 2
-# `--cpl` is used to specify the number of control plane servers to create, in this case 2.
-# `--lb` is used to specify the number of load balancers to create, 2 for this example.
-```
+## High Availability Configuration
 
 ![ha](img/ha.png)
 
@@ -50,27 +20,23 @@ Also known as HA, this topology features multiple control plane servers and one 
 
 ### Single Node Configuration
 
-```bash
-cluster.sh new --nodes 0
-# `new` is the command used to create a new cluster
-# --nodes is used to specify the number of worker nodes to create.
-```
-
 ![zernode](img/zeronode.png)
 
 This topology involves a single server that fulfills both the control plane and worker node roles, providing a basic setup typically used for learning and testing purposes.
 
-## TLS
-
-The communication between components in the cluster is protected by TLS. A CA is created as part of the process and  certificates are issued using OpenSSL and deployed in each server. 
-The implementation can be found here: scripts/plugins/tls.sh and the configuration template files in this place: extras/tls/
-
 # Cluster Management
 
 ## Creation
-Before proceeding with cluster creation, install the dependencies described in this section:
 
-### Command Line
+Before proceeding with cluster creation: 
+1- install the dependencies described in this section:
+2- Generate the cloud-init cfg files by running:
+
+```bash
+$ ./cluster.sh cfg
+```
+
+### From command line
 
 ```bash
 # Most important options
@@ -94,9 +60,13 @@ Before proceeding with cluster creation, install the dependencies described in t
 # HA Cluster with three worker nodes, two control plane servers and one load balancer. After the construction is completed (all pods Ready), it installs the scripts in the /services directory.
 ./cluster.sh new --nodes 3 --cpl 2 --services
 ```
-### YAML file
+### Using a YAML file
 
-The cluster description can be also specified by in a YAML file to faciliate the automation scripts.
+The cluster description can be also specified by in a YAML file to faciliate the automation scripts:
+
+```bash
+./cluster.sh yaml [FILE NAME]
+```
 
 #### Schema
 
@@ -248,6 +218,12 @@ Some add-ons require a locally installed Helm chart for deployment. Please refer
 
 Each VM instance runs on KVM and is initialized using Cloud-Init with a Debian 12 cloud image. Subsequently, the instances are managed by libvirt and its command-line utilities. The Kubernetes services within each VM are controlled by Systemd.
 
+## TLS
+
+The communication between components in the cluster is protected by TLS. A CA is created as part of the process and  certificates are issued using OpenSSL and deployed in each server. 
+The implementation can be found here: scripts/plugins/tls.sh and the configuration template files in this place: extras/tls/
+
+
 ## Design
 
 The script is structured around a core library that handles primary functionalities such as creation and destruction fo clusters, complemented by a suite of plugins that offer customization options for the stack.
@@ -394,6 +370,15 @@ Starts the cluster's VMs
 Usage: ./cluster.sh <info|state|list>
 Display information about the cluster's VM(s).
 ```
+### Prerequisites
+
+- SSH
+- OpenSSL
+- [Cloud-init](https://cloud-init.io/)
+- [KVM](https://ubuntu.com/blog/kvm-hyphervisor): The VMs run on KVM, and KVM along with its dependencies can be installed by running the script [here](https://github.com/andrescosta/jobico-cloud/hacks/deps.sh).
+- [Helm](https://helm.sh/): Several add-ons are installed using Helm charts.
+- [dnsmasq-utils](https://packages.debian.org/buster/dnsmasq-utils)
+
 # Possible future areas of work
 
 ## Current iteration 
