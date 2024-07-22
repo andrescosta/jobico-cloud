@@ -131,7 +131,7 @@ metadata:
   name: traeffik-dashboard-ingress
 spec:
     rules:
-    - host: traefik.jobico.org
+    - host: ingress.jobico.org
       http:
         paths:
         - path: /

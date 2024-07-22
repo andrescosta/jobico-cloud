@@ -12,6 +12,7 @@ DEFAULT_LB=2
 DIR=$(dirname "$0")
 SCRIPTS="${DIR}/scripts"
 ADDONS_DIR="${DIR}/addons"
+SERVICES_DIR="${DIR}/services"
 
 . ${SCRIPTS}/support/exception.sh
 set_trap_err
@@ -19,8 +20,10 @@ set_trap_err
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/ssh.sh
 
+# Cluster creation
+## "new" command. It creates a new cluster using the provided commnad line flags.
 new() {
-  local post_dir="" cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
+  local do_install_svc_dir=false cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
   while [[ $# -gt 0 ]]; do
     case "$1" in
     --nodes)
@@ -60,15 +63,8 @@ new() {
     --no-addons)
       skip_addons=true
       ;;
-    --post)
-      shift
-      if [ -n "${1-}" ]; then
-        post_dir="$1"
-      else
-        echo "With --post at least one directory name must be passed."
-        display_help
-        exit 1
-      fi
+    --services)
+      do_install_svc_dir=true
       ;;
     --schedulable-server)
       schedulable_server=true
@@ -129,46 +125,80 @@ new() {
     fi
   fi
   DRY_RUN echo ">> Dryn run << "
-  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons $addons_dir
-  exec_post_dirs $post_dir
+  local addons_list=$(find "$addons_dir/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list"
+  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons "$addons_list"
+  if [ $do_install_svc_dir == true ]; then
+    install_services_dir
+  fi
   NOT_DRY_RUN echo "The K8s Cluster was created."
 }
-exec_post_dirs() {
-  if [[ $# == 0 ]]; then
-    return
-  fi
-  DRY_RUN echo "Warning: --dry-run option was provided. The scripts are not executed."
-  if [ $(IS_DRY_RUN) == true ]; then
-    return
-  fi
-  local dirs=(${1//,/ })
-  for d in "${dirs[@]}"; do
-    dir="./post/$d"
-    if [ -d $dir ]; then
-      exec $dir
-    else
-      echo "Warning: $dir does not exist"
+## "yaml" command. It creates a new cluster using the provided yaml as template.
+yaml() {
+    if [ ! -f "${SCRIPTS}/support/parse_yaml.sh" ]; then
+        wget https://raw.githubusercontent.com/andrescosta/parse_yaml/master/src/parse_yaml.sh -P ${SCRIPTS}/support >/dev/null 2>&1 
     fi
-  done
+    source ${SCRIPTS}/support/parse_yaml.sh
+    echo "Start processing $1"
+    eval $(parse_yaml $1 "yaml_")
+    local nodes=$DEFAULT_NODES cpl=$DEFAULT_CPL lb=$DEFAULT_LB schedulable_server=false skip_addons=false 
+    local dir="" addons_list_str_yaml="" addons_list_yaml=() addons_list=""
+    local services_list_str_yaml="" services_list_yaml=() services_list=""
+    for f in $yaml_cluster_addons_ ; do
+        dir="${f}_dir"
+        addons_list_str_yaml="${f}_list_"
+        addons_list_yaml=${!addons_list_str_yaml}
+        for addon in ${addons_list_yaml[@]}; do
+            if [[ $addons_list != "" ]]; then
+                addons_list+=";"
+            fi
+            addons_list+="./addons/${!dir}/${!addon}"
+        done 
+    done
+    if [[ -v yaml_cluster_node_size ]]; then
+        nodes=$yaml_cluster_node_size
+    fi
+    if [[ -v yaml_cluster_cpl_size ]]; then
+        cpl=$yaml_cluster_cpl_size
+    fi
+    if [[ $cpl > 1 ]]; then
+        if [[ -v yaml_cluster_cpl_lb_size ]]; then
+            lb=$yaml_cluster_cpl_lb_size
+        fi
+    fi
+    if [ $nodes == 0 ]; then
+        schedulable_server=true
+    else
+        if [[ -v yaml_cluster_cpl_schedulable ]]; then
+            schedulable_server=$yaml_cluster_cpl_schedulable
+        fi
+    fi
+    DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list"
+    jobico::new_cluster $nodes $cpl $lb $schedulable_server false "$addons_list"
+    for f in $yaml_cluster_services_ ; do
+        dir="${f}_dir"
+        services_list_str_yaml="${f}_list_"
+        services_list_yaml=${!services_list_str_yaml}
+        for svc in ${services_list_yaml[@]}; do
+            if [[ $services_list != "" ]]; then
+                services_list+=";"
+            fi
+            services_list+="./${SERVICES_DIR}/${!dir}/${!svc}"
+        done 
+    done
+    if [[ $services_list != "" ]]; then
+        echo "Waiting for the cluster to be created ..."
+        NOT_DRY_RUN wait_all_pods
+        echo ${services_list}
+        NOT_DRY_RUN jobico::install_all_addons "newsvc" "${services_list}"
+    fi
+    NOT_DRY_RUN echo "The K8s Cluster was created."
 }
-exec() {
-  echo "- Executing $1"
-  local dir=$1
-  if [ ! -f "$dir/main.sh" ]; then
-    echo "Waning: $dir/main.sh does not exit"
-    return
-  fi
-  local err=0
-  local output=$(bash "$dir/main.sh" 2>&1) || err=$?
-  echo "> Result of $dir/main.sh:"
-  echo ">> $output"
-  if [[ $err != 0 ]]; then
-    echo "> Warning $script returned an error $err"
-  fi
-  echo "- Finished $1"
-}
+
+# Add new node to the current cluster
 add() {
-  local force=false nodes addons_dir="" skip_addons=false 
+  local nodes addons_dir="" skip_addons=false 
   while [[ $# -gt 0 ]]; do
     case "$1" in
     --nodes)
@@ -196,9 +226,6 @@ add() {
         set -x
       fi
       DEBUGON
-      ;;
-    --force)
-      force=true
       ;;
     --no-addons)
       skip_addons=true
@@ -234,17 +261,19 @@ add() {
 
   echo "$nodes node(s) are being added ...  "
 
-  if [[ $(jobico::add_cmd_was_done) == false && $(jobico::dao::cluster::is_locked) == true ]]; then
-    jobico::unlock_cluster
-  else
-    if [[ $force == true ]]; then
-      kuve::remove_add_commands
-      jobico::unlock_cluster
-    fi
+  if [[ $(jobico::dao::cluster::is_locked) == false ]]; then
+      echo "The cluster was not created."
+      exit 1
   fi
-  jobico::add_nodes $nodes $skip_addons $addons_dir
+  jobico::unlock_cluster
+  kuve::remove_add_commands
+  local addons_list=$(find "$addons_dir/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  jobico::add_nodes $nodes $skip_addons $addons_list
   echo "The node(s) were added."
 }
+
+# Destroy the current cluster.
 destroy() {
   local ask=true response
   while [[ $# -gt 0 ]]; do
@@ -289,6 +318,7 @@ do_destroy() {
     echo "Command execution cancelled."
   fi
 }
+
 clocal() {
   jobico::gen_local_env
 }
@@ -320,6 +350,13 @@ cfg() {
   sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-lb.cfg
   sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-lb.cfg
 }
+addons(){
+  local addons_dir=$1
+  addons_dir=${addons_dir:-$ADDONS_DIR}
+  local addons_list=$(find "$addons_dir/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  jobico::addons_post ${addons_list}
+}
 start_cluster() {
   jobico::start_cluster
 }
@@ -344,6 +381,25 @@ list() {
 debug() {
   jobico::debug::print
 }
+
+# Helpers functions
+install_services_dir() {
+  DRY_RUN echo "Warning: --dry-run option was provided. The scripts are not executed."
+  if [ $(IS_DRY_RUN) == true ]; then
+    return
+  fi
+  echo "Waiting for the cluster to be created ..."
+  wait_all_pods
+  local svc_list=$(find "$SERVICES_DIR/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  svc_list+=$(find "$SERVICES_DIR/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  jobico::install_all_addons "newsvc" "${svc_list}"
+}
+wait_all_pods() {
+    local timeout=4096
+    kubectl wait --for=condition=Ready pods --all --all-namespaces --timeout="${timeout}s"
+}
+
+# Help releated functions
 display_help() {
   echo "Usage: "
   echo "       $0 <command> [arguments]"
@@ -362,7 +418,9 @@ display_help() {
   echo "          list"
   echo "          local"
   echo "          cfg"
+  echo "          services"
   echo "          debug"
+  echo "          wait"
   echo ""
   echo "Additional help: $0 help <command>"
 }
@@ -416,8 +474,8 @@ display_help_for_start() {
   echo "Starts the cluster's VMs"
 }
 display_help_for_addons() {
-  echo "Usage: $0 addons [arguments]"
-  echo "Install the addons from the folder ./addons or the one specified by --dir."
+  echo "Usage: $0 addons [dir]"
+  echo "Install the addons from the folder ./addons or the one passed as argument."
 }
 display_help_for_new() {
   echo "Usage: $0 new [arguments]"
@@ -433,8 +491,8 @@ display_help_for_new() {
   echo "            Specify a different directory name for the addons. Default: $ADDONS_DIR"
   echo "     --no-addons"
   echo "            Skip the instalation of addons"
-  echo "     --post dir_name,[dir_name]"
-  echo "            After the cluster is created successfully, the main.sh script from each of these comma separated directores will be executed."
+  echo "     --services"
+  echo "            Waits for the cluster to be created and then runs the scripts on the 'services' directory."
   echo "     --schedulable-server"
   echo "            The control plane nodes will be available to schedule pods. The default is false(tainted)."
   echo "     --dry-run"
@@ -452,8 +510,6 @@ display_help_for_add() {
   echo "            Specify the number of worker nodes to be added. The default value is 1. "
   echo "     --dry-run"
   echo "            Update the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
-  echo "     --force"
-  echo "            If new nodes were added previously, this parameter force the execution of this command."
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."
@@ -471,6 +527,8 @@ display_help_for_local() {
   echo "Usage: $0 local"
   echo "Prepares the local enviroment. It creates the kubeconfig and installs kubectl."
 }
+
+# Entry point. It process the commnad line commands.
 main() {
   DEBUGOFF
   DRY_RUNOFF
@@ -483,6 +541,10 @@ main() {
     shift
     new "$@"
     ;;
+  yaml)
+    shift
+    yaml "$@"
+    ;;
   add)
     shift
     add "$@"
@@ -492,7 +554,11 @@ main() {
     destroy "$@"
     ;;
   addons)
-    jobico::addons_post $ADDONS_DIR "ex" false
+    shift
+    addons "$@"
+    ;;
+  services)
+    install_services_dir
     ;;
   local)
     shift
@@ -525,6 +591,9 @@ main() {
     ;;
   debug)
     debug
+    ;;
+  wait)
+    wait_all_pods  
     ;;
   help)
     if [ $# -gt 1 ]; then

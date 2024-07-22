@@ -1,1 +1,1 @@
-kubectl run --image=busybox --restart=Never busy
+kubectl run busybox -i --tty --image=busybox --restart=Never --rm -- sh

@@ -1,0 +1,22 @@
+cluster:
+  node:
+    size: 0
+  cpl:
+    schedulable: true
+  addons:
+    - dir: core
+      list:
+        - lb
+        - dns
+        - storage 
+    - dir: extras
+      list:
+        - registry 
+        - database
+  services:
+    - dir: core
+      list:
+        - database
+    - dir: extras
+      list:
+        - identity
