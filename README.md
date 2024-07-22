@@ -56,7 +56,6 @@ cluster.sh new --nodes 0
 # --nodes is used to specify the number of worker nodes to create.
 ```
 
-
 ![zernode](img/zeronode.png)
 
 This topology involves a single server that fulfills both the control plane and worker node roles, providing a basic setup typically used for learning and testing purposes.
@@ -64,7 +63,66 @@ This topology involves a single server that fulfills both the control plane and 
 ## TLS
 
 The communication between components in the cluster is protected by TLS. A CA is created as part of the process and  certificates are issued using OpenSSL and deployed in each server. 
-The implementation can be found here: scripts/plugins/tls.sh and the configuration tremplate files in this place: extras/tls/
+The implementation can be found here: scripts/plugins/tls.sh and the configuration template files in this place: extras/tls/
+
+# Cluster Management
+
+## Creation
+Before proceeding with cluster creation, install the dependencies described in this section:
+
+### Command Line
+
+```bash
+# Most important options
+./cluster.sh new [--nodes n] [--cpl n] [--lb n] [--no-addons] [--post] [--schedulable-server]
+
+# Cluster without worker nodes and one control plane server.
+./cluster.sh new --nodes 0
+
+# Cluster with two worker nodes and one control plane server.
+./cluster.sh new
+
+# Cluster with two worker nodes and one control plane server that can be also schedulable.
+./cluster.sh new --schedulable-server
+
+# HA Cluster with three worker nodes, two control plane servers and two load balancer.
+./cluster.sh new --nodes 3 --cpl 2
+
+# HA Cluster with ten worker nodes, five control plane servers and three load balancers.
+./cluster.sh new --nodes 10 --cpl 5 --lb 3
+
+# HA Cluster with three worker nodes, two control plane servers and one load balancer. After the construction is completed (all pods Ready), it installs the scripts in the /post directory.
+./cluster.sh new --nodes 3 --cpl 2 --post
+```
+### YAML file
+
+The cluster description can be also specified by in a YAML file to faciliate the automation scripts.
+
+#### Schema
+
+```yaml
+cluster:
+  node:
+    size: [NUMBER OF WORKER NODES]
+  cpl:
+    schedulable: [true if the server is tainted.]
+    size: 0
+  addons:
+    - dir: []
+      list:
+      [List of addons]
+  services:
+    - dir: 
+      [List of services]
+```
+### Examples
+
+
+
+## Add nodes
+
+## Status management
+## Destroy
 
 # Kubernetes Configuration & Add-Ons
 
@@ -125,7 +183,7 @@ This directory contains the necessary files to access `db.txt`, which guides the
 
 #### support
 
-This folder contains utilities libraries used by the different components of the system.
+This folder contains utilities libraries used by the different parts of the system.
 
 #### plugins
 
@@ -172,8 +230,8 @@ The arguments that define how the cluster will be created:
             Specify a different directory name for the addons. Default: ./addons
      --no-addons
             Skip the instalation of addons
-     --post dir_name,[dir_name]
-            After the cluster is created successfully, the main.sh script from each of these comma separated directores will be executed.
+     --post
+            Waits for the cluster to be created and then runs the scripts on the post directory.
      --schedulable-server
             The control plane nodes will be available to schedule pods. The default is false(tainted).
      --dry-run
@@ -238,7 +296,6 @@ Starts the cluster's VMs
 Usage: ./cluster.sh <info|state|list>
 Display information about the cluster's VM(s).
 ```
-
 # Possible future areas of work
 
 ## Current iteration 
