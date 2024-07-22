@@ -13,4 +13,4 @@ downloads/
 scripts/support/parse_yaml.sh
 **/cloud-init-lb.cfg
 **/cloud-init-node.cfg
-post/extras/jobicok8s/jobicok8s/ 
+services/extras/jobicok8s/jobicok8s/ 

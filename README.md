@@ -74,7 +74,7 @@ Before proceeding with cluster creation, install the dependencies described in t
 
 ```bash
 # Most important options
-./cluster.sh new [--nodes n] [--cpl n] [--lb n] [--no-addons] [--post] [--schedulable-server]
+./cluster.sh new [--nodes n] [--cpl n] [--lb n] [--no-addons] [--services] [--schedulable-server]
 
 # Cluster without worker nodes and one control plane server.
 ./cluster.sh new --nodes 0
@@ -91,8 +91,8 @@ Before proceeding with cluster creation, install the dependencies described in t
 # HA Cluster with ten worker nodes, five control plane servers and three load balancers.
 ./cluster.sh new --nodes 10 --cpl 5 --lb 3
 
-# HA Cluster with three worker nodes, two control plane servers and one load balancer. After the construction is completed (all pods Ready), it installs the scripts in the /post directory.
-./cluster.sh new --nodes 3 --cpl 2 --post
+# HA Cluster with three worker nodes, two control plane servers and one load balancer. After the construction is completed (all pods Ready), it installs the scripts in the /services directory.
+./cluster.sh new --nodes 3 --cpl 2 --services
 ```
 ### YAML file
 
@@ -117,12 +117,112 @@ cluster:
 ```
 ### Examples
 
+- One control plane and worker node server with several addons and services.
 
+```yaml
+cluster:
+  node:
+    size: 3
+  cpl:
+    schedulable: true
+  addons:
+    - dir: core
+      list:
+        - lb
+        - dns
+        - storage
+    - dir: extras
+      list:
+        - registry
+        - database
+  services:
+    - dir: core
+      list:
+        - database
+    - dir: extras
+      list:
+        - identity
+```
+
+- High availability configuration with 5 worker nodes, 3 control plane servers and two load balancers.
+
+```yaml
+cluster:
+  node:
+    size: 5
+  cpl:
+    schedulable: false
+    size: 3
+    lb:
+      size: 2
+  addons:
+    - dir: core
+      list:
+        - lb
+        - dns
+        - storage
+    - dir: extras
+      list:
+        - registry
+        - database
+  services:
+    - dir: core
+      list:
+        - database
+    - dir: extras
+      list:
+        - identity
+```
+
+#### Executing examples
+
+- One node
+```bash
+/cluster.sh yaml examples/basic/cluster.yaml 
+```
+- High availability
+```bash
+./cluster.sh yaml examples/ha/cluster.yaml
+```
 
 ## Add nodes
 
+After creating a cluster, you can add extra nodes by running the following command:
+
+```bash
+./cluster.sh add [NUMBER OF WORKER NODES]
+```
+
+For example:
+
+```bash
+# Adds 1 worker node
+./cluster.sh add
+
+# Adds 5 worker node
+./cluster.sh add 5
+```
+
 ## Status management
+```bash
+# Starts the cluster's VMs.
+./cluster.sh start
+# Shutdown the cluster's VMs.
+./cluster.sh shutdown
+# Suspend the cluster's VMs.
+./cluster.sh suspend
+# Resume from suspension the cluster's VMs.
+./cluster.sh resume
+# List the cluster's VMs.
+./cluster.sh list
+```
 ## Destroy
+
+The following command stops and deletes the VMs that form a cluster:
+
+```bash
+./cluster.sh destroy
+```
 
 # Kubernetes Configuration & Add-Ons
 
@@ -230,8 +330,8 @@ The arguments that define how the cluster will be created:
             Specify a different directory name for the addons. Default: ./addons
      --no-addons
             Skip the instalation of addons
-     --post
-            Waits for the cluster to be created and then runs the scripts on the post directory.
+     --services
+            Waits for the cluster to be created and then runs the scripts on the services directory.
      --schedulable-server
             The control plane nodes will be available to schedule pods. The default is false(tainted).
      --dry-run
@@ -249,8 +349,6 @@ The arguments that define how the cluster will be updated:
             Specify the number of worker nodes to be added. The default value is 1. 
      --dry-run
             Update the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging.
-     --force
-            If new nodes were added previously, this parameter force the execution of this command.
      --debug [ s | d ]
             Enable the debug mode.
        s: displays basic information.

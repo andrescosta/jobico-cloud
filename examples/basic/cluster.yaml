@@ -3,7 +3,6 @@ cluster:
     size: 0
   cpl:
     schedulable: true
-    size: 0
   addons:
     - dir: core
       list:
