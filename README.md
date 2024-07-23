@@ -29,8 +29,8 @@ This topology involves a single server that fulfills both the control plane and 
 ## Creation
 
 Before proceeding with cluster creation: 
-1. install the dependencies described in this section: [Prerequisites](#prerequisites)
-2. Generate the cloud-init cfg files by running:
+- Install the dependencies described in this section: [Prerequisites](#prerequisites)
+- Generate the cloud-init cfg files by running:
 
 ```bash
 $ ./cluster.sh cfg
