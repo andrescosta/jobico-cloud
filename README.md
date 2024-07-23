@@ -174,7 +174,8 @@ For example:
 ./cluster.sh add 5
 ```
 
-## Status management
+## Managing Cluster VMs
+
 ```bash
 # Starts the cluster's VMs.
 ./cluster.sh start
@@ -187,7 +188,7 @@ For example:
 # List the cluster's VMs.
 ./cluster.sh list
 ```
-## Destroy
+## Destroying the cluster
 
 The following command stops and deletes the VMs that form a cluster:
 
