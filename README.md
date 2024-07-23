@@ -24,7 +24,7 @@ This topology features multiple control plane servers and one or more worker nod
 
 This topology involves a single server that fulfills both the control plane and worker node roles, providing a basic setup typically used for learning and testing purposes.
 
-# Cluster 
+# Kubernetes Cluster 
 
 ## Architecture
 
@@ -32,7 +32,7 @@ This topology involves a single server that fulfills both the control plane and 
 
 ## Enhancements
 
-Enhancements are additional components and services that can be installed in a cluster to extend its capabilities and improve its performance. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more. By integrating these enhancements, the cluster can offer a more robust, efficient, and versatile environment for managing and deploying applications.
+Enhancements are additional components and services that are installed in a cluster to extend its capabilities. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more. By integrating these enhancements, the cluster can offer a more robust, efficient, and versatile environment for managing and deploying applications.
 
 ## Add-Ons & Services
 
@@ -54,7 +54,9 @@ Enhancements are additional components and services that can be installed in a c
 
 ### Disabling Enhacements
 
-To omit the deployment of an add-on or service, create a file named **disabled** in its directory. This simple step ensures that the specified add-on or service will not be deployed, allowing you to customize the cluster setup according to your needs.
+To omit the deployment of an add-on or service, when a cluster is built using command line, create a file named **disabled** in its directory. This simple step ensures that the specified add-on or service will not be deployed, allowing you to customize the cluster setup according to your needs.
+
+## DNS
 
 ## Management
 
@@ -404,14 +406,10 @@ This script [deps.sh](https://github.com/andrescosta/jobico-cloud/hacks/deps.sh)
 
 # Possible future areas of work
 
-## Current iteration 
-
 - Improvements to the plugins mechanism
 - Performance
 - Cloud-Init
-- Let's Encrypt
-
-## Refactors 
+- TLS updates using Let's Encrypt
 - Control Plane Kubelet
 - Kubeadm
 - External Etcd 
