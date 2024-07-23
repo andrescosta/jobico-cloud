@@ -200,7 +200,7 @@ The following command stops and deletes the VMs that form a cluster:
 
 During the cluster creation process from command line(cluster.sh new), a series of add-ons are installed. To omit the deployment of a specific one, create a file named `disabled` in its directory.
 
-# Addons
+## Addons
 
 - [CoreDNS](https://coredns.io/plugins/kubernetes): It provides cluster wide DNS services.
 - [K8s Gateway](https://github.com/ori-edge/k8s_gateway): This component acts as a single external DNS interface into the cluster. It supports Ingress, Service of type LoadBalancer and resources from the Gateway API project.    
