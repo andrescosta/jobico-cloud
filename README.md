@@ -196,11 +196,15 @@ The following command stops and deletes the VMs that form a cluster:
 ./cluster.sh destroy
 ```
 
-# Kubernetes Configuration & Add-Ons
+# Cluster Enhancements
 
-During the cluster creation process from command line(cluster.sh new), a series of add-ons are installed. To omit the deployment of a specific one, create a file named `disabled` in its directory.
+Enhancements are additional components and services that can be installed in a cluster to extend its capabilities and improve its performance. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more. By integrating these enhancements, the cluster can offer a more robust, efficient, and versatile environment for managing and deploying applications.
 
-## Addons
+## Add-Ons & Services
+
+**Add-ons** and **Services** are concepts used to manage dependencies among enhancement components within a cluster. **Core** add-ons have no dependencies other than Kubernetes itself, while **Extra** add-ons depend on the core add-ons. Service components are installed after the cluster is created and all Pods are in the "Ready" state. **Core** services have no dependencies, whereas **Extra** services depend on the Core services.
+
+## Enhacements list
 
 - [CoreDNS](https://coredns.io/plugins/kubernetes): It provides cluster wide DNS services.
 - [K8s Gateway](https://github.com/ori-edge/k8s_gateway): This component acts as a single external DNS interface into the cluster. It supports Ingress, Service of type LoadBalancer and resources from the Gateway API project.    
@@ -211,6 +215,12 @@ During the cluster creation process from command line(cluster.sh new), a series 
 - [Distribution Registry](https://distribution.github.io/distribution/): It is a server side application that stores and lets you distribute container images and other content. 
 - [Grafana and Prometheus](https://github.com/prometheus-operator/kube-prometheus): It installs a collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules.
 - [Dashboard](https://github.com/kubernetes/dashboard): A general purpose, web-based UI for Kubernetes clusters. It allows to manage applications running in the cluster.
+- [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg): CloudNativePG is an operator that covers the full lifecycle of a highly available PostgreSQL database cluster with a primary/standby architecture, using native streaming replication.
+- [ZITADEL](https://github.com/zitadel/zitadel): Identity management.
+
+### Disabling Enhacements
+
+To omit the deployment of an add-on or service, create a file named **disabled** in its directory. This simple step ensures that the specified add-on or service will not be deployed, allowing you to customize the cluster setup according to your needs.
 
 # Cluster.sh command reference
 
