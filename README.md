@@ -58,6 +58,9 @@ To omit the deployment of an add-on or service, when a cluster is built using co
 
 ## DNS
 
+The cluster deploys CoreDNS for internal DNS resolution and k8s_gateway for external DNS resolution. It designates **jobico.org** as the primary domain for all subdomains corresponding to services that expose functionality externally.
+On local machines, you can configure the DNS server at **192.168.122.23** to handle all domains within jobico.org. One method to achieve this is by implementing Split DNS. Numerous tutorials available [online](https://www.google.com/search?q=split+dns+linux) can guide you through this setup.
+
 ## Management
 
 ### Creation
