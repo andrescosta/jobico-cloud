@@ -41,7 +41,7 @@ Enhancements are additional components and services that are installed in a clus
 ## Enhacements list
 
 - [CoreDNS](https://coredns.io/plugins/kubernetes): It provides cluster wide DNS services.
-- [K8s Gateway](https://github.com/ori-edge/k8s_gateway): This component acts as a single external DNS interface into the cluster. It supports Ingress, Service of type LoadBalancer and resources from the Gateway API project.    
+- [k8s_gateway](https://github.com/ori-edge/k8s_gateway): This component acts as a single external DNS interface into the cluster. It supports Ingress, Service of type LoadBalancer and resources from the Gateway API project.    
 - [Metallb](https://metallb.universe.tf/): A network load balancer implementation. The pool of IP address can be configured here: /addons/core/metallb
 - [NFS](https://github.com/kubernetes-csi/csi-driver-nfs): This driver allows Kubernetes to access NFS server on Linux node.
 - [Traefik](https://traefik.io/traefik/): The Traefik Kubernetes Ingress provider is a Kubernetes Ingress controller. It manages access to cluster services by supporting the Ingress specification.
@@ -67,6 +67,7 @@ On local machines, you can configure the DNS server at **192.168.122.23** to han
 
 Before proceeding with cluster creation: 
 - Install the dependencies described in this section: [Prerequisites](#prerequisites)
+- Configure Split DNS to access services using the **jobico.org** domain, [more info](#dns).
 - Generate the cloud-init cfg files by running:
 
 ```bash
