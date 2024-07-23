@@ -409,7 +409,7 @@ The following packages must be installed locally before creating a cluster::
 This script [deps.sh](https://github.com/andrescosta/jobico-cloud/hacks/deps.sh) can facilitate the installation of these dependencies (except Helm).
 
 # Possible future areas of work
-
+- Add more capabalities configured by YAML (CIDRs, main domain, etc.)
 - Improvements to the plugins mechanism
 - Performance
 - Cloud-Init
