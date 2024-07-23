@@ -196,7 +196,13 @@ The following command stops and deletes the VMs that form a cluster:
 ./cluster.sh destroy
 ```
 
-# Cluster Enhancements
+# Kubernetes Cluster 
+
+## Architecture
+
+![architecture](img/architecture.png)
+
+## Enhancements
 
 Enhancements are additional components and services that can be installed in a cluster to extend its capabilities and improve its performance. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more. By integrating these enhancements, the cluster can offer a more robust, efficient, and versatile environment for managing and deploying applications.
 
