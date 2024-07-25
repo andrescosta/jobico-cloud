@@ -26,7 +26,7 @@ jobico::vm::list() {
 }
 jobico::vm::clear_dhcp() {
     jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
-        eval "$(virsh -q net-dhcp-leases default | { grep $HOST || true; } | awk '{split($5, ip, "/"); print "dhcp_release virbr0",ip[1],$3}')"
+        eval "$(virsh -q net-dhcp-leases default | awk -v host="${HOST}" '{ if ($6 == host) { split($5, ip, "/"); print "dhcp_release virbr0",ip[1],$3 }}')"
     done
 }
 jobico::vm::wait_until_all_up() {

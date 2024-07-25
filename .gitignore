@@ -6,6 +6,7 @@ machines.txt
 *.swp
 *.bak
 *.log
+*.bkp
 **/certs
 **/auth
 **/log
