@@ -127,7 +127,7 @@ spec:
       volumes:
         - name: certs-vol
           secret:
-            secretName: i-certs-secret
+            secretName: jobico.org-secret 
         - name: config-map
           configMap:
             name: ingress-config

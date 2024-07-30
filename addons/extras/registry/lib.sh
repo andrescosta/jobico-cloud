@@ -17,7 +17,7 @@ manifests(){
 deploy(){
     while read IP FQDN HOST SUBNET TYPE SCH; do
         SSH -n root@${IP} mkdir -p /etc/containerd/certs.d/$REGISTRY_NAME 
-        SCP $1/certs/tls.crt root@${IP}:/etc/containerd/certs.d/$REGISTRY_NAME/ca.crt 
+        SCP $2/jobico.org.crt root@${IP}:/etc/containerd/certs.d/$REGISTRY_NAME/ca.crt 
         SSH root@${IP} \
 << 'EOF'
 echo  '
@@ -34,6 +34,6 @@ EOF
 
 deploy_docker(){
     sudo mkdir -p /etc/docker/certs.d/reg.jobico.org/
-    sudo cp $1/certs/tls.crt /etc/docker/certs.d/reg.jobico.org/ca.crt
+    sudo cp $2/jobico.org.crt /etc/docker/certs.d/reg.jobico.org/ca.crt
     sudo systemctl restart docker
 }
