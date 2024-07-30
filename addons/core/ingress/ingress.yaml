@@ -1,3 +1,4 @@
+---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -38,6 +39,29 @@ metadata:
   name: traefik-account
 
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-config
+data:
+  tr.yaml: |
+    tls:
+      certificates:
+      - certFile: /certs/tls.crt
+        keyFile: /certs/tls.key
+    tcp:
+      routers:
+        MyDBRouter0:
+          service: MyDBService01
+          rule: "HostSNI(`db.jobico.org`)"
+          tls:
+            passthrough: true
+      services:
+        MyDBService01:
+          loadBalancer:
+            servers:
+              - address: cluster-jobico-rw.default.svc.cluster.local:5432
+---
 
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -75,15 +99,22 @@ spec:
       containers:
         - name: traefik
           image: traefik:v3.0
+          volumeMounts:
+            - name: certs-vol
+              mountPath: "/certs"
+            - name: config-map
+              mountPath: "/etc/tra-conf"
           args:
             - --log.level=DEBUG
             - --api.insecure
             - --entryPoints.websecure.address=:443
             - --entryPoints.web.address=:80
-            - --entryPoints.websecure.http.tls
+            - --entryPoints.postgres.address=:5432/tcp
+            - --entryPoints.websecure.http.tls=true
             - --serversTransport.insecureSkipVerify=true
             - --providers.kubernetesingress=true
             - --providers.kubernetesingress.ingressendpoint.publishedservice=default/traefik-web-service
+            - --providers.file.filename=/etc/tra-conf/tr.yaml
           ports:
             - name: web
               containerPort: 80
@@ -91,6 +122,15 @@ spec:
               containerPort: 443
             - name: dashboard
               containerPort: 8080
+            - name: pg
+              containerPort: 5432
+      volumes:
+        - name: certs-vol
+          secret:
+            secretName: i-certs-secret
+        - name: config-map
+          configMap:
+            name: ingress-config
 ---
 apiVersion: v1
 kind: Service
@@ -125,6 +165,24 @@ spec:
 
 
 ---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-pg-service 
+  annotations:
+    coredns.io/hostname: "db.jobico.org"
+spec:
+  type:  LoadBalancer
+  ports:
+    - port: 5432
+      protocol: TCP
+      targetPort: pg 
+  selector:
+    app: traefik
+
+---
+
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:

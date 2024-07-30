@@ -397,3 +397,11 @@ This script [deps.sh](https://github.com/andrescosta/jobico-cloud/hacks/deps.sh)
 - Control Plane Kubelet
 - Kubeadm
 - External Etcd 
+
+
+## ZITADEL user
+
+zitadel-admin@zitadel.id.jobico.org
+Password1!
+
+
