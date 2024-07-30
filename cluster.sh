@@ -393,8 +393,11 @@ install_services_dir() {
   echo "Waiting for the cluster to be created ..."
   wait_all_pods
   local svc_list=$(find "$SERVICES_DIR/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
-  svc_list+=$(find "$SERVICES_DIR/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
-  jobico::install_all_addons "newsvc" "${svc_list}"
+  jobico::install_all_addons "newsvc_core" "${svc_list}"
+  echo "Waiting for core services to be created ..."
+  wait_all_pods
+  svc_list=$(find "$SERVICES_DIR/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
+  jobico::install_all_addons "newsvc_extra" "${svc_list}"
 }
 wait_all_pods() {
     local timeout=4096
