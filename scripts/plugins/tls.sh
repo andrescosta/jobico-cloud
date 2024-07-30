@@ -83,3 +83,6 @@ jobico::tls::deploy_to_server() {
             root@$host:~/
     done
 }
+jobico::tls::create_tls_secret(){
+    kubectl create secret tls jobico.org-secret --cert=${WORK_DIR}/jobico.org.crt --key=${WORK_DIR}/jobico.org.key
+}

@@ -11,6 +11,9 @@ spec:
       volumeMounts:
         - name: repo-vol
           mountPath: "/var/lib/registry"
+        - name: certs-vol
+          mountPath: "/certs"
+          readOnly: true
         - name: auth-vol
           mountPath: "/auth"
           readOnly: true
@@ -29,6 +32,9 @@ spec:
     - name: repo-vol
       persistentVolumeClaim:
         claimName: docker-repo-pvc
+    - name: certs-vol
+      secret:
+        secretName: jobico.org-secret
     - name: auth-vol
       secret:
         secretName: auth-secret
@@ -72,6 +78,7 @@ spec:
     tls:
     - hosts:
       - reg.jobico.org
+      secretName: jobico.org-secret
     rules:
     - host: reg.jobico.org
       http:

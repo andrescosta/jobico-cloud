@@ -351,8 +351,10 @@ cfg() {
   sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-lb.cfg
 }
 addons(){
-  local addons_dir=$1
-  addons_dir=${addons_dir:-$ADDONS_DIR}
+  local addons_dir=$ADDONS_DIR
+  if [ $# -gt 0 ]; then
+    addons_dir=$1
+  fi
   local addons_list=$(find "$addons_dir/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   jobico::addons_post ${addons_list}
