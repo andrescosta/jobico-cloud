@@ -1,4 +1,4 @@
-helm uninstall v1obs -nobs
+helm uninstall kube-prometheus-stack --namespace obs
 kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
 kubectl delete crd alertmanagers.monitoring.coreos.com
 kubectl delete crd podmonitors.monitoring.coreos.com
