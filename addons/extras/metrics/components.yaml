@@ -192,7 +192,6 @@ spec:
       - emptyDir: {}
         name: tmp-dir
       - configMap: 
-        #defaultMode: 420
           name: extension-apiserver-authentication
         name: ca-file 
 ---
