@@ -1,3 +1,17 @@
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+helm install --create-namespace \
+  --values $1/values-loki.yaml \
+  loki \
+  --namespace=obs \
+  grafana/loki
+
+helm install tempo grafana/tempo --namespace=obs
+
+helm install pyroscope grafana/pyroscope --namespace=obs
+
 helm install kube-prometheus-stack \
   --create-namespace \
   --namespace obs \
