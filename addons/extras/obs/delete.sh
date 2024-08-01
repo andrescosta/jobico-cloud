@@ -1,3 +1,6 @@
+helm uninstall loki --namespace obs
+helm uninstall pyroscope --namespace obs
+helm uninstall tempo --namespace obs
 helm uninstall prometheus-postgres-exporter --namespace obs
 helm uninstall kube-prometheus-stack --namespace obs
 kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
