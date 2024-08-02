@@ -4,7 +4,6 @@ metadata:
   labels:
     release: kube-prometheus-stack
   name: kube-prometheus-stack-prometheus-postgres-exporter
-  namespace: obs
 spec:
   endpoints:
   - port: http

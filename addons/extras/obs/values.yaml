@@ -5,7 +5,27 @@ grafana:
       - grafana.jobico.org
   sidecar:
     skipTlsVerify: true
+    alerts:
+      enabled: true
+      searchNamespace: ALL
   additionalDataSources:
+    - orgId: 1
+      name: PrometheusTrace
+      type: prometheus
+      typeName: Prometheus
+      typeLogoUrl: public/app/plugins/datasource/prometheus/img/prometheus_logo.svg
+      access: proxy
+      url: http://kube-prometheus-stack-prometheus.obs:9090/
+      basicAuth: false
+      isDefault: false
+      uid: prometheustrace
+      jsonData: 
+          httpMethod: POST
+          timeInterval: 30s
+          exemplarTraceIdDestinations:
+            - name: trace_id
+              datasourceUid: tempo
+      readOnly: true
     - orgId: 1
       name: loki
       type: loki
@@ -14,8 +34,14 @@ grafana:
       url: http://loki-gateway.obs.svc.cluster.local/
       basicAuth: false
       isDefault: false
+      uid: loki
       jsonData:
         httpHeaderName1: 'X-Scope-OrgID'
+        derivedFields:
+         - datasourceUid: tempo
+           matcherRegex: ^.*?\\b\\w+,\\s*([^,]+)
+           name: TraceID
+           url: $${__value.raw}
       secureJsonData:
         httpHeaderValue1: 'jobico'
     - name: Tempo
@@ -29,6 +55,10 @@ grafana:
       editable: false
       apiVersion: 1
       uid: tempo
+      jsonData:
+        httpMethod: GET
+        tracesToLogs:
+            datasourceUid: 'loki'
     - orgId: 1
       name: "Pyroscope"
       type: "grafana-pyroscope-datasource"

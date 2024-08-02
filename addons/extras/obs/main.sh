@@ -22,4 +22,7 @@ helm install kube-prometheus-stack \
 helm install prometheus-postgres-exporter \
  prometheus-community/prometheus-postgres-exporter -nobs -f $1/values-pg.yaml
 
-kubectl apply -f $1/monitor.yaml
+kubectl apply -nobs -f $1/dashboards-jvm-micrometer.yaml
+kubectl apply -nobs -f $1/dashboards-trace.yaml
+kubectl apply -nobs -f $1/dashboards-pg.yaml
+kubectl apply -nobs -f $1/monitor.yaml
