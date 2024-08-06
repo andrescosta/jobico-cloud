@@ -1,3 +1,5 @@
+# CA
+
 [req]
 distinguished_name = req_distinguished_name
 prompt             = no
@@ -23,11 +25,6 @@ CN = admin
 O  = system:masters
 
 # Service Accounts
-#
-# The Kubernetes Controller Manager leverages a key pair to generate
-# and sign service account tokens as described in the
-# [managing service accounts](https://kubernetes.io/docs/admin/service-accounts-admin/)
-# documentation.
 
 [service-accounts]
 distinguished_name = service-accounts_distinguished_name
@@ -42,8 +39,10 @@ CN = service-accounts
 distinguished_name = kube-proxy_distinguished_name
 prompt             = no
 req_extensions     = kube-proxy_req_extensions
+x509_extensions    = kube-proxy_x509_extensions
 
-[kube-proxy_req_extensions]
+
+[kube-proxy_x509_extensions]
 basicConstraints     = CA:FALSE
 extendedKeyUsage     = clientAuth, serverAuth
 keyUsage             = critical, digitalSignature, keyEncipherment
@@ -51,6 +50,9 @@ nsCertType           = client
 nsComment            = "Kube Proxy Certificate"
 subjectAltName       = DNS:kube-proxy, IP:127.0.0.1
 subjectKeyIdentifier = hash
+
+[kube-proxy_req_extensions]
+subjectAltName       = DNS:kube-proxy, IP:127.0.0.1
 
 [kube-proxy_distinguished_name]
 CN = system:kube-proxy
@@ -65,8 +67,9 @@ L  = Montreal
 distinguished_name = kube-controller-manager_distinguished_name
 prompt             = no
 req_extensions     = kube-controller-manager_req_extensions
+x509_extensions    = kube-controller-manager_x509_extensions
 
-[kube-controller-manager_req_extensions]
+[kube-controller-manager_x509_extensions]
 basicConstraints     = CA:FALSE
 extendedKeyUsage     = clientAuth, serverAuth
 keyUsage             = critical, digitalSignature, keyEncipherment
@@ -74,6 +77,9 @@ nsCertType           = client
 nsComment            = "Kube Controller Manager Certificate"
 subjectAltName       = DNS:kube-proxy, IP:127.0.0.1
 subjectKeyIdentifier = hash
+
+[kube-controller-manager_req_extensions]
+subjectAltName       = DNS:kube-proxy, IP:127.0.0.1
 
 [kube-controller-manager_distinguished_name]
 CN = system:kube-controller-manager
@@ -88,8 +94,9 @@ L  = Montreal
 distinguished_name = kube-scheduler_distinguished_name
 prompt             = no
 req_extensions     = kube-scheduler_req_extensions
+x509_extensions    = kube-scheduler_x509_extensions
 
-[kube-scheduler_req_extensions]
+[kube-scheduler_x509_extensions]
 basicConstraints     = CA:FALSE
 extendedKeyUsage     = clientAuth, serverAuth
 keyUsage             = critical, digitalSignature, keyEncipherment
@@ -97,6 +104,9 @@ nsCertType           = client
 nsComment            = "Kube Scheduler Certificate"
 subjectAltName       = DNS:kube-scheduler, IP:127.0.0.1
 subjectKeyIdentifier = hash
+
+[kube-scheduler_req_extensions]
+subjectAltName       = DNS:kube-scheduler, IP:127.0.0.1
 
 [kube-scheduler_distinguished_name]
 CN = system:kube-scheduler
@@ -107,18 +117,13 @@ L  = Montreal
 
 
 # API Server
-#
-# The Kubernetes API server is automatically assigned the `kubernetes`
-# internal dns name, which will be linked to the first IP address (`10.32.0.1`)
-# from the address range (`10.32.0.0/24`) reserved for internal cluster
-# services.
-
 [kube-api-server]
 distinguished_name = kube-api-server_distinguished_name
 prompt             = no
 req_extensions     = kube-api-server_req_extensions
+x509_extensions    = kube-api-server_x509_extensions
 
-[kube-api-server_req_extensions]
+[kube-api-server_x509_extensions]
 basicConstraints     = CA:FALSE
 extendedKeyUsage     = clientAuth, serverAuth
 keyUsage             = critical, digitalSignature, keyEncipherment
@@ -126,6 +131,9 @@ nsCertType           = client
 nsComment            = "Kube Scheduler Certificate"
 subjectAltName       = @kube-api-server_alt_names
 subjectKeyIdentifier = hash
+
+[kube-api-server_req_extensions]
+subjectAltName       = @kube-api-server_alt_names
 
 [kube-api-server_alt_names]
 IP.0 = 10.32.0.1
@@ -154,14 +162,14 @@ nsComment            = "Admin Client Certificate"
 subjectKeyIdentifier = hash
 
 # ETCD 
-#
 
 [etcd-server]
 distinguished_name = etcd-server_distinguished_name
 prompt             = no
 req_extensions     = etcd-server_req_extensions
+x509_extensions    = etcd-server_x509_extensions
 
-[etcd-server_req_extensions]
+[etcd-server_x509_extensions]
 basicConstraints     = CA:FALSE
 extendedKeyUsage     = clientAuth, serverAuth
 keyUsage             = critical, digitalSignature, keyEncipherment
@@ -169,6 +177,9 @@ nsCertType           = client
 nsComment            = "Etcd Certificate"
 subjectAltName       = @etcd-server_alt_names
 subjectKeyIdentifier = hash
+
+[etcd-server_req_extensions]
+subjectAltName       = @etcd-server_alt_names
 
 [etcd-server_alt_names]
 IP.0 = 127.0.0.1
@@ -184,8 +195,9 @@ L  = Montreal
 distinguished_name = lb_distinguished_name
 prompt             = no
 req_extensions     = lb_req_extensions
+x509_extensions    = lb_x509_extensions
 
-[lb_req_extensions]
+[lb_x509_extensions]
 basicConstraints     = CA:FALSE
 extendedKeyUsage     = clientAuth, serverAuth
 keyUsage             = critical, digitalSignature, keyEncipherment
@@ -193,6 +205,9 @@ nsCertType           = client
 nsComment            = "Load balancer Certificate"
 subjectAltName       = @lb_alt_names
 subjectKeyIdentifier = hash
+
+[lb_req_extensions]
+subjectAltName       = @lb_alt_names
 
 [lb_alt_names]
 IP.0={LB_IP}
@@ -202,3 +217,33 @@ CN = LoadBalancer
 C  = CA
 ST = Quebec
 L  = Montreal
+
+# Jobico.org
+
+[jobico.org]
+distinguished_name = jobico.org_distinguished_name
+prompt             = no
+req_extensions     = jobico.org_req_extensions
+x509_extensions    = jobico.org_x509_extensions
+
+[jobico.org_x509_extensions]
+basicConstraints     = CA:FALSE
+extendedKeyUsage     = clientAuth, serverAuth
+keyUsage             = critical, digitalSignature, keyEncipherment
+nsCertType           = client
+nsComment            = "Jobico.org Certificate"
+subjectAltName       = @jobico.org_alt_names
+subjectKeyIdentifier = hash
+
+[jobico.org_req_extensions]
+subjectAltName       = @jobico.org_alt_names
+
+[jobico.org_alt_names]
+DNS.0 = *.jobico.org 
+
+[jobico.org_distinguished_name]
+CN = *.jobico.org 
+C  = CA
+ST = Quebec
+L  = Montreal
+

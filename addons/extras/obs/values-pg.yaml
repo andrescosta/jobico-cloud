@@ -1,0 +1,6 @@
+config:
+  datasource:
+    host: 'cluster-jobico-rw.default.svc.cluster.local'
+    user: postgres
+    password: postgres
+

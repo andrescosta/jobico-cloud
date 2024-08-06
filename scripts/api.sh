@@ -80,6 +80,11 @@ jobico::create_cluster() {
         NOT_DRY_RUN jobico::net::add_routes
         jobico::set_done "routes"
     fi
+    # TLS Secret
+    if [ $(jobico::was_done "tls_secret") == false ]; then
+        NOT_DRY_RUN jobico::tls::create_tls_secret
+        jobico::set_done "tls_secret"
+    fi
 }
 jobico::create_nodes() {
     if [ $(jobico::was_done "add_machines") == false ]; then
@@ -117,7 +122,6 @@ jobico::create_nodes() {
     # Routes
     if [ $(jobico::was_done "add_routes") == false ]; then
         NOT_DRY_RUN jobico::net::init
-        #NOT_DRY_RUN jobico::net::add_routes
         NOT_DRY_RUN jobico::net::add_routes_to_added_node
         jobico::set_done "add_routes"
     fi
@@ -173,7 +177,7 @@ jobico::install() {
     if [[ -f $script ]]; then
         echo "[*] Installing $script ..."
         if [[ $(IS_DRY_RUN) == false ]]; then
-             local output=$(bash $script ${dir} ${op} 2>&1) || err=$?
+             local output=$(bash $script ${dir} ${WORK_DIR} 2>&1) || err=$?
              echo "Instalation result:"
              echo "$output"
              if [[ $err != 0 ]]; then
