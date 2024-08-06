@@ -1,6 +1,6 @@
 # Introduction
 
-This educational project, inspired by [Kubernetes the Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way), initially began as a set of scripts to automate the guide's processes. Over time, it has evolved into a broader initiative that supports various topologies and integrates several Kubernetes extensions as addons. Despite these enhancements, the project remains a valuable tool for deepening my understanding of the technologies involved, such as Kubernetes and its high availability configurations, Bash scripting, and Linux.
+This educational project started as a set of scripts to automate the processes described in [Kubernetes the Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way). Over time, it has evolved into a broader initiative that supports various  cluster topologies and integrates several Kubernetes extensions as addons. Despite these enhancements, the project remains an educational tool to deepen my understanding of technologies such as Kubernetes, its high availability configurations, Bash scripting, and Linux.
 
 # Overview
 
@@ -30,13 +30,13 @@ This topology involves a single server that fulfills both the control plane and 
 
 ![architecture](img/architecture.png)
 
-## Enhancements
+## Extensions
 
-Enhancements are additional components and services that are installed in a cluster to extend its capabilities. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more. By integrating these enhancements, the cluster can offer a more robust, efficient, and versatile environment for managing and deploying applications.
+These extensions are additional components that are installed in a cluster to extend its capabilities. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more.
 
 ### Add-Ons & Services
 
-**Add-ons** and **Services** are concepts used to manage dependencies among enhancement components within a cluster. **Core** add-ons have no dependencies other than Kubernetes itself, while **Extra** add-ons depend on the core add-ons. Service components are installed after the cluster is created and all Pods are in the "Ready" state. **Core** services have no dependencies, whereas **Extra** services depend on the Core services.
+**Add-ons** and **Services** are part of a basic mechanism for managing dependencies among extensions within a cluster. **Core** add-ons have no dependencies other than Kubernetes itself, while **Extra** add-ons depend on the core add-ons. Service components are installed after the cluster is created and all Pods are in the "Ready" state. **Core** services have no dependencies, whereas **Extra** services depend on the Core services.
 
 ### Enhacements list
 
@@ -62,11 +62,11 @@ Enhancements are additional components and services that are installed in a clus
   
 - [Dashboard](https://github.com/kubernetes/dashboard): A general purpose, web-based UI for Kubernetes clusters. It allows to manage applications running in the cluster.
 - [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg): CloudNativePG is an operator that covers the full lifecycle of a highly available PostgreSQL database cluster with a primary/standby architecture, using native streaming replication.
-- [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several identity standards like OpenID Connect and SAML.
+- [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several standards like OpenID Connect and SAML.
 
 ### Disabling Enhacements
 
-To omit the deployment of an add-on or service, when a cluster is built using command line, create a file named **disabled** in its directory. This simple step ensures that the specified add-on or service will not be deployed, allowing you to customize the cluster setup according to your needs.
+To omit the deployment of an extension, when a cluster is built using command line, create a file named **disabled** in its directory. This simple step ensures that the specified extension(add-on or service) will not be deployed, allowing you to customize the cluster setup according to your needs.
 
 ## Jobico.org
 
@@ -77,20 +77,20 @@ On local machines, you can configure the DNS server at **192.168.122.23** to han
 
 ### Certificate
 
-One common certificate for all services exposed in jobico.org is generated and signed by the cluster's CA. After creating the cluster, this CA can be installed on Linux by running the following script **hacks/cert_add.sh** .
+A common certificate for all services exposed in jobico.org is generated and signed by the cluster's CA. After creating the cluster, you can install the cluster's CA on Linux by running the script **hacks/cert_add.sh**.
 
 ## Management
 
 ### Creation
 
-Before proceeding with cluster creation: 
-- Install the dependencies described in this section: [Prerequisites](#prerequisites)
-- Configure Split DNS to access services using the **jobico.org** domain, [more info](#dns).
-- Generate the cloud-init cfg files by running:
+Before proceeding with cluster creation, install the dependencies described in this section [Prerequisites](#prerequisites) and generate the **cloud-init cfg** files by running:
 
 ```bash
 $ ./cluster.sh cfg
 ```
+
+After the cluster is created, you can configure Split DNS to access services using the **jobico.org** domain, [more info](#dns).
+
 
 #### From command line
 
