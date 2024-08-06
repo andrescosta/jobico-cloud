@@ -15,3 +15,4 @@ scripts/support/parse_yaml.sh
 **/cloud-init-lb.cfg
 **/cloud-init-node.cfg
 services/extras/jobicok8s/jobicok8s/ 
+*drawio.bkp
