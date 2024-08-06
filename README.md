@@ -32,7 +32,7 @@ This topology involves a single server that fulfills both the control plane and 
 
 ## Extensions
 
-These extensions are additional components that are installed in a cluster to extend its capabilities. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more.
+Extensions are additional components installed in a cluster to enhance its capabilities. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more.
 
 ### Add-Ons & Services
 
