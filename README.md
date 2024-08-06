@@ -2,6 +2,8 @@
 
 This educational project started as a set of scripts to automate the process described in [Kubernetes the Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way). Over time, it has evolved into a broader initiative that supports various  cluster topologies and integrates several Kubernetes extensions as addons. Despite these enhancements, the project remains an educational tool to deepen my understanding of technologies such as Kubernetes, its high availability configurations, Bash scripting, and Linux.
 
+For details on the project's implementation, check [IMPLEMENTATION.md](/IMPLEMENTATION.md).
+
 # Overview
 
 The following sections outline the various topologies that the tool can create, based on the parameters specified by command line or as a YAML file. 
@@ -357,62 +359,6 @@ Starts the cluster's VMs
 Usage: ./cluster.sh <info|state|list>
 Display information about the cluster's VM(s).
 ```
-# Implementation 
-
-## VMs
-
-Each VM instance runs on KVM and is initialized using Cloud-Init with a Debian 12 cloud image. Subsequently, the instances are managed by libvirt and its command-line utilities. The Kubernetes services within each VM are controlled by Systemd.
-
-## TLS
-
-The communication between components in the cluster is protected by TLS. A CA is created as part of the process and  certificates are issued using OpenSSL and deployed in each server. 
-The implementation can be found here: scripts/plugins/tls.sh and the configuration template files in this place: extras/tls/
-
-
-## Design
-
-The script is structured around a core library that handles primary functionalities such as creation and destruction fo clusters, complemented by a suite of plugins that offer customization options for the stack.
-
-### Configuration File (`db.txt`)
-
-The script uses a configuration file named `db.txt` that outlines the components of the cluster and guides the actions necessary for its creation. This file is generated when a new cluster is created using the `new` command and is updated whenever a new worker node is added using the `add` command.
-
-## Structure
-
-### cluster.sh
-
-`cluster.sh` is a command-line script that integrates the cluster management library to offer functionalities such as creation, destruction, startup, and shutdown of clusters, among other options.
-
-### extras
-
-`extras` is a directory that contains configuration templates, OpenSSL config templates, and other support files.
-
-### scripts
-
-- api.sh: This library offers a public API for cluster management.
-- controller.sh: Implementation of the api.sh public API.
-- Makefile.vm: Makefile that support the creation and destroying of VM.
-
-#### dao
-
-This directory contains the necessary files to access `db.txt`, which guides the cluster creation process. As part of this process, a `cluster.txt` file is created with information about the infrastructure to be deployed. Access to both files is managed by libraries present in this directory.
-
-#### vm
-
-- host.sh: Contains functionality for updating the host files of both the local machine and the cluster's VMs.
-- local.sh: Provides services for setting up the local machine.
-
-#### support
-
-This folder contains utilities libraries used by the different parts of the system.
-
-#### plugins
-
-- haproxy.sh: It provides functions to generate haproxy and keepalived configuration files and deploy them on the load balancer VMs.
-- kvm.sh: It enables the creation, removal, and administration of virtual machines (VMs).
-- net.sh: It includes functionality for configuring new routes for the cluster's virtual machines (VMs).
-- tls.sh: It implements the functionality for generating the Certificate Authority (CA), issuing certificates, and deploying them.
-
 # Prerequisites
 
 The following packages must be installed locally before creating a cluster::
@@ -427,19 +373,14 @@ The following packages must be installed locally before creating a cluster::
 This script [deps.sh](https://github.com/andrescosta/jobico-cloud/hacks/deps.sh) can facilitate the installation of these dependencies (except Helm).
 
 # Possible future areas of work
+
 - Add more capabalities configured by YAML (CIDRs, main domain, etc.)
+- Improvements to the observavility stack
 - Improvements to the plugins mechanism
+- Imporvements to the templating system.
 - Performance
 - Cloud-Init
 - TLS updates using Let's Encrypt
 - Control Plane Kubelet
 - Kubeadm
-- External Etcd 
-
-
-## ZITADEL user
-
-zitadel-admin@zitadel.id.jobico.org
-Password1!
-
-
+- External Etcd
