@@ -85,7 +85,7 @@ A common certificate for all services exposed in jobico.org is generated and sig
 
 ### Creation
 
-Before proceeding with the cluster creation, install the dependencies described in this section [Prerequisites](#prerequisites) and generate the **cloud-init cfg** files by running:
+Before proceeding with the cluster creation, install the dependencies described in the section [Prerequisites](#prerequisites) and generate the **cloud-init cfg** files by running:
 
 ```bash
 $ ./cluster.sh cfg
