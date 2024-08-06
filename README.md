@@ -79,7 +79,7 @@ On local machines, you can configure the DNS server at **192.168.122.23** to han
 
 ### Certificate
 
-A common certificate for all services exposed in jobico.org is generated and signed by the cluster's CA. After creating the cluster, you can install the cluster's CA on Linux by running the script **hacks/cert_add.sh**.
+A common certificate for all services exposed in **jobico.org** is generated and signed by the cluster's CA. After creating the cluster, you can install the cluster's CA on Linux by running the script **hacks/cert_add.sh**.
 
 ## Management
 
@@ -112,7 +112,9 @@ After the cluster is created, you can configure Split DNS to access services usi
 # HA Cluster with ten worker nodes, five control plane servers and three load balancers.
 ./cluster.sh new --nodes 10 --cpl 5 --lb 3
 
-# HA Cluster with three worker nodes, two control plane servers and one load balancer. After the construction is completed (all pods Ready), it installs the scripts in the /services directory.
+# HA Cluster with three worker nodes, two control plane servers and one load balancer. 
+# After the construction is completed (all pods Ready), it installs the scripts in the 
+# /services directory.
 ./cluster.sh new --nodes 3 --cpl 2 --services
 ```
 
