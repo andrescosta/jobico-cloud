@@ -1,4 +1,8 @@
-helm uninstall v1obs -nobs
+helm uninstall loki --namespace obs
+helm uninstall pyroscope --namespace obs
+helm uninstall tempo --namespace obs
+helm uninstall prometheus-postgres-exporter --namespace obs
+helm uninstall kube-prometheus-stack --namespace obs
 kubectl delete crd alertmanagerconfigs.monitoring.coreos.com
 kubectl delete crd alertmanagers.monitoring.coreos.com
 kubectl delete crd podmonitors.monitoring.coreos.com
@@ -9,3 +13,4 @@ kubectl delete crd prometheusrules.monitoring.coreos.com
 kubectl delete crd scrapeconfigs.monitoring.coreos.com
 kubectl delete crd servicemonitors.monitoring.coreos.com
 kubectl delete crd thanosrulers.monitoring.coreos.com
+kubectl delete namespace obs

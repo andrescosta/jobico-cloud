@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    release: kube-prometheus-stack
+  name: kube-prometheus-stack-prometheus-postgres-exporter
+spec:
+  endpoints:
+  - port: http
+    scheme: http
+  selector:
+    matchLabels:
+      app: prometheus-postgres-exporter
+      release: prometheus-postgres-exporter

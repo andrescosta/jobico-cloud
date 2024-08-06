@@ -1,6 +1,8 @@
 # Introduction
 
-This educational project, inspired by [Kubernetes the Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way), initially began as a set of scripts to automate the guide's processes. Over time, it has evolved into a broader initiative that supports various topologies and integrates several Kubernetes extensions as addons. Despite these enhancements, the project remains a valuable tool for deepening my understanding of the technologies involved, such as Kubernetes and its high availability configurations, Bash scripting, and Linux.
+This educational project started as a set of scripts to automate the process described in [Kubernetes the Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way). Over time, it has evolved into a broader initiative that supports various  cluster topologies and integrates several Kubernetes extensions as addons. Despite these enhancements, the project remains an educational tool to deepen my understanding of technologies such as Kubernetes, its high availability configurations, Bash scripting, and Linux.
+
+For details on the project's implementation, check [IMPLEMENTATION.md](/IMPLEMENTATION.md).
 
 # Overview
 
@@ -30,15 +32,15 @@ This topology involves a single server that fulfills both the control plane and 
 
 ![architecture](img/architecture.png)
 
-## Enhancements
+## Extensions
 
-Enhancements are additional components and services that are installed in a cluster to extend its capabilities. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more. By integrating these enhancements, the cluster can offer a more robust, efficient, and versatile environment for managing and deploying applications.
+Extensions are additional components installed in a cluster to enhance its capabilities. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more.
 
-## Add-Ons & Services
+### Add-Ons & Services
 
-**Add-ons** and **Services** are concepts used to manage dependencies among enhancement components within a cluster. **Core** add-ons have no dependencies other than Kubernetes itself, while **Extra** add-ons depend on the core add-ons. Service components are installed after the cluster is created and all Pods are in the "Ready" state. **Core** services have no dependencies, whereas **Extra** services depend on the Core services.
+**Add-ons** and **Services** are part of a basic mechanism for managing dependencies among extensions within a cluster. **Core** add-ons have no dependencies other than Kubernetes itself, while **Extra** add-ons depend on the core add-ons. Service components are installed after the cluster is created and all Pods are in the "Ready" state. **Core** services have no dependencies, whereas **Extra** services depend on the Core services.
 
-## Enhacements list
+### Enhacements list
 
 - [CoreDNS](https://coredns.io/plugins/kubernetes): It provides cluster wide DNS services.
 - [k8s_gateway](https://github.com/ori-edge/k8s_gateway): This component acts as a single external DNS interface into the cluster. It supports Ingress, Service of type LoadBalancer and resources from the Gateway API project.    
@@ -47,32 +49,50 @@ Enhancements are additional components and services that are installed in a clus
 - [Traefik](https://traefik.io/traefik/): The Traefik Kubernetes Ingress provider is a Kubernetes Ingress controller. It manages access to cluster services by supporting the Ingress specification.
 - [Metrics](https://github.com/kubernetes-sigs/metrics-server): It collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through Metrics API for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler. It can also be accessed by kubectl top.
 - [Distribution Registry](https://distribution.github.io/distribution/): It is a server side application that stores and lets you distribute container images and other content. 
-- [Grafana and Prometheus](https://github.com/prometheus-operator/kube-prometheus): It installs a collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules.
+- [Observability](https://github.com/prometheus-operator/kube-prometheus): It installs and integrates the following services:
+
+  - **The Kube-Prometheus stack**
+  - **Grafana Loki**
+  - **Grafana Tempo**
+  - **Grafana Pyroscope**
+  - **Prometheus Postgres Exporter**
+
+  In addition, it provisions the following dashboards:
+  - **JVM-micrometer**: A dashboard that presents a collection of metrics collected from services running on a Java Virtual Machine.
+  - **Trace**: This dashboard displays information from Loki(logs), Tempo(traces), and Prometheus(metrics) correlated by a Trace ID and associated to a service call. 
+  - **Pg**: It displays the information collected by the **Prometheus Postgres Exporter**.
+  
 - [Dashboard](https://github.com/kubernetes/dashboard): A general purpose, web-based UI for Kubernetes clusters. It allows to manage applications running in the cluster.
 - [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg): CloudNativePG is an operator that covers the full lifecycle of a highly available PostgreSQL database cluster with a primary/standby architecture, using native streaming replication.
-- [ZITADEL](https://github.com/zitadel/zitadel): Identity management.
+- [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several standards like OpenID Connect and SAML.
 
 ### Disabling Enhacements
 
-To omit the deployment of an add-on or service, when a cluster is built using command line, create a file named **disabled** in its directory. This simple step ensures that the specified add-on or service will not be deployed, allowing you to customize the cluster setup according to your needs.
+To omit the deployment of an extension, when a cluster is built using command line, create a file named **disabled** in its directory. This simple step ensures that the specified extension(add-on or service) will not be deployed, allowing you to customize the cluster setup according to your needs.
 
-## DNS
+## Jobico.org
 
-The cluster deploys CoreDNS for internal DNS resolution and k8s_gateway for external DNS resolution. It designates **jobico.org** as the primary domain for all subdomains corresponding to services that expose functionality externally.
-On local machines, you can configure the DNS server at **192.168.122.23** to handle all domains within jobico.org. One method to achieve this is by implementing Split DNS. Numerous tutorials available [online](https://www.google.com/search?q=split+dns+linux) can guide you through this setup.
+### DNS
+
+The cluster deploys CoreDNS for internal DNS resolution and [k8s_gateway](https://github.com/ori-edge/k8s_gateway) for external DNS resolution. It designates **jobico.org** as the primary domain for all subdomains corresponding to services that expose functionality externally.
+On local machines, you can configure the DNS server at **192.168.122.23** to handle all domains within jobico.org. One method to achieve this is by implementing Split DNS. Numerous tutorials are available [online](https://www.google.com/search?q=split+dns+linux) that can guide you through this setup.
+
+### Certificate
+
+A common certificate for all services exposed in **jobico.org** is generated and signed by the cluster's CA. After creating the cluster, you can install the cluster's CA on Linux by running the script **hacks/cert_add.sh**.
 
 ## Management
 
 ### Creation
 
-Before proceeding with cluster creation: 
-- Install the dependencies described in this section: [Prerequisites](#prerequisites)
-- Configure Split DNS to access services using the **jobico.org** domain, [more info](#dns).
-- Generate the cloud-init cfg files by running:
+Before proceeding with the cluster creation, install the dependencies described in the section [Prerequisites](#prerequisites) and generate the **cloud-init cfg** files by running:
 
 ```bash
 $ ./cluster.sh cfg
 ```
+
+After the cluster is created, you can configure Split DNS to access services using the **jobico.org** domain, [more info](#dns).
+
 
 #### From command line
 
@@ -92,7 +112,9 @@ $ ./cluster.sh cfg
 # HA Cluster with ten worker nodes, five control plane servers and three load balancers.
 ./cluster.sh new --nodes 10 --cpl 5 --lb 3
 
-# HA Cluster with three worker nodes, two control plane servers and one load balancer. After the construction is completed (all pods Ready), it installs the scripts in the /services directory.
+# HA Cluster with three worker nodes, two control plane servers and one load balancer. 
+# After the construction is completed (all pods Ready), it installs the scripts in the 
+# /services directory.
 ./cluster.sh new --nodes 3 --cpl 2 --services
 ```
 
@@ -339,62 +361,6 @@ Starts the cluster's VMs
 Usage: ./cluster.sh <info|state|list>
 Display information about the cluster's VM(s).
 ```
-# Implementation 
-
-## VMs
-
-Each VM instance runs on KVM and is initialized using Cloud-Init with a Debian 12 cloud image. Subsequently, the instances are managed by libvirt and its command-line utilities. The Kubernetes services within each VM are controlled by Systemd.
-
-## TLS
-
-The communication between components in the cluster is protected by TLS. A CA is created as part of the process and  certificates are issued using OpenSSL and deployed in each server. 
-The implementation can be found here: scripts/plugins/tls.sh and the configuration template files in this place: extras/tls/
-
-
-## Design
-
-The script is structured around a core library that handles primary functionalities such as creation and destruction fo clusters, complemented by a suite of plugins that offer customization options for the stack.
-
-### Configuration File (`db.txt`)
-
-The script uses a configuration file named `db.txt` that outlines the components of the cluster and guides the actions necessary for its creation. This file is generated when a new cluster is created using the `new` command and is updated whenever a new worker node is added using the `add` command.
-
-## Structure
-
-### cluster.sh
-
-`cluster.sh` is a command-line script that integrates the cluster management library to offer functionalities such as creation, destruction, startup, and shutdown of clusters, among other options.
-
-### extras
-
-`extras` is a directory that contains configuration templates, OpenSSL config templates, and other support files.
-
-### scripts
-
-- api.sh: This library offers a public API for cluster management.
-- controller.sh: Implementation of the api.sh public API.
-- Makefile.vm: Makefile that support the creation and destroying of VM.
-
-#### dao
-
-This directory contains the necessary files to access `db.txt`, which guides the cluster creation process. As part of this process, a `cluster.txt` file is created with information about the infrastructure to be deployed. Access to both files is managed by libraries present in this directory.
-
-#### vm
-
-- host.sh: Contains functionality for updating the host files of both the local machine and the cluster's VMs.
-- local.sh: Provides services for setting up the local machine.
-
-#### support
-
-This folder contains utilities libraries used by the different parts of the system.
-
-#### plugins
-
-- haproxy.sh: It provides functions to generate haproxy and keepalived configuration files and deploy them on the load balancer VMs.
-- kvm.sh: It enables the creation, removal, and administration of virtual machines (VMs).
-- net.sh: It includes functionality for configuring new routes for the cluster's virtual machines (VMs).
-- tls.sh: It implements the functionality for generating the Certificate Authority (CA), issuing certificates, and deploying them.
-
 # Prerequisites
 
 The following packages must be installed locally before creating a cluster::
@@ -409,11 +375,14 @@ The following packages must be installed locally before creating a cluster::
 This script [deps.sh](https://github.com/andrescosta/jobico-cloud/hacks/deps.sh) can facilitate the installation of these dependencies (except Helm).
 
 # Possible future areas of work
+
 - Add more capabalities configured by YAML (CIDRs, main domain, etc.)
+- Improvements to the observavility stack
 - Improvements to the plugins mechanism
+- Imporvements to the templating system.
 - Performance
 - Cloud-Init
 - TLS updates using Let's Encrypt
 - Control Plane Kubelet
 - Kubeadm
-- External Etcd 
+- External Etcd
