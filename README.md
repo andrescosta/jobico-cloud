@@ -34,11 +34,11 @@ This topology involves a single server that fulfills both the control plane and 
 
 Enhancements are additional components and services that are installed in a cluster to extend its capabilities. These enhancements include tools and features such as observability solutions for monitoring and logging, database management systems, metrics collection and analysis, container registries, and more. By integrating these enhancements, the cluster can offer a more robust, efficient, and versatile environment for managing and deploying applications.
 
-## Add-Ons & Services
+### Add-Ons & Services
 
 **Add-ons** and **Services** are concepts used to manage dependencies among enhancement components within a cluster. **Core** add-ons have no dependencies other than Kubernetes itself, while **Extra** add-ons depend on the core add-ons. Service components are installed after the cluster is created and all Pods are in the "Ready" state. **Core** services have no dependencies, whereas **Extra** services depend on the Core services.
 
-## Enhacements list
+### Enhacements list
 
 - [CoreDNS](https://coredns.io/plugins/kubernetes): It provides cluster wide DNS services.
 - [k8s_gateway](https://github.com/ori-edge/k8s_gateway): This component acts as a single external DNS interface into the cluster. It supports Ingress, Service of type LoadBalancer and resources from the Gateway API project.    
@@ -47,19 +47,37 @@ Enhancements are additional components and services that are installed in a clus
 - [Traefik](https://traefik.io/traefik/): The Traefik Kubernetes Ingress provider is a Kubernetes Ingress controller. It manages access to cluster services by supporting the Ingress specification.
 - [Metrics](https://github.com/kubernetes-sigs/metrics-server): It collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through Metrics API for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler. It can also be accessed by kubectl top.
 - [Distribution Registry](https://distribution.github.io/distribution/): It is a server side application that stores and lets you distribute container images and other content. 
-- [Grafana and Prometheus](https://github.com/prometheus-operator/kube-prometheus): It installs a collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules.
+- [Observability](https://github.com/prometheus-operator/kube-prometheus): It installs and integrates the following services:
+
+  - **The Kube-Prometheus stack**
+  - **Grafana Loki**
+  - **Grafana Tempo**
+  - **Grafana Pyroscope**
+  - **Prometheus Postgres Exporter**
+
+  In addition, it provisions the following dashboards:
+  - **JVM-micrometer**: A dashboard that presents a collection of metrics collected from services running on a Java Virtual Machine.
+  - **Trace**: This dashboard displays information from Loki(logs), Tempo(traces), and Prometheus(metrics) correlated by a Trace ID and associated to a service call. 
+  - **Pg**: It displays the information collected by the **Prometheus Postgres Exporter**.
+  
 - [Dashboard](https://github.com/kubernetes/dashboard): A general purpose, web-based UI for Kubernetes clusters. It allows to manage applications running in the cluster.
 - [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg): CloudNativePG is an operator that covers the full lifecycle of a highly available PostgreSQL database cluster with a primary/standby architecture, using native streaming replication.
-- [ZITADEL](https://github.com/zitadel/zitadel): Identity management.
+- [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several identity standards like OpenID Connect and SAML.
 
 ### Disabling Enhacements
 
 To omit the deployment of an add-on or service, when a cluster is built using command line, create a file named **disabled** in its directory. This simple step ensures that the specified add-on or service will not be deployed, allowing you to customize the cluster setup according to your needs.
 
-## DNS
+## Jobico.org
 
-The cluster deploys CoreDNS for internal DNS resolution and k8s_gateway for external DNS resolution. It designates **jobico.org** as the primary domain for all subdomains corresponding to services that expose functionality externally.
-On local machines, you can configure the DNS server at **192.168.122.23** to handle all domains within jobico.org. One method to achieve this is by implementing Split DNS. Numerous tutorials available [online](https://www.google.com/search?q=split+dns+linux) can guide you through this setup.
+### DNS
+
+The cluster deploys CoreDNS for internal DNS resolution and [k8s_gateway](https://github.com/ori-edge/k8s_gateway) for external DNS resolution. It designates **jobico.org** as the primary domain for all subdomains corresponding to services that expose functionality externally.
+On local machines, you can configure the DNS server at **192.168.122.23** to handle all domains within jobico.org. One method to achieve this is by implementing Split DNS. Numerous tutorials are available [online](https://www.google.com/search?q=split+dns+linux) that can guide you through this setup.
+
+### Certificate
+
+One common certificate for all services exposed in jobico.org is generated and signed by the cluster's CA. After creating the cluster, this CA can be installed on Linux by running the following script **hacks/cert_add.sh** .
 
 ## Management
 
