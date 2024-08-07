@@ -43,6 +43,11 @@ jobico::new_cluster() {
         echo "A cluster already exists."
         exit 1
     fi
+    if [[ ! -f $EXTRAS_DIR/cfg/cloud-init-node.cfg || ! -f  $EXTRAS_DIR/cfg/cloud-init-lb.cfg ]]; then
+       echo "The cloud init config files were not generated."
+       echo "Run $0 cfg to generate them"
+       exit 1
+    fi 
     jobico::plugin::load ${PLUGINS_CONF_FILE}
     jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server
     DEBUG jobico::debug::print
