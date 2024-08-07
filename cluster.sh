@@ -218,7 +218,7 @@ add() {
     --debug)
       shift
       if [ "$1" != "s" ] && [ "$1" != "d" ]; then
-        echo "Invalid value for --debug.Plase provide s or d" >&2
+        echo "Invalid value for --debug.Plase provide 's' or 'd'" >&2
         display_help
         exit 1
       fi
@@ -326,18 +326,18 @@ clocal() {
 cfg() {
   local salt_def="SALT12345678"
   local auth_key_def=$(ls ~/.ssh/*.pub 2>/dev/null | head -n 1)
-  read -p "Salt for Debian               :" -e -i "${salt_def}" salt_deb
-  read -p "Password for Debian           :" -s pass_deb
+  read -p "Salt for user debian :" -e -i "${salt_def}" salt_deb
+  read -p "Password for user debian :" -s pass_deb
   echo
   local epass_deb=$(escape $(mkpasswd --method=SHA-512 --salt=${salt_deb} --rounds=4096 ${pass_deb}))
-  read -p "Authorized key file for debian:" -e -i "$auth_key_def" auth_key_deb
+  read -p "Authorized key file for user debian :" -e -i "$auth_key_def" auth_key_deb
   local key_deb="- $(escape "$(<$auth_key_deb)")"
-  read -p "Salt for root                 :" -e -i "$salt_def" salt_root
-  read -p "Password for root             :" -s pass_root
+  read -p "Salt for user root :" -e -i "$salt_def" salt_root
+  read -p "Password for user root :" -s pass_root
   echo
   local epass_root=$(escape $(mkpasswd --method=SHA-512 --salt=${salt_root} --rounds=4096 ${pass_root}))
   local auth_key_root=$auth_key_deb
-  read -p "Authorized key file for root  :" -e -i "$auth_key_def" auth_key_root
+  read -p "Authorized key file for user root :" -e -i "$auth_key_def" auth_key_root
   local key_root="- $(escape "$(<"$auth_key_root")")"
   cp extras/cfg/cloud-init-lb.cfg.tmpl extras/cfg/cloud-init-lb.cfg
   cp extras/cfg/cloud-init-node.cfg.tmpl extras/cfg/cloud-init-node.cfg
