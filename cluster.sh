@@ -299,15 +299,14 @@ destroy() {
       exit 1
       ;;
     esac
-    shift
   done
   NOT_DRY_RUN do_destroy
   DRY_RUN jobico::destroy_cluster
 }
 do_destroy() {
-  local response
   if [ "$ask" = true ]; then
-    read -r -p "Are you sure to destroy the cluster? [Y/n] " response
+    read -n 1 -p "Are you sure to destroy the cluster? [Y/n] " response
+    echo
     response=${response,,}
   fi
   if [[ $response == "yes" || $response == "y" ]]; then
