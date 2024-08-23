@@ -145,9 +145,9 @@ EOF
             git fetch -q origin "$branch"
             git diff --quiet origin/"$branch" -- "$build_dir"        
             if [[ $? == 1 || $first_build == true ]]; then
-                first_build=false
                 git pull origin "$branch"
                 patch_version=$(git rev-list HEAD --count --no-merges)
+                ((patch_version=patch_version+1))
                 push_version="$version.$patch_version"
                 buildah login --username jobico --password jobico123 https://reg.jobico.org
                 buildah build --format=docker -t $image:$push_version $build_dir
@@ -160,6 +160,7 @@ EOF
                 git commit -a -m "New chart: ${helm_version}.${patch_version}"
                 git push
                 popd >/dev/null
+                first_build=false
             fi
             if [ $interrupted == true ]; then
                 if [ $verbose == true ]; then
