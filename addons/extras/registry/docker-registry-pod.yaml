@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
     - name: registry
-      image: registry:2.6.2
+      image: registry:2.8.3
       volumeMounts:
         - name: repo-vol
           mountPath: "/var/lib/registry"
@@ -28,6 +28,8 @@ spec:
           value: "/certs/tls.crt"
         - name: REGISTRY_HTTP_TLS_KEY
           value: "/certs/tls.key"
+        - name: REGISTRY_STORAGE_DELETE_ENABLED
+          value: "true"
   volumes:
     - name: repo-vol
       persistentVolumeClaim:
