@@ -1,0 +1,8 @@
+platform=amd64
+rel-k8s=v1.28.4
+rel-cri=v1.28.0
+rel-runc=v1.1.9
+rel-cni=v1.5.1
+rel-containerd=1.7.8
+rel-etcd=v3.4.27
+rel-kubectl
