@@ -1,5 +1,6 @@
 debian-12.qcow2
 *.iso
+mngt/
 machines.txt
 /tmp
 **/work*
