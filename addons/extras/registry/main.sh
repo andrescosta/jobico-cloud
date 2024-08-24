@@ -1,3 +1,4 @@
+readonly DIR=$2
 . constants.sh
 . ${SCRIPTS}/dao/dao.sh
 . ${SCRIPTS}/dao/cluster.sh
