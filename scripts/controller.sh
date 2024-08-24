@@ -22,6 +22,7 @@ jobico::new_cluster() {
     local schedulable_server=$4
     local skip_addons=$5
     local addons_list=$6
+    local vers=$7
     if [[ $(jobico::dao::cluster::is_locked) == true ]]; then
         echo "A cluster already exists."
         exit 1
@@ -30,9 +31,13 @@ jobico::new_cluster() {
        echo "The cloud init config files were not generated."
        echo "Run $0 cfg to generate them"
        exit 1
-    fi 
+    fi
+    if [[ ! -f "$vers" ]]; then
+        echo "The file $vers does not exit."
+        exit 1
+    fi
     jobico::plugin::load ${PLUGINS_CONF_FILE}
-    jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server
+    jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server $vers
     DEBUG jobico::debug::print
     jobico::create_cluster
     if [ $skip_addons == false ]; then
@@ -90,7 +95,12 @@ jobico::destroy_cluster() {
 }
 
 jobico::gen_local_env() {
-    jobico::local
+    local vers=$1
+     if [[ ! -f "$vers" ]]; then
+        echo "The file $vers does not exit."
+        exit 1
+    fi
+    jobico::local $vers
 }
 
 jobico::add_nodes() {

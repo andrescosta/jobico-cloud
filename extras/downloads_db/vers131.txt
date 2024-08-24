@@ -1,5 +1,5 @@
 platform=amd64
-rel-k8s=v1.28.4
+rel-k8s=v1.31.0
 rel-cri=v1.28.0
 rel-runc=v1.1.9
 rel-cni=v1.5.1
