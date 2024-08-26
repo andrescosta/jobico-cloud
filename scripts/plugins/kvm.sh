@@ -1,19 +1,19 @@
 jobico::vm::create() {
     jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
-        make -f scripts/Makefile.vm new-vm-${TYPE} VM_IP=${IP} VM_NAME=${HOST}
+        make -f $SCRIPTS/Makefile.vm new-vm-${TYPE} VM_IP=${IP} VM_NAME=${HOST} -C ${DIR}
     done
 }
 
 jobico::vm::destroy() {
     jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
-        make -f scripts/Makefile.vm destroy-vm VM_IP=${IP} VM_NAME=${HOST}
+        make -f $SCRIPTS/Makefile.vm destroy-vm VM_IP=${IP} VM_NAME=${HOST} -C ${DIR}
     done
 }
 jobico::vm::cmd() {
     if [ $(jobico::dao::cluster::is_locked) == true ]; then
         jobico::dao::cluster::unlock
         jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
-            make -f scripts/Makefile.vm cmd-vm CMD=$1 VM_NAME=${HOST}
+            make -f $SCRIPTS/Makefile.vm cmd-vm CMD=$1 VM_NAME=${HOST} -C ${DIR}
         done
         jobico::dao::cluster::lock
         echo true
@@ -22,7 +22,7 @@ jobico::vm::cmd() {
     fi
 }
 jobico::vm::list() {
-    make -f scripts/Makefile.vm list
+    make -f $SCRIPTS/Makefile.vm list -C ${DIR}
 }
 jobico::vm::clear_dhcp() {
     jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do

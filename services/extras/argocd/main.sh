@@ -1,3 +1,4 @@
+readonly DIR=$2
 . constants.sh
 . ${SCRIPTS}/plugins/tls.sh
 echo $WORK_DIR

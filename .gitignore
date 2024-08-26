@@ -12,6 +12,7 @@ machines.txt
 **/auth
 **/log
 downloads/
+downloads_local/
 scripts/support/parse_yaml.sh
 **/cloud-init-lb.cfg
 **/cloud-init-node.cfg

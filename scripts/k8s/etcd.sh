@@ -47,9 +47,9 @@ jobico::etcd::deploy(){
     for host in ${servers[*]}; do
         file=${WORK_DIR}/etcd-${host}.service
         SCP ${file} root@${host}:~/etcd.service 
-        SCP ${DOWNLOADS_DIR}/etcd-v3.4.27-linux-amd64.tar.gz root@${host}:~/
+        SCP ${DOWNLOADS_DIR}/etcd.tar.gz root@${host}:~/
         SSH root@$host << 'EOF'
-tar -xvf ~/etcd-v3.4.27-linux-amd64.tar.gz
+tar -xvf ~/etcd.tar.gz
 mv ~/etcd-v3.4.27-linux-amd64/etcd* /usr/local/bin
 mkdir -p /etc/etcd /var/lib/etcd
 cp ca.crt \

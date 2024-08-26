@@ -5,11 +5,13 @@ set -o pipefail
 set -o errtrace
 
 PS4='LINENO:'
+DIR=$(dirname "$0")
+WORK_DIR="${DIR}/work"
 DEFAULT_NODES=2
 DEFAULT_NODES_ADD=1
 DEFAULT_CPL=1
 DEFAULT_LB=2
-DIR=$(dirname "$0")
+DEFAULT_VERS="$DIR/extras/downloads_db/vers.txt"
 SCRIPTS="${DIR}/scripts"
 ADDONS_DIR="${DIR}/addons"
 SERVICES_DIR="${DIR}/services"
@@ -20,10 +22,12 @@ set_trap_err
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/ssh.sh
 
+
 # Cluster creation
 ## "new" command. It creates a new cluster using the provided commnad line flags.
 new() {
-  local do_install_svc_dir=false cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false
+  local do_install_svc_dir=false cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false 
+  local vers=$DEFAULT_VERS
   while [[ $# -gt 0 ]]; do
     case "$1" in
     --nodes)
@@ -82,6 +86,10 @@ new() {
         exit 1
       fi
       ;;
+    --vers)
+      shift
+      vers=$1
+      ;;
     --debug)
       shift
       if [ "$1" != "s" ] && [ "$1" != "d" ]; then
@@ -128,7 +136,7 @@ new() {
   local addons_list=$(find "$addons_dir/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list"
-  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons "$addons_list"
+  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons "$addons_list" "$vers"
   if [ $do_install_svc_dir == true ]; then
     install_services_dir
   fi
@@ -153,7 +161,7 @@ yaml() {
             if [[ $addons_list != "" ]]; then
                 addons_list+=";"
             fi
-            addons_list+="./addons/${!dir}/${!addon}"
+            addons_list+="${ADDONS_DIR}/${!dir}/${!addon}"
         done 
     done
     if [[ -v yaml_cluster_node_size ]]; then
@@ -184,7 +192,7 @@ yaml() {
             if [[ $services_list != "" ]]; then
                 services_list+=";"
             fi
-            services_list+="./${SERVICES_DIR}/${!dir}/${!svc}"
+            services_list+="${SERVICES_DIR}/${!dir}/${!svc}"
         done 
     done
     if [[ $services_list != "" ]]; then
@@ -312,14 +320,77 @@ do_destroy() {
   if [[ $response == "yes" || $response == "y" ]]; then
     echo "Destroying the cluster ... "
     jobico::destroy_cluster
-    rm -rf work
+    rm -rf ${DIR}/work
   else
     echo "Command execution cancelled."
   fi
 }
 
 clocal() {
-  jobico::gen_local_env
+  local vers=$DEFAULT_VERS
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --vers)
+        shift
+        vers=$1
+        ;;
+      -*)
+        echo "Unrecognized or incomplete option: $1" >&2
+        display_help
+        exit 1
+        ;;
+      *)
+        echo "Invalid argument: $1" >&2
+        display_help
+        exit 1
+        ;;
+    esac
+    shift
+  done
+  jobico::gen_local_env $vers
+}
+ca(){
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      add)
+        add_ca
+      ;;
+      -*)
+        echo "Unrecognized or incomplete option: $1" >&2
+        display_help
+        exit 1
+        ;;
+      *)
+        echo "Invalid argument: $1" >&2
+        display_help
+        exit 1
+        ;;
+    esac
+    shift
+  done
+}
+add_ca(){
+  certName="Jobico.org-CA"
+  certFile=${WORK_DIR}/ca.crt
+  certCRT=jobico.ca.crt
+  certPEM=jobico.ca.pem
+  sudo rm -r /usr/local/share/ca-certificates/$certCRT
+  sudo rm -r /etc/ssl/certs/$certPEM
+  sudo update-ca-certificates
+  sudo cp $certFile /usr/local/share/ca-certificates/$certCRT
+  sudo update-ca-certificates
+  for certDB in $(find ~/ -name "cert9.db")
+  do
+      certdir=$(dirname ${certDB});
+      certutil -D -n "${certName}" -d sql:${certdir}
+      certutil -A -n "${certName}" -t "TCu,Cu,Tu" -i ${certFile} -d sql:${certdir}
+  done
+  for certDB in $(find ~/ -name "cert8.db")
+  do
+      certdir=$(dirname ${certDB});
+      certutil -D -n "${certName}" -d sql:${certdir}
+      certutil -A -n "${certName}" -t "TCu,Cu,Tu" -i ${certFile} -d dbm:${certdir}
+  done
 }
 
 cfg() {
@@ -422,6 +493,7 @@ display_help() {
   echo "          list"
   echo "          local"
   echo "          cfg"
+  echo "          ca"
   echo "          services"
   echo "          debug"
   echo "          wait"
@@ -455,6 +527,9 @@ display_help_command() {
   cfg)
     display_help_for_cfg
     ;;
+  ca)
+    display_help_for_ca
+    ;;
   debug)
     display_help_for_debug
     ;;
@@ -468,6 +543,12 @@ display_help_command() {
 display_help_for_debug(){
     echo "Usage: $0 debug"
     echo "Prints the content of the internal databases using the dao scripts."
+}
+display_help_for_ca(){
+    echo "Usage: $0 ca <command>"
+    echo "Cluster CA management."
+    echo "Commands:"
+    echo "          add - Add the CA to the local certificate repositories."
 }
 display_help_for_cluster_info() {
   echo "Usage: $0 <info|state|list>"
@@ -497,6 +578,8 @@ display_help_for_new() {
   echo "            Skip the instalation of addons"
   echo "     --services"
   echo "            Waits for the cluster to be created and then runs the scripts on the 'services' directory."
+  echo "     --vers"
+  echo "            File name with version numbers."
   echo "     --schedulable-server"
   echo "            The control plane nodes will be available to schedule pods. The default is false(tainted)."
   echo "     --dry-run"
@@ -598,6 +681,10 @@ main() {
     ;;
   wait)
     wait_all_pods  
+    ;;
+  ca)
+    shift
+    ca "$@"
     ;;
   help)
     if [ $# -gt 1 ]; then
