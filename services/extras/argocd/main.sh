@@ -5,6 +5,10 @@ echo $WORK_DIR
 kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl patch configmap argocd-cmd-params-cm  --patch-file $1/cm.yaml -nargocd
+kubectl patch configmap argocd-cm --patch-file $1/argocd-cm-patch.yaml -nargocd
+kubectl patch configmap argocd-rbac-cm --patch-file $1/rbac.yaml -nargocd
+kubectl patch role argocd-server --type=json --patch-file $1/role.yaml -nargocd
+kubectl patch ClusterRole argocd-server --type=json --patch-file $1/role.yaml
 jobico::tls::create_tls_secret argocd
 kubectl apply -f $1/ingress.yaml
 if [ ! -e /usr/local/bin/argocd ]; then

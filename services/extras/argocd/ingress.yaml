@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: argocd-server-http-ingress
   namespace: argocd
+  annotations:
+    traefik.ingress.kubernetes.io/websocket: "true"
 spec:
   rules:
   - http:
@@ -25,6 +27,8 @@ kind: Ingress
 metadata:
   name: argocd-server-grpc-ingress
   namespace: argocd
+  annotations:
+    traefik.ingress.kubernetes.io/websocket: "true"
 spec:
   rules:
   - http:
