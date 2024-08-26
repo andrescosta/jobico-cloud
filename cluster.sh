@@ -493,6 +493,7 @@ display_help() {
   echo "          list"
   echo "          local"
   echo "          cfg"
+  echo "          ca"
   echo "          services"
   echo "          debug"
   echo "          wait"
@@ -526,6 +527,9 @@ display_help_command() {
   cfg)
     display_help_for_cfg
     ;;
+  ca)
+    display_help_for_ca
+    ;;
   debug)
     display_help_for_debug
     ;;
@@ -539,6 +543,12 @@ display_help_command() {
 display_help_for_debug(){
     echo "Usage: $0 debug"
     echo "Prints the content of the internal databases using the dao scripts."
+}
+display_help_for_ca(){
+    echo "Usage: $0 ca <command>"
+    echo "Cluster CA management."
+    echo "Commands:"
+    echo "          add - Add the CA to the local certificate repositories."
 }
 display_help_for_cluster_info() {
   echo "Usage: $0 <info|state|list>"
