@@ -38,7 +38,7 @@ Extensions are additional components installed in a cluster to enhance its capab
 
 ### Add-Ons & Services
 
-**Add-ons** and **Services** are part of a basic mechanism for managing dependencies among extensions within a cluster. **Core** add-ons have no dependencies other than Kubernetes itself, while **Extra** add-ons depend on the core add-ons. Service components are installed after the cluster is created and all Pods are in the "Ready" state. **Core** services have no dependencies, whereas **Extra** services depend on the Core services.
+**Add-ons** and **Services** are part of a rudimentary mechanism for managing dependencies among extensions within a cluster. **Core** add-ons have no dependencies other than Kubernetes itself, while **Extra** add-ons depend on the core add-ons. Service components are installed after the cluster is created and all Pods are in the "Ready" state. **Core** services have no dependencies, whereas **Extra** services depend on the Core services.
 
 ### Enhacements list
 
@@ -79,7 +79,7 @@ On local machines, you can configure the DNS server at **192.168.122.23** to han
 
 ### Certificate
 
-A common certificate for all services exposed in **jobico.org** is generated and signed by the cluster's CA. After creating the cluster, you can install the cluster's CA on Linux by running the script **hacks/cert_add.sh**.
+A common certificate for all services exposed in **jobico.org** is generated and signed by the cluster's CA. After creating the cluster, you can install the cluster's CA on Linux using the [CLI](#installing-the-ca).
 
 ## Management
 
@@ -215,6 +215,22 @@ cluster:
 ```bash
 ./cluster.sh yaml examples/ha/cluster.yaml
 ```
+### Kubernetes versions
+
+The command-line tool allows you to specify component versions during cluster creation by using the versioning flag: `--vers [file_name]`. If the flag is not provided, the default file used is `extras/downloads_db/vers.txt`.
+
+```bash
+# The file vers131.txt install the K8s version v1.31.0
+./cluster.sh new --vers extras/downloads_db/vers131.txt
+```
+
+### Installing the CA
+
+After creating a cluster, you can add the created CA by running the following command:
+
+```bash
+./cluster.sh ca add
+```
 
 ### Add nodes
 
@@ -256,7 +272,19 @@ The following command stops and deletes the VMs that form a cluster:
 ./cluster.sh destroy
 ```
 
+# Kubectl plugin
 
+All these commands can be executed from the Kubectl command line tool. You just need to add the installation directory to the PATH, and then they can be accessed using the command **jobico**:
+
+```bash
+kubectl jobico <command>
+
+# Examples:
+## Creating a cluster with 3 worker nodes
+kubectl jobico new --nodes 3
+## Destroying a cluster
+kubectl jobico destroy
+```
 
 # Cluster.sh command reference
 
@@ -298,7 +326,9 @@ The arguments that define how the cluster will be created:
      --no-addons
             Skip the instalation of addons
      --services
-            Waits for the cluster to be created and then runs the scripts on the services directory.
+            Waits for the cluster to be created and then runs the scripts on the 'services' directory.
+     --vers
+            File name with version numbers.
      --schedulable-server
             The control plane nodes will be available to schedule pods. The default is false(tainted).
      --dry-run
@@ -361,6 +391,13 @@ Starts the cluster's VMs
 Usage: ./cluster.sh <info|state|list>
 Display information about the cluster's VM(s).
 ```
+```
+Usage: ./cluster.sh ca <command>
+Cluster CA management.
+Commands:
+          add - Add the CA to the local certificate repositories.
+```
+
 # Prerequisites
 
 The following packages must be installed locally before creating a cluster::

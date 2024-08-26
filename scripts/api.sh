@@ -1,9 +1,14 @@
 jobico::init() {
+    local number_of_nodes=$1
+    local number_of_cpl_nodes=$2
+    local number_of_lbs=$3
+    local schedulable_server=$4
+    local vers=$5
     jobico::local::init_fs
     if [ $(jobico::was_done "init") == false ]; then
         jobico::dao::gen_databases "$@"
-        NOT_DRY_RUN jobico::local::download_deps
-        NOT_DRY_RUN jobico::local::install_kubectl
+        NOT_DRY_RUN jobico::local::download_deps "$vers"
+        NOT_DRY_RUN jobico::local::install_kubectl ${DOWNLOADS_DIR} false
         jobico::set_done "init"
     fi
 }
@@ -127,12 +132,10 @@ jobico::create_nodes() {
     fi
 }
 jobico::local() {
-    if [ $(jobico::was_done "locals") == false ]; then
-        jobico::local::download_local_deps
-        jobico::local::install_kubectl
-        jobico::kubeconfig::gen_for_kube_admin
-        jobico::set_done "locals"
-    fi
+    local vers=$1
+    jobico::local::download_local_deps $vers
+    jobico::local::install_kubectl ${DOWNLOADS_LOCAL_DIR} true
+    jobico::kubeconfig::gen_for_kube_admin
 }
 jobico::destroy_vms() {
     NOT_DRY_RUN jobico::vm::destroy
@@ -165,19 +168,19 @@ jobico::install_addons(){
     done
 }
 jobico::install() {
-    local dir=$1
+    local addon_dir=$1
     local op=$2
     local err=0
     local command="main.sh"
     if [ $op == "add" ]; then
         command="main_add.sh"
     fi
-    local script="${dir}/$command"
+    local script="${addon_dir}/$command"
     DEBUG echo "Addon script:>>>$script<<<"
     if [[ -f $script ]]; then
         echo "[*] Installing $script ..."
         if [[ $(IS_DRY_RUN) == false ]]; then
-             local output=$(bash $script ${dir} ${WORK_DIR} 2>&1) || err=$?
+             local output=$(bash $script ${addon_dir} ${DIR} 2>&1) || err=$?
              echo "Instalation result:"
              echo "$output"
              if [[ $err != 0 ]]; then
