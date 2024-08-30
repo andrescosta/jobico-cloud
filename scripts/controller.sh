@@ -1,4 +1,3 @@
-. constants.sh
 . ${SCRIPTS}/support/plugin.sh
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/debug.sh

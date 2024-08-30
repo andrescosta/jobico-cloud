@@ -6,16 +6,7 @@ set -o errtrace
 
 PS4='LINENO:'
 DIR=$(dirname "$0")
-WORK_DIR="${DIR}/work"
-DEFAULT_NODES=2
-DEFAULT_NODES_ADD=1
-DEFAULT_CPL=1
-DEFAULT_LB=2
-DEFAULT_VERS="$DIR/extras/downloads_db/vers.txt"
-SCRIPTS="${DIR}/scripts"
-ADDONS_DIR="${DIR}/addons"
-SERVICES_DIR="${DIR}/services"
-
+. constants.sh
 . ${SCRIPTS}/support/exception.sh
 set_trap_err
 . ${SCRIPTS}/controller.sh
@@ -320,7 +311,7 @@ do_destroy() {
   if [[ $response == "yes" || $response == "y" ]]; then
     echo "Destroying the cluster ... "
     jobico::destroy_cluster
-    rm -rf ${DIR}/work
+    rm -rf ${WORK_DIR}
   else
     echo "Command execution cancelled."
   fi
