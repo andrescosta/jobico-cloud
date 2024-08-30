@@ -12,8 +12,8 @@ jobico::host::update_local_etc_hosts() {
     sudo bash -c "$cmd"
 }
 jobico::host::restore_local_etc_hosts() {
-    sed "/${BEGIN_HOSTS_FILE}/,/${END_HOSTS_FILE}/d" /etc/hosts >${WORK_DIR}/uhosts
-    sudo bash -c "cp ${WORK_DIR}/uhosts /etc/hosts"
+    sed "/${BEGIN_HOSTS_FILE}/,/${END_HOSTS_FILE}/d" /etc/hosts >$(work_dir)/uhosts
+    sudo bash -c "cp $(work_dir)/uhosts /etc/hosts"
 }
 jobico::host::update_local_known_hosts() {
     jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
@@ -40,6 +40,6 @@ jobico::host::add_new_nodes_to_hostsfile() {
     while read IP FQDN HOST SUBNET TYPE SCH; do
         entry="${entry}${IP} ${FQDN} ${HOST}\n"
     done < <(jobico::dao::cluster::nodes)
-    sed -i "/${END_HOSTS_FILE}/d" "${WORK_DIR}/hosts"
-    echo -e "${entry}${END_HOSTS_FILE}" >>"${WORK_DIR}/hosts"
+    sed -i "/${END_HOSTS_FILE}/d" "$(work_dir)/hosts"
+    echo -e "${entry}${END_HOSTS_FILE}" >>"$(work_dir)/hosts"
 }

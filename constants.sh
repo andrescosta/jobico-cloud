@@ -1,14 +1,8 @@
-readonly WORK_DIR="${DIR}/work"
-readonly DOWNLOADS_DIR="${DIR}/downloads"
-readonly DOWNLOADS_LOCAL_DIR="${DIR}/downloads_local"
 readonly SCRIPTS="${DIR}/scripts"
 readonly ADDONS_DIR="${DIR}/addons"
 readonly SERVICES_DIR="${DIR}/services"
 readonly EXTRAS_DIR="${DIR}/extras"
-readonly HOSTSFILE="${WORK_DIR}/hosts"
-readonly CA_CONF="${WORK_DIR}/ca.conf"
 readonly MAKE=make
-readonly STATUS_FILE=${WORK_DIR}/jobico_status
 readonly CLUSTER_NAME=jobico-cloud
 readonly WORKER_NAME=node
 readonly SERVER_NAME=server

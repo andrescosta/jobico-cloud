@@ -82,7 +82,7 @@ jobico::debug::print() {
         if [ "${TYPE}" == "server" ]; then
             echo "IP:$IP FQDN:$FQDN HOST:$HOST SUBNET:$SUBNET TYPE:$TYPE"
         fi
-    done <${WORK_DIR}/cluster.txt
+    done <$(work_dir)/cluster.txt
     echo "------certificates----------"
     print_array ${gencert[@]}
     echo "--------kubeconfig----------"

@@ -1,6 +1,6 @@
-readonly MACHINES_DB="${WORK_DIR}/cluster.txt"
-readonly MACHINES_NEW_DB="${WORK_DIR}/cluster_patch.txt"
-readonly MACHINES_DB_LOCK="${WORK_DIR}/cluster_lock.txt"
+readonly MACHINES_DB="$(work_dir)/cluster.txt"
+readonly MACHINES_NEW_DB="$(work_dir)/cluster_patch.txt"
+readonly MACHINES_DB_LOCK="$(work_dir)/cluster_lock.txt"
 readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
 readonly FROM_HOST=7
 readonly SCHEDULABLE="schedulable"
@@ -20,32 +20,32 @@ jobico::dao::gen_db() {
     local total_workers=$1
     local total_cpl_nodes=$2
     local total_of_lbs=$3
-    cp ${EXTRAS_DIR}/db/db.txt.tmpl ${WORK_DIR}/db.txt
+    cp ${EXTRAS_DIR}/db/db.txt.tmpl $(work_dir)/db.txt
     if [ $total_cpl_nodes -gt 1 ]; then
-        echo "server lbvip" >>${WORK_DIR}/db.txt
+        echo "server lbvip" >>$(work_dir)/db.txt
         for ((i = 0; i < total_of_lbs; i++)); do
-            echo "$LB_NAME-$i lb" >>${WORK_DIR}/db.txt
+            echo "$LB_NAME-$i lb" >>$(work_dir)/db.txt
         done
         for ((i = 0; i < total_cpl_nodes; i++)); do
-            echo "$SERVER_NAME-$i control_plane gencert" >>${WORK_DIR}/db.txt
+            echo "$SERVER_NAME-$i control_plane gencert" >>$(work_dir)/db.txt
         done
     else
-        echo "server control_plane gencert" >>${WORK_DIR}/db.txt
+        echo "server control_plane gencert" >>$(work_dir)/db.txt
     fi
     for ((i = 0; i < total_workers; i++)); do
-        echo "$WORKER_NAME-$i worker gencert" >>${WORK_DIR}/db.txt
+        echo "$WORKER_NAME-$i worker gencert" >>$(work_dir)/db.txt
     done
 }
 jobico::dao::gen_add_db() {
-    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt || true)
+    local total_nodes=$(grep -c 'node-*' $(work_dir)/db.txt || true)
     local total_workers=$1
     ((total_workers = total_workers + total_nodes))
     for ((i = total_nodes; i < total_workers; i++)); do
-        echo "$WORKER_NAME-$i worker gencert" >>${WORK_DIR}/db_patch.txt
+        echo "$WORKER_NAME-$i worker gencert" >>$(work_dir)/db_patch.txt
     done
 }
 jobico::dao::gen_add_cluster_db() {
-    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt || true)
+    local total_nodes=$(grep -c 'node-*' $(work_dir)/db.txt || true)
     local workers=($(jobico::dao::cpl::get worker))
     local total=$(wc -l <$MACHINES_DB)
     ((host_1 = total + FROM_HOST))
@@ -58,8 +58,8 @@ jobico::dao::gen_add_cluster_db() {
 }
 jobico::dao::merge_dbs() {
     cat ${MACHINES_NEW_DB} >>${MACHINES_DB}
-    cat ${WORK_DIR}/db_patch.txt >>${WORK_DIR}/db.txt
-    rm ${MACHINES_NEW_DB} ${WORK_DIR}/db_patch.txt
+    cat $(work_dir)/db_patch.txt >>$(work_dir)/db.txt
+    rm ${MACHINES_NEW_DB} $(work_dir)/db_patch.txt
 }
 jobico::dao::gen_cluster_db() {
     rm -f ${MACHINES_DB}

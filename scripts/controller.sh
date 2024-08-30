@@ -1,3 +1,8 @@
+
+readonly HOSTSFILE="$(work_dir)/hosts"
+readonly CA_CONF="$(work_dir)/ca.conf"
+readonly STATUS_FILE=$(work_dir)/jobico_status
+
 . ${SCRIPTS}/support/plugin.sh
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/debug.sh
@@ -83,7 +88,7 @@ jobico::destroy_cluster() {
             exit 1
         fi
     fi
-    if [ ! -e ${WORK_DIR}/db.txt ]; then
+    if [ ! -e $(work_dir)/db.txt ]; then
         echo "Error: The cluster was not created."
         exit 1
     fi
@@ -111,7 +116,7 @@ jobico::add_nodes() {
         echo "Error: The cluster was not created."
         exit 1
     fi
-    if [ ! -e ${WORK_DIR}/db.txt ]; then
+    if [ ! -e $(work_dir)/db.txt ]; then
         echo "Error: The cluster was not created."
         exit 1
     fi

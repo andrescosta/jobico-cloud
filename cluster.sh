@@ -7,12 +7,12 @@ set -o errtrace
 PS4='LINENO:'
 DIR=$(dirname "$0")
 . constants.sh
+. ${SCRIPTS}/support/dirs.sh
 . ${SCRIPTS}/support/exception.sh
 set_trap_err
 . ${SCRIPTS}/controller.sh
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/ssh.sh
-
 
 # Cluster creation
 ## "new" command. It creates a new cluster using the provided commnad line flags.
@@ -93,6 +93,18 @@ new() {
       fi
       DEBUGON
       ;;
+    --work-dir)
+      shift
+      set_work_dir $1
+      ;;
+    --download-dir)
+      shift
+      set_downloads_dir $1
+      ;;
+    --local-download-dir)
+      shift
+      set_downloads_local_dir $1
+      ;;
     -*)
       echo "Unrecognized or incomplete option: $1" >&2
       display_help
@@ -110,6 +122,7 @@ new() {
   cpl=${cpl:-$DEFAULT_CPL}
   lb=${lb:-$DEFAULT_LB}
   addons_dir=${addons_dir:-$ADDONS_DIR}
+  save_dirs
   if [[ $nodes == 0 ]]; then
     echo "Warning: No worker nodes are created. The control plane nodes are schedulable."
     schedulable_server=true
@@ -302,6 +315,7 @@ destroy() {
   NOT_DRY_RUN do_destroy
   DRY_RUN jobico::destroy_cluster
 }
+
 do_destroy() {
   if [ "$ask" = true ]; then
     read -n 1 -p "Are you sure to destroy the cluster? [Y/n] " response
@@ -311,7 +325,8 @@ do_destroy() {
   if [[ $response == "yes" || $response == "y" ]]; then
     echo "Destroying the cluster ... "
     jobico::destroy_cluster
-    rm -rf ${WORK_DIR}
+    rm -rf $(work_dir)
+    reset_dirs
   else
     echo "Command execution cancelled."
   fi
@@ -362,7 +377,7 @@ ca(){
 }
 add_ca(){
   certName="Jobico.org-CA"
-  certFile=${WORK_DIR}/ca.crt
+  certFile=$(work_dir)/ca.crt
   certCRT=jobico.ca.crt
   certPEM=jobico.ca.pem
   sudo rm -r /usr/local/share/ca-certificates/$certCRT
@@ -575,6 +590,12 @@ display_help_for_new() {
   echo "            The control plane nodes will be available to schedule pods. The default is false(tainted)."
   echo "     --dry-run"
   echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
+  echo "     --workdir"
+  echo "            Directory to use for generated files."
+  echo "     --downloaddir"
+  echo "            Directory to use for downloading support files."
+  echo "     --localdownloaddir"
+  echo "            Directory to use for downloading local utilities files."
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."

@@ -8,7 +8,7 @@ jobico::init() {
     if [ $(jobico::was_done "init") == false ]; then
         jobico::dao::gen_databases "$@"
         NOT_DRY_RUN jobico::local::download_deps "$vers"
-        NOT_DRY_RUN jobico::local::install_kubectl ${DOWNLOADS_DIR} false
+        NOT_DRY_RUN jobico::local::install_kubectl $(downloads_dir) false
         jobico::set_done "init"
     fi
 }
@@ -134,7 +134,7 @@ jobico::create_nodes() {
 jobico::local() {
     local vers=$1
     jobico::local::download_local_deps $vers
-    jobico::local::install_kubectl ${DOWNLOADS_LOCAL_DIR} true
+    jobico::local::install_kubectl $(downloads_local_dir) true
     jobico::kubeconfig::gen_for_kube_admin
 }
 jobico::destroy_vms() {
