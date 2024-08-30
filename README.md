@@ -226,7 +226,7 @@ The command-line tool allows you to specify component versions during cluster cr
 
 ### Installing the CA
 
-After creating a cluster, you can add the created CA by running the following command:
+Once the cluster is created, you can add the generated CA to local certificate databases by running the following command:
 
 ```bash
 ./cluster.sh ca add
