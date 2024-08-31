@@ -194,24 +194,24 @@ jobico::install() {
     fi
 }
 jobico::set_done() {
-    echo "|$1|" >>${STATUS_FILE}
+    echo "|$1|" >>$(jobico::status_file)
 }
 jobico::was_done() {
-    if grep -q $1 ${STATUS_FILE}; then
+    if grep -q $1 $(jobico::status_file); then
         echo true
     else
         echo false
     fi
 }
 jobico::add_cmd_was_done() {
-    if grep -q '^|add_' ${STATUS_FILE}; then
+    if grep -q '^|add_' $(jobico::status_file); then
         echo true
     else
         echo false
     fi
 }
 kuve::remove_add_commands() {
-    sed -i '/^|add_/d' ${STATUS_FILE}
+    sed -i '/^|add_/d' $(jobico::status_file)
 }
 jobico::unlock_cluster() {
     NOT_DRY_RUN jobico::dao::cluster::unlock

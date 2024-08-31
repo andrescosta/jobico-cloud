@@ -8,6 +8,7 @@ PS4='LINENO:'
 DIR=$(dirname "$0")
 . constants.sh
 . ${SCRIPTS}/support/dirs.sh
+load_dirs
 . ${SCRIPTS}/support/exception.sh
 set_trap_err
 . ${SCRIPTS}/controller.sh
@@ -19,6 +20,7 @@ set_trap_err
 new() {
   local do_install_svc_dir=false cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false 
   local vers=$DEFAULT_VERS
+  echo $(work_dir)
   while [[ $# -gt 0 ]]; do
     case "$1" in
     --nodes)
@@ -95,7 +97,7 @@ new() {
       ;;
     --dir)
       shift
-      set_dir $1
+      set_support_dir $1
       ;;
     -*)
       echo "Unrecognized or incomplete option: $1" >&2
@@ -115,6 +117,7 @@ new() {
   lb=${lb:-$DEFAULT_LB}
   addons_dir=${addons_dir:-$ADDONS_DIR}
   save_dirs
+  echo $(work_dir)
   if [[ $nodes == 0 ]]; then
     echo "Warning: No worker nodes are created. The control plane nodes are schedulable."
     schedulable_server=true

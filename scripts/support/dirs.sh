@@ -20,6 +20,7 @@ EOF
 }
 
 load_dirs() {
+     echo "Load dirrr" >&2
     if [[ -f "${DIR}/dirs.conf" ]]; then
         source ${DIR}/dirs.conf
         set_dir "_work_dir" $_work_dir
@@ -44,7 +45,7 @@ set_work_dir(){
     set_dir "_work_dir" $1
 }
 
-set_dir(){
+set_support_dir(){
     set_work_dir $1/work
     set_downloads_dir $1/downloads
     set_downloads_local_dir $1/downloads_local
@@ -65,5 +66,3 @@ downloads_local_dir(){
 set_downloads_local_dir(){
     set_dir "_downloads_local_dir" $1
 }
-
-load_dirs

@@ -1,8 +1,10 @@
 jobico::local::init_fs() {
     mkdir -p $(work_dir)
-    touch ${STATUS_FILE}
+    touch $(jobico::status_file)
 }
-
+jobico::status_file(){
+    echo "$(work_dir)/jobico_status"
+}
 jobico::local::download_deps() {
     local downloads_tbl_tmpl=${EXTRAS_DIR}/downloads_db/downloads.txt.tmpl
     local downloads_tbl=$(downloads_dir)/downloads.txt

@@ -1,7 +1,7 @@
 
-readonly HOSTSFILE="$(work_dir)/hosts"
-readonly CA_CONF="$(work_dir)/ca.conf"
-readonly STATUS_FILE=$(work_dir)/jobico_status
+#readonly HOSTSFILE="$(work_dir)/hosts"
+#readonly CA_CONF="$(work_dir)/ca.conf"
+#readonly STATUS_FILE=$(work_dir)/jobico_status
 
 . ${SCRIPTS}/support/plugin.sh
 . ${SCRIPTS}/support/utils.sh
