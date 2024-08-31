@@ -20,7 +20,6 @@ EOF
 }
 
 load_dirs() {
-     echo "Load dirrr" >&2
     if [[ -f "${DIR}/dirs.conf" ]]; then
         source ${DIR}/dirs.conf
         set_dir "_work_dir" $_work_dir

@@ -1,15 +1,15 @@
-jobico::tls::ca_conf_file(){
+ca_conf_file(){
     echo "$(work_dir)/ca.conf"
 }
 jobico::tls::gen_ca_conf() {
-    cp ${EXTRAS_DIR}/tls/ca.conf.tmpl $(jobico::tls::ca_conf_file)
+    cp ${EXTRAS_DIR}/tls/ca.conf.tmpl $(ca_conf_file)
     local workers=($(jobico::dao::cpl::get worker))
     local new_ca=""
     while read IP FQDN HOST SUBNET TYPE SCH; do
         node_req=$(sed "s/{NAME}/${HOST}/g; s/{IP}/${IP}/g;" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl")
         new_ca="${new_ca}\n\n${node_req}"
     done < <(jobico::dao::cluster::members)
-    echo -e "${new_ca}" >>$(jobico::tls::ca_conf_file)
+    echo -e "${new_ca}" >>$(ca_conf_file)
 
     local ips=""
     local dns=""
@@ -20,15 +20,15 @@ jobico::tls::gen_ca_conf() {
             dns="${dns}DNS.${i}=${FQDN}\n"
             ((i = i + 1))
         fi
-    done <${JOBICO_CLUSTER_TBL}
-    sed -i "s/{ETCD_IPS}/$ips/g" "$(jobico::tls::ca_conf_file)"
-    sed -i "s/{ETCD_DNS}/$dns/g" "$(jobico::tls::ca_conf_file)"
-    sed -i "s/{API_SERVER_IPS}/$ips/g" "$(jobico::tls::ca_conf_file)"
+    done <$(machines_db)
+    sed -i "s/{ETCD_IPS}/$ips/g" "$(ca_conf_file)"
+    sed -i "s/{ETCD_DNS}/$dns/g" "$(ca_conf_file)"
+    sed -i "s/{API_SERVER_IPS}/$ips/g" "$(ca_conf_file)"
 
     local vip=$(jobico::dao::cluster::lb 1)
     local vipname=$(jobico::dao::cluster::lb 2)
-    sed -i "s/{LB_IP}/${vip}/g" "$(jobico::tls::ca_conf_file)"
-    sed -i "s/{LB_DNS}/${vipname}/g" "$(jobico::tls::ca_conf_file)"
+    sed -i "s/{LB_IP}/${vip}/g" "$(ca_conf_file)"
+    sed -i "s/{LB_DNS}/${vipname}/g" "$(ca_conf_file)"
 }
 jobico::tls::add_nodes_to_ca_conf() {
     local workers=($(jobico::dao::cpl::get worker))
@@ -37,13 +37,13 @@ jobico::tls::add_nodes_to_ca_conf() {
         node_req=$(sed "s/{NAME}/${HOST}/g; s/{IP}/${IP}/g;" "${EXTRAS_DIR}/tls/ca.conf.nodes.tmpl")
         new_ca="${new_ca}\n\n${node_req}"
     done < <(jobico::dao::cluster::nodes)
-    echo -e "${new_ca}" >>$(jobico::tls::ca_conf_file)
+    echo -e "${new_ca}" >>$(ca_conf_file)
 }
 jobico::tls::gen_ca() {
     openssl genrsa -out $(work_dir)/ca.key 4096
     openssl req -x509 -new -sha512 -noenc \
         -key $(work_dir)/ca.key -days 3653 \
-        -config $(jobico::tls::ca_conf_file) \
+        -config $(ca_conf_file) \
         -out $(work_dir)/ca.crt
 }
 jobico::tls::gen_certs() {
@@ -52,7 +52,7 @@ jobico::tls::gen_certs() {
         openssl genrsa -out "$(work_dir)/${component}.key" 4096
 
         openssl req -new -key "$(work_dir)/${component}.key" -sha256 \
-            -config $(jobico::tls::ca_conf_file) -section ${component} \
+            -config $(ca_conf_file) -section ${component} \
             -out "$(work_dir)/${component}.csr"
 
         openssl x509 -req -days 3653 -in "$(work_dir)/${component}.csr" \

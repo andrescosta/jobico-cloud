@@ -1,8 +1,3 @@
-
-#readonly HOSTSFILE="$(work_dir)/hosts"
-#readonly CA_CONF="$(work_dir)/ca.conf"
-#readonly STATUS_FILE=$(work_dir)/jobico_status
-
 . ${SCRIPTS}/support/plugin.sh
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/debug.sh
@@ -83,7 +78,7 @@ jobico::exec_cmd() {
 }
 jobico::destroy_cluster() {
     if [[ $(jobico::dao::cluster::is_locked) == false ]]; then
-        if [ ! -e ${MACHINES_DB} ]; then
+        if [ ! -e $(machines_db) ]; then
             echo "Error: The cluster was not created."
             exit 1
         fi
@@ -112,7 +107,7 @@ jobico::add_nodes() {
         echo "Error: The cluster is locked. Use --force to add nodes"
         exit 1
     fi
-    if [ ! -e ${MACHINES_DB} ]; then
+    if [ ! -e $(machines_db) ]; then
         echo "Error: The cluster was not created."
         exit 1
     fi

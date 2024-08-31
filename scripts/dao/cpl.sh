@@ -23,7 +23,7 @@ jobico::dao::cpl::all_workers() {
 }
 jobico::dao::cluster::all_nodes() {
     echo "$(jobico::dao::cluster::curr_nodes)"
-    if [ -f "${MACHINES_NEW_DB}" ]; then
+    if [ -f "$(machines_new_db)" ]; then
         echo "$(jobico::dao::cluster::nodes)"
     fi
 }

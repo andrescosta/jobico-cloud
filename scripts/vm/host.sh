@@ -1,18 +1,18 @@
-jobico::host::host_file(){
+hosts_file(){
     echo "$(work_dir)/hosts"
 }
 
 jobico::host::gen_hostsfile() {
-    echo ${BEGIN_HOSTS_FILE} >$(jobico::host::host_file)
+    echo ${BEGIN_HOSTS_FILE} >$(hosts_file)
     jobico::dao::cluster::all | while read IP FQDN HOST SUBNET TYPE SCH; do
         entry="${IP} ${FQDN} ${HOST}"
-        echo ${entry} >>$(jobico::host::host_file)
+        echo ${entry} >>$(hosts_file)
     done
-    echo ${END_HOSTS_FILE} >>$(jobico::host::host_file)
+    echo ${END_HOSTS_FILE} >>$(hosts_file)
 }
 jobico::host::update_local_etc_hosts() {
     jobico::host::restore_local_etc_hosts
-    local cmd="cat $(jobico::host::host_file) >> /etc/hosts"
+    local cmd="cat $(hosts_file) >> /etc/hosts"
     sudo bash -c "$cmd"
 }
 jobico::host::restore_local_etc_hosts() {
@@ -34,7 +34,7 @@ jobico::host::set_machines_hostname() {
 }
 jobico::host::update_machines_etc_hosts() {
     jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
-        SCP $(jobico::host::host_file) root@${IP}:~/
+        SCP $(hosts_file) root@${IP}:~/
         SSH -n \
             root@${IP} "cat hosts >> /etc/hosts"
     done
