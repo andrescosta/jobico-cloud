@@ -93,17 +93,9 @@ new() {
       fi
       DEBUGON
       ;;
-    --work-dir)
+    --dir)
       shift
-      set_work_dir $1
-      ;;
-    --download-dir)
-      shift
-      set_downloads_dir $1
-      ;;
-    --local-download-dir)
-      shift
-      set_downloads_local_dir $1
+      set_dir $1
       ;;
     -*)
       echo "Unrecognized or incomplete option: $1" >&2
@@ -590,12 +582,8 @@ display_help_for_new() {
   echo "            The control plane nodes will be available to schedule pods. The default is false(tainted)."
   echo "     --dry-run"
   echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
-  echo "     --workdir"
-  echo "            Directory to use for generated files."
-  echo "     --downloaddir"
-  echo "            Directory to use for downloading support files."
-  echo "     --localdownloaddir"
-  echo "            Directory to use for downloading local utilities files."
+  echo "     --dir"
+  echo "            Directory to use for support files."
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."

@@ -44,6 +44,12 @@ set_work_dir(){
     set_dir "_work_dir" $1
 }
 
+set_dir(){
+    set_work_dir $1/work
+    set_downloads_dir $1/downloads
+    set_downloads_local_dir $1/downloads_local
+}
+
 downloads_dir(){
     get_dir "_downloads_dir"
 }
