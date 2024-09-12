@@ -46,7 +46,7 @@ Extensions are additional components installed in a cluster to enhance its capab
 - [k8s_gateway](https://github.com/ori-edge/k8s_gateway): This component acts as a single external DNS interface into the cluster. It supports Ingress, Service of type LoadBalancer and resources from the Gateway API project.    
 - [Metallb](https://metallb.universe.tf/): A network load balancer implementation. The pool of IP address can be configured here: /addons/core/metallb
 - [NFS](https://github.com/kubernetes-csi/csi-driver-nfs): This driver allows Kubernetes to access NFS server on Linux node.
-- [Traefik](https://traefik.io/traefik/): The Traefik Kubernetes Ingress provider is a Kubernetes Ingress controller. It manages access to cluster services by supporting the Ingress specification.The dashboard is accessible here: [https://ingress.jobico.org/dashboard](https://ingress.jobico.org/dashboard/#/)
+- [Traefik](https://traefik.io/traefik/): The Traefik Kubernetes Ingress provider is a Kubernetes Ingress controller. It manages access to cluster services by supporting the Ingress specification. The dashboard is accessible here: [https://ingress.jobico.org/dashboard](https://ingress.jobico.org/dashboard/#/)
 - [Metrics](https://github.com/kubernetes-sigs/metrics-server): It collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through Metrics API for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler. It can also be accessed by kubectl top.
 - [Distribution Registry](https://distribution.github.io/distribution/): It is a server side application that stores and lets you distribute container images and other content. 
 - [Observability](https://github.com/prometheus-operator/kube-prometheus): It installs and integrates the following services:
@@ -65,9 +65,9 @@ Extensions are additional components installed in a cluster to enhance its capab
   Grafana can be accessed from here: [https://grafana.jobico.org/](https://grafana.jobico.org/)
 - [Dashboard](https://github.com/kubernetes/dashboard): A general purpose, web-based UI for Kubernetes clusters. It allows to manage applications running in the cluster. It can be accessed from here: [https://dashboard.jobico.org](https://dashboard.jobico.org)
 - [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg): CloudNativePG is an operator that covers the full lifecycle of a highly available PostgreSQL database cluster with a primary/standby architecture, using native streaming replication.
-- [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several standards like OpenID Connect and SAML.The dashboard is accessible here: [http://id.jobico.org/](http://id.jobico.org/)
-- [Tekton](https://tekton.dev/): It is an open-source framework for creating CI/CD systems, allowing developers to build, test, and deploy across cloud providers and on-premise systems.The dashboard is accessible here: [https://cd.jobico.org/](https://cd.jobico.org/)
-- [ArgoCD](https://argoproj.github.io/cd/): Declarative continuous delivery with a fully-loaded UI.The dashboard is accessible here: [https://argocd.jobico.org/](https://argocd.jobico.org/)
+- [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several standards like OpenID Connect and SAML. The dashboard is accessible here: [http://id.jobico.org/](http://id.jobico.org/)
+- [Tekton](https://tekton.dev/): It is an open-source framework for creating CI/CD systems, allowing developers to build, test, and deploy across cloud providers and on-premise systems. The dashboard is accessible here: [https://cd.jobico.org/](https://cd.jobico.org/)
+- [ArgoCD](https://argoproj.github.io/cd/): Declarative continuous delivery with a fully-loaded UI. The dashboard is accessible here: [https://argocd.jobico.org/](https://argocd.jobico.org/)
 
 ### Disabling Enhacements
 
