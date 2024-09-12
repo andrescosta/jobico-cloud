@@ -1,11 +1,19 @@
-readonly MACHINES_DB="${WORK_DIR}/cluster.txt"
-readonly MACHINES_NEW_DB="${WORK_DIR}/cluster_patch.txt"
-readonly MACHINES_DB_LOCK="${WORK_DIR}/cluster_lock.txt"
-readonly JOBICO_CLUSTER_TBL=${MACHINES_DB}
 readonly FROM_HOST=7
 readonly SCHEDULABLE="schedulable"
 readonly NO_SCHEDULABLE="no_schedulable"
 readonly TAINTED="tainted"
+
+machines_db(){
+    echo "$(work_dir)/cluster.txt"
+}
+
+machines_new_db(){
+    echo "$(work_dir)/cluster_patch.txt"
+}
+
+machines_db_lock(){
+    echo "$(work_dir)/cluster_lock.txt"
+}
 
 jobico::dao::gen_databases() {
     local number_of_nodes=$1
@@ -20,49 +28,49 @@ jobico::dao::gen_db() {
     local total_workers=$1
     local total_cpl_nodes=$2
     local total_of_lbs=$3
-    cp ${EXTRAS_DIR}/db/db.txt.tmpl ${WORK_DIR}/db.txt
+    cp ${EXTRAS_DIR}/db/db.txt.tmpl $(work_dir)/db.txt
     if [ $total_cpl_nodes -gt 1 ]; then
-        echo "server lbvip" >>${WORK_DIR}/db.txt
+        echo "server lbvip" >>$(work_dir)/db.txt
         for ((i = 0; i < total_of_lbs; i++)); do
-            echo "$LB_NAME-$i lb" >>${WORK_DIR}/db.txt
+            echo "$LB_NAME-$i lb" >>$(work_dir)/db.txt
         done
         for ((i = 0; i < total_cpl_nodes; i++)); do
-            echo "$SERVER_NAME-$i control_plane gencert" >>${WORK_DIR}/db.txt
+            echo "$SERVER_NAME-$i control_plane gencert" >>$(work_dir)/db.txt
         done
     else
-        echo "server control_plane gencert" >>${WORK_DIR}/db.txt
+        echo "server control_plane gencert" >>$(work_dir)/db.txt
     fi
     for ((i = 0; i < total_workers; i++)); do
-        echo "$WORKER_NAME-$i worker gencert" >>${WORK_DIR}/db.txt
+        echo "$WORKER_NAME-$i worker gencert" >>$(work_dir)/db.txt
     done
 }
 jobico::dao::gen_add_db() {
-    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt || true)
+    local total_nodes=$(grep -c 'node-*' $(work_dir)/db.txt || true)
     local total_workers=$1
     ((total_workers = total_workers + total_nodes))
     for ((i = total_nodes; i < total_workers; i++)); do
-        echo "$WORKER_NAME-$i worker gencert" >>${WORK_DIR}/db_patch.txt
+        echo "$WORKER_NAME-$i worker gencert" >>$(work_dir)/db_patch.txt
     done
 }
 jobico::dao::gen_add_cluster_db() {
-    local total_nodes=$(grep -c 'node-*' ${WORK_DIR}/db.txt || true)
+    local total_nodes=$(grep -c 'node-*' $(work_dir)/db.txt || true)
     local workers=($(jobico::dao::cpl::get worker))
-    local total=$(wc -l <$MACHINES_DB)
+    local total=$(wc -l <$(machines_db))
     ((host_1 = total + FROM_HOST))
     ((host_2 = total_nodes + 1))
     for wkr in "${workers[@]}"; do
-        echo "192.168.122.${host_1} ${wkr}.kubernetes.local ${wkr} 10.200.${host_2}.0/24 node $SCHEDULABLE" >>${MACHINES_NEW_DB}
+        echo "192.168.122.${host_1} ${wkr}.kubernetes.local ${wkr} 10.200.${host_2}.0/24 node $SCHEDULABLE" >>$(machines_new_db)
         ((host_1 = host_1 + 1))
         ((host_2 = host_2 + 1))
     done
 }
 jobico::dao::merge_dbs() {
-    cat ${MACHINES_NEW_DB} >>${MACHINES_DB}
-    cat ${WORK_DIR}/db_patch.txt >>${WORK_DIR}/db.txt
-    rm ${MACHINES_NEW_DB} ${WORK_DIR}/db_patch.txt
+    cat $(machines_new_db) >>$(machines_db)
+    cat $(work_dir)/db_patch.txt >>$(work_dir)/db.txt
+    rm $(machines_new_db) $(work_dir)/db_patch.txt
 }
 jobico::dao::gen_cluster_db() {
-    rm -f ${MACHINES_DB}
+    rm -f $(machines_db)
     local workers=($(jobico::dao::cpl::get worker))
     local servers=($(jobico::dao::cpl::get control_plane))
     local lbs=($(jobico::dao::cpl::get lb))
@@ -76,26 +84,26 @@ jobico::dao::gen_cluster_db() {
     fi
     if [ "${#servers[@]}" -gt 1 ]; then
         if [ -n "$lbvip" ]; then
-            echo "192.168.122.${host_1} ${lbvip}.kubernetes.local ${lbvip} 0.0.0.0/24 lbvip $NO_SCHEDULABLE" >>${MACHINES_DB}
+            echo "192.168.122.${host_1} ${lbvip}.kubernetes.local ${lbvip} 0.0.0.0/24 lbvip $NO_SCHEDULABLE" >>$(machines_db)
             ((host_1 = host_1 + 1))
         fi
         for lb in "${lbs[@]}"; do
-            echo "192.168.122.${host_1} ${lb}.kubernetes.local ${lb} 0.0.0.0/24 lb $NO_SCHEDULABLE" >>${MACHINES_DB}
+            echo "192.168.122.${host_1} ${lb}.kubernetes.local ${lb} 0.0.0.0/24 lb $NO_SCHEDULABLE" >>$(machines_db)
             ((host_1 = host_1 + 1))
         done
         for svr in "${servers[@]}"; do
-            echo "192.168.122.${host_1} ${svr}.kubernetes.local ${svr} 10.200.${host_2}.0/24 server $svr_type" >>${MACHINES_DB}
+            echo "192.168.122.${host_1} ${svr}.kubernetes.local ${svr} 10.200.${host_2}.0/24 server $svr_type" >>$(machines_db)
             ((host_1 = host_1 + 1))
             ((host_2 = host_2 + 1))
         done
     else
         svr=${servers[0]}
-        echo "192.168.122.${host_1} ${svr}.kubernetes.local ${svr} 10.200.${host_2}.0/24 server $svr_type" >>${MACHINES_DB}
+        echo "192.168.122.${host_1} ${svr}.kubernetes.local ${svr} 10.200.${host_2}.0/24 server $svr_type" >>$(machines_db)
         ((host_1 = host_1 + 1))
         ((host_2 = host_2 + 1))
     fi
     for wkr in "${workers[@]}"; do
-        echo "192.168.122.${host_1} ${wkr}.kubernetes.local ${wkr} 10.200.${host_2}.0/24 node $SCHEDULABLE" >>${MACHINES_DB}
+        echo "192.168.122.${host_1} ${wkr}.kubernetes.local ${wkr} 10.200.${host_2}.0/24 node $SCHEDULABLE" >>$(machines_db)
         ((host_1 = host_1 + 1))
         ((host_2 = host_2 + 1))
     done

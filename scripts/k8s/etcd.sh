@@ -34,7 +34,7 @@ jobico::etcd::gen_service(){
     local clustere=$(escape ${cluster})
     local i=0
     while read IP FQDN HOST SUBNET TYPE SCH; do
-        file=${WORK_DIR}/etcd-${IP}.service
+        file=$(work_dir)/etcd-${IP}.service
         cp ${EXTRAS_DIR}/units/etcd.service.tmpl ${file}
         sed -i "s/{IP}/${IP}/g" "${file}"
         sed -i "s/{ETCD_NAME}/${HOST}/g" "${file}" 
@@ -45,9 +45,9 @@ jobico::etcd::deploy(){
     local i=0
     local servers=($(jobico::dao::cluster::get server 1))
     for host in ${servers[*]}; do
-        file=${WORK_DIR}/etcd-${host}.service
+        file=$(work_dir)/etcd-${host}.service
         SCP ${file} root@${host}:~/etcd.service 
-        SCP ${DOWNLOADS_DIR}/etcd.tar.gz root@${host}:~/
+        SCP $(downloads_dir)/etcd.tar.gz root@${host}:~/
         SSH root@$host << 'EOF'
 tar -xvf ~/etcd.tar.gz
 mv ~/etcd-v3.4.27-linux-amd64/etcd* /usr/local/bin

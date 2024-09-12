@@ -1,6 +1,6 @@
 
 jobico::encryption::gen_key(){
-    cat > ${WORK_DIR}/encryption-config.yaml \
+    cat > $(work_dir)/encryption-config.yaml \
 <<EOF
   kind: EncryptionConfig
   apiVersion: v1
@@ -19,6 +19,6 @@ EOF
 jobico::encryption::deploy(){
     local servers=($(jobico::dao::cluster::get server 1))
     for host in ${servers[@]}; do
-        SCP ${WORK_DIR}/encryption-config.yaml root@$host:~/
+        SCP $(work_dir)/encryption-config.yaml root@$host:~/
     done
 }
