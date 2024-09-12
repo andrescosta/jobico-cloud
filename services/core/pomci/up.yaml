@@ -1,7 +1,0 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: todosvc-todo-svc-jobico
-  namespace: default
-spec:
-  replicas: 3

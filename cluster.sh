@@ -6,28 +6,21 @@ set -o errtrace
 
 PS4='LINENO:'
 DIR=$(dirname "$0")
-WORK_DIR="${DIR}/work"
-DEFAULT_NODES=2
-DEFAULT_NODES_ADD=1
-DEFAULT_CPL=1
-DEFAULT_LB=2
-DEFAULT_VERS="$DIR/extras/downloads_db/vers.txt"
-SCRIPTS="${DIR}/scripts"
-ADDONS_DIR="${DIR}/addons"
-SERVICES_DIR="${DIR}/services"
-
+. constants.sh
+. ${SCRIPTS}/support/dirs.sh
+load_dirs
 . ${SCRIPTS}/support/exception.sh
 set_trap_err
 . ${SCRIPTS}/controller.sh
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/ssh.sh
 
-
 # Cluster creation
 ## "new" command. It creates a new cluster using the provided commnad line flags.
 new() {
   local do_install_svc_dir=false cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false 
   local vers=$DEFAULT_VERS
+  echo $(work_dir)
   while [[ $# -gt 0 ]]; do
     case "$1" in
     --nodes)
@@ -102,6 +95,10 @@ new() {
       fi
       DEBUGON
       ;;
+    --dir)
+      shift
+      set_support_dir $1
+      ;;
     -*)
       echo "Unrecognized or incomplete option: $1" >&2
       display_help
@@ -119,6 +116,8 @@ new() {
   cpl=${cpl:-$DEFAULT_CPL}
   lb=${lb:-$DEFAULT_LB}
   addons_dir=${addons_dir:-$ADDONS_DIR}
+  save_dirs
+  echo $(work_dir)
   if [[ $nodes == 0 ]]; then
     echo "Warning: No worker nodes are created. The control plane nodes are schedulable."
     schedulable_server=true
@@ -311,6 +310,7 @@ destroy() {
   NOT_DRY_RUN do_destroy
   DRY_RUN jobico::destroy_cluster
 }
+
 do_destroy() {
   if [ "$ask" = true ]; then
     read -n 1 -p "Are you sure to destroy the cluster? [Y/n] " response
@@ -320,7 +320,8 @@ do_destroy() {
   if [[ $response == "yes" || $response == "y" ]]; then
     echo "Destroying the cluster ... "
     jobico::destroy_cluster
-    rm -rf ${DIR}/work
+    rm -rf $(work_dir)
+    reset_dirs
   else
     echo "Command execution cancelled."
   fi
@@ -371,7 +372,7 @@ ca(){
 }
 add_ca(){
   certName="Jobico.org-CA"
-  certFile=${WORK_DIR}/ca.crt
+  certFile=$(work_dir)/ca.crt
   certCRT=jobico.ca.crt
   certPEM=jobico.ca.pem
   sudo rm -r /usr/local/share/ca-certificates/$certCRT
@@ -584,6 +585,8 @@ display_help_for_new() {
   echo "            The control plane nodes will be available to schedule pods. The default is false(tainted)."
   echo "     --dry-run"
   echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
+  echo "     --dir"
+  echo "            Directory to use for support files."
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."

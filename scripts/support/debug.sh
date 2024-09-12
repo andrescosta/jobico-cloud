@@ -82,7 +82,7 @@ jobico::debug::print() {
         if [ "${TYPE}" == "server" ]; then
             echo "IP:$IP FQDN:$FQDN HOST:$HOST SUBNET:$SUBNET TYPE:$TYPE"
         fi
-    done <${WORK_DIR}/cluster.txt
+    done <$(work_dir)/cluster.txt
     echo "------certificates----------"
     print_array ${gencert[@]}
     echo "--------kubeconfig----------"
@@ -90,14 +90,14 @@ jobico::debug::print() {
     echo "---------cluster------------"
     while read IP FQDN HOST SUBNET TYPE SCH; do
         echo "IP:$IP FQDN:$FQDN HOST:$HOST SUBNET:$SUBNET TYPE:$TYPE"
-    done <${JOBICO_CLUSTER_TBL}
+    done <$(machines_db)
     echo "---------routes------------"
 
     for worker1 in "${workers[@]}"; do
         for worker2 in "${workers[@]}"; do
             if [ "$worker1" != "$worker2" ]; then
-                node_ip=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 1)
-                node_subnet=$(grep ${worker2} ${MACHINES_DB} | cut -d " " -f 4)
+                node_ip=$(grep ${worker2} $(machines_db) | cut -d " " -f 1)
+                node_subnet=$(grep ${worker2} $(machines_db) | cut -d " " -f 4)
                 echo "SSH root at ${worker1}"
                 echo "to add route ${node_subnet} via ${node_ip}"
             fi

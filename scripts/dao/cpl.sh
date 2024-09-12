@@ -1,20 +1,20 @@
 jobico::dao::cpl::control_plane() {
-    local db=${WORK_DIR}/db.txt
+    local db=$(work_dir)/db.txt
     local values=($(awk '$2 == "control_plane" {print $1}' ${db}))
     for e in "${values[@]}"; do
         echo "$e"
     done
 }
 jobico::dao::cpl::curr_workers() {
-    local values=($(awk '$2 == "worker" {print $1}' ${WORK_DIR}/db.txt))
+    local values=($(awk '$2 == "worker" {print $1}' $(work_dir)/db.txt))
     for e in "${values[@]}"; do
         echo "$e"
     done
 }
 jobico::dao::cpl::all_workers() {
-    local values=($(awk '$2 == "worker" {print $1}' ${WORK_DIR}/db.txt))
-    if [ -f ${WORK_DIR}/db_patch.txt ]; then
-        values2=($(awk '$2 == "worker" {print $1}' ${WORK_DIR}/db_patch.txt))
+    local values=($(awk '$2 == "worker" {print $1}' $(work_dir)/db.txt))
+    if [ -f $(work_dir)/db_patch.txt ]; then
+        values2=($(awk '$2 == "worker" {print $1}' $(work_dir)/db_patch.txt))
         values=("${values[@]}" "${values2[@]}")
     fi
     for e in "${values[@]}"; do
@@ -23,7 +23,7 @@ jobico::dao::cpl::all_workers() {
 }
 jobico::dao::cluster::all_nodes() {
     echo "$(jobico::dao::cluster::curr_nodes)"
-    if [ -f "${MACHINES_NEW_DB}" ]; then
+    if [ -f "$(machines_new_db)" ]; then
         echo "$(jobico::dao::cluster::nodes)"
     fi
 }
@@ -41,10 +41,10 @@ jobico::dao::cpl::getby() {
     echo "$values"
 }
 jobico::dao::cpl::curr_db() {
-    if [ -f ${WORK_DIR}/db_patch.txt ]; then
-        echo "${WORK_DIR}/db_patch.txt"
+    if [ -f $(work_dir)/db_patch.txt ]; then
+        echo "$(work_dir)/db_patch.txt"
         return
     fi
-    echo "${WORK_DIR}/db.txt"
+    echo "$(work_dir)/db.txt"
 }
 

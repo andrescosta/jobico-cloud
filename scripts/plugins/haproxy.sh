@@ -1,16 +1,16 @@
 jobico::haproxy::gen_cfg(){
     local vip=$(jobico::dao::cluster::lb 1)
-    cp ${EXTRAS_DIR}/configs/haproxy.cfg.tmpl ${WORK_DIR}/haproxy.cfg
+    cp ${EXTRAS_DIR}/configs/haproxy.cfg.tmpl $(work_dir)/haproxy.cfg
     local servers=""
     while read IP FQDN HOST SUBNET TYPE SCH; do
         if [ "${TYPE}" == "server" ]; then
             servers="${servers}    server ${HOST} ${IP}:6443 check fall 3 rise 2\n"
         fi
-    done < ${WORK_DIR}/cluster.txt
-    sed -i "s/{LB_IPS}/${servers}/g" "${WORK_DIR}/haproxy.cfg" 
+    done < $(work_dir)/cluster.txt
+    sed -i "s/{LB_IPS}/${servers}/g" "$(work_dir)/haproxy.cfg" 
     servers=($(jobico::dao::cluster::get lb 1))
     for ip1 in ${servers[@]}; do
-        file="${WORK_DIR}/keepalived${ip1}.conf"
+        file="$(work_dir)/keepalived${ip1}.conf"
         cp  ${EXTRAS_DIR}/configs/keepalived.conf.tmpl ${file} 
         sed -i "s/{IP}/${ip1}/g" "${file}" 
         sed -i "s/{VIP}/${vip}/g" "${file}" 
@@ -27,8 +27,8 @@ jobico::haproxy::gen_cfg(){
 jobico::haproxy::deploy(){
     local servers=($(jobico::dao::cluster::get lb 1))
     for ip in ${servers[@]}; do
-        SCP ${WORK_DIR}/haproxy.cfg root@${ip}:~/ 
-        SCP ${WORK_DIR}/keepalived${ip}.conf root@${ip}:~/keepalived.conf
+        SCP $(work_dir)/haproxy.cfg root@${ip}:~/ 
+        SCP $(work_dir)/keepalived${ip}.conf root@${ip}:~/keepalived.conf
         SSH root@$ip << 'EOF'
 cloud-init status --wait > /dev/null
 cat ~/haproxy.cfg >> /etc/haproxy/haproxy.cfg

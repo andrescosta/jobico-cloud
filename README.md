@@ -46,7 +46,7 @@ Extensions are additional components installed in a cluster to enhance its capab
 - [k8s_gateway](https://github.com/ori-edge/k8s_gateway): This component acts as a single external DNS interface into the cluster. It supports Ingress, Service of type LoadBalancer and resources from the Gateway API project.    
 - [Metallb](https://metallb.universe.tf/): A network load balancer implementation. The pool of IP address can be configured here: /addons/core/metallb
 - [NFS](https://github.com/kubernetes-csi/csi-driver-nfs): This driver allows Kubernetes to access NFS server on Linux node.
-- [Traefik](https://traefik.io/traefik/): The Traefik Kubernetes Ingress provider is a Kubernetes Ingress controller. It manages access to cluster services by supporting the Ingress specification.
+- [Traefik](https://traefik.io/traefik/): The Traefik Kubernetes Ingress provider is a Kubernetes Ingress controller. It manages access to cluster services by supporting the Ingress specification. The dashboard is accessible here: [https://ingress.jobico.org/dashboard](https://ingress.jobico.org/dashboard/#/)
 - [Metrics](https://github.com/kubernetes-sigs/metrics-server): It collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through Metrics API for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler. It can also be accessed by kubectl top.
 - [Distribution Registry](https://distribution.github.io/distribution/): It is a server side application that stores and lets you distribute container images and other content. 
 - [Observability](https://github.com/prometheus-operator/kube-prometheus): It installs and integrates the following services:
@@ -61,10 +61,13 @@ Extensions are additional components installed in a cluster to enhance its capab
   - **JVM-micrometer**: A dashboard that presents a collection of metrics collected from services running on a Java Virtual Machine.
   - **Trace**: This dashboard displays information from Loki(logs), Tempo(traces), and Prometheus(metrics) correlated by a Trace ID and associated to a service call. 
   - **Pg**: It displays the information collected by the **Prometheus Postgres Exporter**.
-  
-- [Dashboard](https://github.com/kubernetes/dashboard): A general purpose, web-based UI for Kubernetes clusters. It allows to manage applications running in the cluster.
+
+  Grafana can be accessed from here: [https://grafana.jobico.org/](https://grafana.jobico.org/)
+- [Dashboard](https://github.com/kubernetes/dashboard): A general purpose, web-based UI for Kubernetes clusters. It allows to manage applications running in the cluster. It can be accessed from here: [https://dashboard.jobico.org](https://dashboard.jobico.org)
 - [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg): CloudNativePG is an operator that covers the full lifecycle of a highly available PostgreSQL database cluster with a primary/standby architecture, using native streaming replication.
-- [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several standards like OpenID Connect and SAML.
+- [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several standards like OpenID Connect and SAML. The dashboard is accessible here: [http://id.jobico.org/](http://id.jobico.org/)
+- [Tekton](https://tekton.dev/): It is an open-source framework for creating CI/CD systems, allowing developers to build, test, and deploy across cloud providers and on-premise systems. The dashboard is accessible here: [https://cd.jobico.org/](https://cd.jobico.org/)
+- [ArgoCD](https://argoproj.github.io/cd/): Declarative continuous delivery with a fully-loaded UI. The dashboard is accessible here: [https://argocd.jobico.org/](https://argocd.jobico.org/)
 
 ### Disabling Enhacements
 
@@ -91,8 +94,7 @@ Before proceeding with the cluster creation, install the dependencies described 
 $ ./cluster.sh cfg
 ```
 
-After the cluster is created, you can configure Split DNS to access services using the **jobico.org** domain, [more info](#dns).
-
+After a cluster is created, you can configure Split DNS to access services using the **jobico.org** domain, [more info](#dns).
 
 #### From command line
 
@@ -217,12 +219,16 @@ cluster:
 ```
 ### Kubernetes versions
 
-The command-line tool allows you to specify component versions during cluster creation by using the versioning flag: `--vers [file_name]`. If the flag is not provided, the default file used is `extras/downloads_db/vers.txt`.
+The flag `--vers [file_name]` allows you to specify the file containing the versions for each Kubernetes cluster component to be installed. If not provided, it defaults to `extras/downloads_db/vers.txt`.
 
 ```bash
 # The file vers131.txt install the K8s version v1.31.0
 ./cluster.sh new --vers extras/downloads_db/vers131.txt
 ```
+
+### Work Directories
+
+The tool creates several directories to store the files generated during cluster creation, including those for Kubernetes components. These files are crucial for both normal cluster operation and adding new nodes. By default, the directories are located in `$HOME/.jobico`, but you can specify a different location using the `--dir` flag when running the `new` command.
 
 ### Installing the CA
 
@@ -322,7 +328,7 @@ The arguments that define how the cluster will be created:
      --lb n
             Specify the number of load balancers to be created in case --cpl is greater than 1. The default value is 2. 
      --addons dir_name
-            Specify a different directory name for the addons. Default: ./addons
+            Specify a different directory name for the addons. Default: /home/andres/projs/jobico-cloud/addons
      --no-addons
             Skip the instalation of addons
      --services
@@ -333,6 +339,8 @@ The arguments that define how the cluster will be created:
             The control plane nodes will be available to schedule pods. The default is false(tainted).
      --dry-run
             Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging.
+     --dir
+            Directory to use for support files.
      --debug [ s | d ]
             Enable the debug mode.
        s: displays basic information.

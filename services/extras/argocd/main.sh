@@ -1,7 +1,6 @@
 readonly DIR=$2
 . constants.sh
 . ${SCRIPTS}/plugins/tls.sh
-echo $WORK_DIR
 kubectl create namespace argocd
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 kubectl patch configmap argocd-cmd-params-cm  --patch-file $1/argocd-cmd-params-cm-patch.yaml -nargocd

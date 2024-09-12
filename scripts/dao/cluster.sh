@@ -16,9 +16,9 @@ jobico::dao::cluster::all() {
     cat ${db}
 }
 jobico::dao::cluster::lb() {
-    local lb=$(awk -v value="lbvip" -v col="$1" '$5 == value {print $col}' ${MACHINES_DB})
+    local lb=$(awk -v value="lbvip" -v col="$1" '$5 == value {print $col}' $(machines_db))
     if [ -z ${lb} ]; then
-        lb=$(awk -v value="server" -v col="$1" '$5 == value {print $col}' ${MACHINES_DB})
+        lb=$(awk -v value="server" -v col="$1" '$5 == value {print $col}' $(machines_db))
     fi
     echo "${lb}"
 }
@@ -52,11 +52,11 @@ jobico::dao::cluster::get() {
     done
 }
 jobico::dao::cluster::curr_nodes() {
-    local result=$(awk '$5 == "node" {print $0}' ${MACHINES_DB})
+    local result=$(awk '$5 == "node" {print $0}' $(machines_db))
     if [[ ! -z "$result" ]]; then
         echo "$result"
     fi
-    local result=$(awk '$5 == "server" {print $0}' ${MACHINES_DB})
+    local result=$(awk '$5 == "server" {print $0}' $(machines_db))
     if [[ ! -z "$result" ]]; then
         echo "$result"
     fi
@@ -72,22 +72,22 @@ jobico::dao::cluster::count() {
 }
 
 jobico::dao::cluster::curr_db() {
-    if [ -f "${MACHINES_NEW_DB}" ]; then
-        echo "${MACHINES_NEW_DB}"
+    if [ -f "$(machines_new_db)" ]; then
+        echo "$(machines_new_db)"
         return
     fi
-    echo "${MACHINES_DB}"
+    echo "$(machines_db)"
 }
 jobico::dao::cluster::lock() {
-    mv ${MACHINES_DB} ${MACHINES_DB_LOCK}
+    mv $(machines_db) $(machines_db_lock)
 }
 jobico::dao::cluster::unlock() {
-    if [ -f "${MACHINES_DB_LOCK}" ]; then
-        mv ${MACHINES_DB_LOCK} ${MACHINES_DB}
+    if [ -f "$(machines_db_lock)" ]; then
+        mv $(machines_db_lock) $(machines_db)
     fi
 }
 jobico::dao::cluster::is_locked() {
-    if [ -f "${MACHINES_DB_LOCK}" ]; then
+    if [ -f "$(machines_db_lock)" ]; then
         echo true
     else
         echo false
