@@ -91,8 +91,7 @@ Before proceeding with the cluster creation, install the dependencies described 
 $ ./cluster.sh cfg
 ```
 
-After the cluster is created, you can configure Split DNS to access services using the **jobico.org** domain, [more info](#dns).
-
+After a cluster is created, you can configure Split DNS to access services using the **jobico.org** domain, [more info](#dns).
 
 #### From command line
 
@@ -217,12 +216,16 @@ cluster:
 ```
 ### Kubernetes versions
 
-The command-line tool allows you to specify component versions during cluster creation by using the versioning flag: `--vers [file_name]`. If the flag is not provided, the default file used is `extras/downloads_db/vers.txt`.
+The flag `--vers [file_name]` allows you to specify the file containing the versions for each Kubernetes cluster component to be installed. If not provided, it defaults to `extras/downloads_db/vers.txt`.
 
 ```bash
 # The file vers131.txt install the K8s version v1.31.0
 ./cluster.sh new --vers extras/downloads_db/vers131.txt
 ```
+
+### Work Directories
+
+The tool creates several directories to store the files generated during cluster creation, including those for Kubernetes components. These files are crucial for both normal cluster operation and adding new nodes. By default, the directories are located in `$HOME/.jobico`, but you can specify a different location using the `--dir` flag when running the `new` command.
 
 ### Installing the CA
 
@@ -322,7 +325,7 @@ The arguments that define how the cluster will be created:
      --lb n
             Specify the number of load balancers to be created in case --cpl is greater than 1. The default value is 2. 
      --addons dir_name
-            Specify a different directory name for the addons. Default: ./addons
+            Specify a different directory name for the addons. Default: /home/andres/projs/jobico-cloud/addons
      --no-addons
             Skip the instalation of addons
      --services
@@ -333,6 +336,8 @@ The arguments that define how the cluster will be created:
             The control plane nodes will be available to schedule pods. The default is false(tainted).
      --dry-run
             Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging.
+     --dir
+            Directory to use for support files.
      --debug [ s | d ]
             Enable the debug mode.
        s: displays basic information.
