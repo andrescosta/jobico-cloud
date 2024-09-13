@@ -44,3 +44,21 @@ print_array_to_file() {
         echo "$v" >array.txt
     done
 }
+
+prepare_file() {
+    local filename=$1
+    local output_dir="$(work_dir)/template/$2"
+    local output_file="$output_dir/$(basename $filename)"
+    if [[ "$output_file" == *.tmpl ]]; then
+        output_file="${output_file%.tmpl}"
+    fi
+    mkdir -p "$output_dir"
+    cp "$filename" "$output_file"
+    shift
+    shift
+    for pattern in "$@"; do
+        IFS="=" read -r key value <<< "$pattern"
+        sed -i "s/$key/$value/g" "$output_file"
+    done
+    echo "$output_file"
+}

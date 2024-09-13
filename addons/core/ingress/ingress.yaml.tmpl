@@ -53,7 +53,7 @@ data:
       routers:
         MyDBRouter0:
           service: MyDBService01
-          rule: "HostSNI(`db.jobico.org`)"
+          rule: "HostSNI(`db.{DOMAIN}`)"
           tls:
             passthrough: true
       services:
@@ -127,7 +127,7 @@ spec:
       volumes:
         - name: certs-vol
           secret:
-            secretName: jobico.org-secret 
+            secretName: {DOMAIN}-secret 
         - name: config-map
           configMap:
             name: ingress-config
@@ -171,7 +171,7 @@ kind: Service
 metadata:
   name: traefik-pg-service 
   annotations:
-    coredns.io/hostname: "db.jobico.org"
+    coredns.io/hostname: "db.{DOMAIN}"
 spec:
   type:  LoadBalancer
   ports:
@@ -189,7 +189,7 @@ metadata:
   name: traeffik-dashboard-ingress
 spec:
     rules:
-    - host: ingress.jobico.org
+    - host: ingress.{DOMAIN}
       http:
         paths:
         - path: /

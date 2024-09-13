@@ -393,21 +393,25 @@ add_ca(){
   certFile="$(work_dir)/ca.crt"
   certCRT="$domain.ca.crt"
   certPEM="$domain.ca.pem"
-  sudo rm -r /usr/local/share/ca-certificates/$certCRT
-  sudo rm -r /etc/ssl/certs/$certPEM
+  sudo rm -f -r /usr/local/share/ca-certificates/$certCRT
+  sudo rm -f -r /etc/ssl/certs/$certPEM
   sudo update-ca-certificates
   sudo cp $certFile /usr/local/share/ca-certificates/$certCRT
   sudo update-ca-certificates
   for certDB in $(find ~/ -name "cert9.db")
   do
       certdir=$(dirname ${certDB});
-      certutil -D -n "${certName}" -d sql:${certdir}
+      if certutil -L -d sql:${certdir} | grep -q "$certName"; then
+        certutil -D -n "${certName}" -d sql:${certdir}
+      fi
       certutil -A -n "${certName}" -t "TCu,Cu,Tu" -i ${certFile} -d sql:${certdir}
   done
   for certDB in $(find ~/ -name "cert8.db")
   do
       certdir=$(dirname ${certDB});
-      certutil -D -n "${certName}" -d sql:${certdir}
+      if certutil -L -d sql:${certdir} | grep -q "$certName"; then
+        certutil -D -n "${certName}" -d sql:${certdir}
+      fi
       certutil -A -n "${certName}" -t "TCu,Cu,Tu" -i ${certFile} -d dbm:${certdir}
   done
 }
