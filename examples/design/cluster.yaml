@@ -6,7 +6,7 @@ cluster:
   cidr: 192.168.122.8/24
   tls: ...
   name: aaa
-  domain: jobico.org
+  domain: jobico.local
   node:
     image: aaaa
     size: 0

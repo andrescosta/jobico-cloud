@@ -46,7 +46,7 @@ Extensions are additional components installed in a cluster to enhance its capab
 - [k8s_gateway](https://github.com/ori-edge/k8s_gateway): This component acts as a single external DNS interface into the cluster. It supports Ingress, Service of type LoadBalancer and resources from the Gateway API project.    
 - [Metallb](https://metallb.universe.tf/): A network load balancer implementation. The pool of IP address can be configured here: /addons/core/metallb
 - [NFS](https://github.com/kubernetes-csi/csi-driver-nfs): This driver allows Kubernetes to access NFS server on Linux node.
-- [Traefik](https://traefik.io/traefik/): The Traefik Kubernetes Ingress provider is a Kubernetes Ingress controller. It manages access to cluster services by supporting the Ingress specification. The dashboard is accessible here: [https://ingress.jobico.org/dashboard](https://ingress.jobico.org/dashboard/#/)
+- [Traefik](https://traefik.io/traefik/): The Traefik Kubernetes Ingress provider is a Kubernetes Ingress controller. It manages access to cluster services by supporting the Ingress specification. The dashboard is accessible here: [https://ingress.jobico.local/dashboard](https://ingress.jobico.local/dashboard/#/)
 - [Metrics](https://github.com/kubernetes-sigs/metrics-server): It collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through Metrics API for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler. It can also be accessed by kubectl top.
 - [Distribution Registry](https://distribution.github.io/distribution/): It is a server side application that stores and lets you distribute container images and other content. 
 - [Observability](https://github.com/prometheus-operator/kube-prometheus): It installs and integrates the following services:
@@ -62,27 +62,27 @@ Extensions are additional components installed in a cluster to enhance its capab
   - **Trace**: This dashboard displays information from Loki(logs), Tempo(traces), and Prometheus(metrics) correlated by a Trace ID and associated to a service call. 
   - **Pg**: It displays the information collected by the **Prometheus Postgres Exporter**.
 
-  Grafana can be accessed from here: [https://grafana.jobico.org/](https://grafana.jobico.org/)
-- [Dashboard](https://github.com/kubernetes/dashboard): A general purpose, web-based UI for Kubernetes clusters. It allows to manage applications running in the cluster. It can be accessed from here: [https://dashboard.jobico.org](https://dashboard.jobico.org)
+  Grafana can be accessed from here: [https://grafana.jobico.local/](https://grafana.jobico.local/)
+- [Dashboard](https://github.com/kubernetes/dashboard): A general purpose, web-based UI for Kubernetes clusters. It allows to manage applications running in the cluster. It can be accessed from here: [https://dashboard.jobico.local](https://dashboard.jobico.local)
 - [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg): CloudNativePG is an operator that covers the full lifecycle of a highly available PostgreSQL database cluster with a primary/standby architecture, using native streaming replication.
-- [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several standards like OpenID Connect and SAML. The dashboard is accessible here: [http://id.jobico.org/](http://id.jobico.org/)
-- [Tekton](https://tekton.dev/): It is an open-source framework for creating CI/CD systems, allowing developers to build, test, and deploy across cloud providers and on-premise systems. The dashboard is accessible here: [https://cd.jobico.org/](https://cd.jobico.org/)
-- [ArgoCD](https://argoproj.github.io/cd/): Declarative continuous delivery with a fully-loaded UI. The dashboard is accessible here: [https://argocd.jobico.org/](https://argocd.jobico.org/)
+- [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several standards like OpenID Connect and SAML. The dashboard is accessible here: [http://id.jobico.local/](http://id.jobico.local/)
+- [Tekton](https://tekton.dev/): It is an open-source framework for creating CI/CD systems, allowing developers to build, test, and deploy across cloud providers and on-premise systems. The dashboard is accessible here: [https://cd.jobico.local/](https://cd.jobico.local/)
+- [ArgoCD](https://argoproj.github.io/cd/): Declarative continuous delivery with a fully-loaded UI. The dashboard is accessible here: [https://argocd.jobico.local/](https://argocd.jobico.local/)
 
 ### Disabling Enhacements
 
 To omit the deployment of an extension, when a cluster is built using command line, create a file named **disabled** in its directory. This simple step ensures that the specified extension(add-on or service) will not be deployed, allowing you to customize the cluster setup according to your needs.
 
-## Jobico.org
+## jobico.local
 
 ### DNS
 
-The cluster deploys CoreDNS for internal DNS resolution and [k8s_gateway](https://github.com/ori-edge/k8s_gateway) for external DNS resolution. It designates **jobico.org** as the primary domain for all subdomains corresponding to services that expose functionality externally.
-On local machines, you can configure the DNS server at **192.168.122.23** to handle all domains within jobico.org. One method to achieve this is by implementing Split DNS. Numerous tutorials are available [online](https://www.google.com/search?q=split+dns+linux) that can guide you through this setup.
+The cluster deploys CoreDNS for internal DNS resolution and [k8s_gateway](https://github.com/ori-edge/k8s_gateway) for external DNS resolution. It designates **jobico.local** as the primary domain for all subdomains corresponding to services that expose functionality externally.
+On local machines, you can configure the DNS server at **192.168.122.23** to handle all domains within jobico.local. One method to achieve this is by implementing Split DNS. Numerous tutorials are available [online](https://www.google.com/search?q=split+dns+linux) that can guide you through this setup.
 
 ### Certificate
 
-A common certificate for all services exposed in **jobico.org** is generated and signed by the cluster's CA. After creating the cluster, you can install the cluster's CA on Linux using the [CLI](#installing-the-ca).
+A common certificate for all services exposed in **jobico.local** is generated and signed by the cluster's CA. After creating the cluster, you can install the cluster's CA on Linux using the [CLI](#installing-the-ca).
 
 ## Management
 
@@ -94,7 +94,7 @@ Before proceeding with the cluster creation, install the dependencies described 
 $ ./cluster.sh cfg
 ```
 
-After a cluster is created, you can configure Split DNS to access services using the **jobico.org** domain, [more info](#dns).
+After a cluster is created, you can configure Split DNS to access services using the **jobico.local** domain, [more info](#dns).
 
 #### From command line
 
