@@ -14,12 +14,13 @@ set_trap_err
 . ${SCRIPTS}/controller.sh
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/ssh.sh
+. ${SCRIPTS}/dao/cpl.sh
 
 # Cluster creation
 ## "new" command. It creates a new cluster using the provided commnad line flags.
 new() {
   local do_install_svc_dir=false cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false 
-  local vers=$DEFAULT_VERS
+  local vers=$DEFAULT_VERS domain=$DOMAIN
   echo $(work_dir)
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -81,7 +82,15 @@ new() {
       ;;
     --vers)
       shift
-      vers=$1
+      if [ -n "${1-}" ]; then
+        vers=$1
+        if [ ! -f "$vers" ]; then
+          echo "The file $vers does not exist." >&2
+          exit 1
+        fi
+      else
+        echo "--vers requires a file name."
+      fi
       ;;
     --debug)
       shift
@@ -98,6 +107,14 @@ new() {
     --dir)
       shift
       set_support_dir $1
+      ;;
+    --domain)
+      shift
+      if [ -n "${1-}" ]; then
+        domain=$1
+      else
+        echo "--domain requires a domain name"
+      fi
       ;;
     -*)
       echo "Unrecognized or incomplete option: $1" >&2
@@ -135,7 +152,7 @@ new() {
   local addons_list=$(find "$addons_dir/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list"
-  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons "$addons_list" "$vers"
+  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons "$addons_list" "$vers" "$domain"
   if [ $do_install_svc_dir == true ]; then
     install_services_dir
   fi
@@ -371,10 +388,11 @@ ca(){
   done
 }
 add_ca(){
-  certName="Jobico.org-CA"
-  certFile=$(work_dir)/ca.crt
-  certCRT=jobico.ca.crt
-  certPEM=jobico.ca.pem
+  local domain=$(jobico::dao::cpl::get_domain)
+  certName="$domain-CA"
+  certFile="$(work_dir)/ca.crt"
+  certCRT="$domain.ca.crt"
+  certPEM="$domain.ca.pem"
   sudo rm -r /usr/local/share/ca-certificates/$certCRT
   sudo rm -r /etc/ssl/certs/$certPEM
   sudo update-ca-certificates
@@ -587,6 +605,8 @@ display_help_for_new() {
   echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
   echo "     --dir"
   echo "            Directory to use for support files."
+  echo "     --domain"
+  echo "            Cluster's domain. Default: jobico.local"
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."

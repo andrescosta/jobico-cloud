@@ -20,7 +20,9 @@ jobico::dao::gen_databases() {
     local number_of_cpl_nodes=$2
     local number_of_lbs=$3
     local schedulable_server=$4
-    jobico::dao::gen_db $number_of_nodes $number_of_cpl_nodes $number_of_lbs
+    local vers=$5
+    local domain=$6
+    jobico::dao::gen_db $number_of_nodes $number_of_cpl_nodes $number_of_lbs $domain
     jobico::dao::gen_cluster_db $schedulable_server
 }
 
@@ -28,7 +30,9 @@ jobico::dao::gen_db() {
     local total_workers=$1
     local total_cpl_nodes=$2
     local total_of_lbs=$3
+    local domain=$4
     cp ${EXTRAS_DIR}/db/db.txt.tmpl $(work_dir)/db.txt
+    sed -i "s/{DOMAIN}/$domain/g" $(work_dir)/db.txt
     if [ $total_cpl_nodes -gt 1 ]; then
         echo "server lbvip" >>$(work_dir)/db.txt
         for ((i = 0; i < total_of_lbs; i++)); do

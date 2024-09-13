@@ -18,8 +18,6 @@ rules:
   - apiGroups: ["apps"]
     resources: ["deployments/scale", "replicasets/scale"]
     verbs: ["get", "update"]
-# Remove the configmaps rule once below issue is fixed:
-# kubernetes-incubator/cluster-proportional-autoscaler#16
   - apiGroups: [""]
     resources: ["configmaps"]
     verbs: ["get", "create"]
@@ -75,8 +73,6 @@ spec:
           - --namespace=kube-system
           - --configmap=kube-dns-autoscaler
           - --target=deployment/coredns
-          # When cluster is using large nodes(with more cores), "coresPerReplica" should dominate.
-          # If using small nodes, "nodesPerReplica" should dominate.
           - --default-params={"linear":{"coresPerReplica":256,"nodesPerReplica":16,"preventSinglePointFailure":true,"includeUnschedulableNodes":true}}
           - --logtostderr=true
           - --v=2
