@@ -21,7 +21,6 @@ set_trap_err
 new() {
   local do_install_svc_dir=false cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false 
   local vers=$DEFAULT_VERS domain=$DOMAIN
-  echo $(work_dir)
   while [[ $# -gt 0 ]]; do
     case "$1" in
     --nodes)
