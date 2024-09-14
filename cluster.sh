@@ -163,11 +163,31 @@ yaml() {
         wget https://raw.githubusercontent.com/andrescosta/parse_yaml/master/src/parse_yaml.sh -P ${SCRIPTS}/support >/dev/null 2>&1 
     fi
     source ${SCRIPTS}/support/parse_yaml.sh
-    echo "Start processing $1"
-    eval $(parse_yaml $1 "yaml_")
+    
+    local file_name="cluster.yaml"
+    while [[ $# -gt 0 ]]; do
+      if [ $1 == "--debug" ]; then
+        shift
+        if [ "$1" != "s" ] && [ "$1" != "d" ]; then
+          echo "Invalid value for --debug.Plase provide s or d" >&2
+          display_help
+          exit 1
+        fi
+        if [ "$1" == "d" ]; then
+          set -x
+        fi
+        DEBUGON
+      else
+        file_name=$1
+      fi
+      shift
+    done
+
+    eval $(parse_yaml $file_name "yaml_")
     local nodes=$DEFAULT_NODES cpl=$DEFAULT_CPL lb=$DEFAULT_LB schedulable_server=false skip_addons=false 
     local dir="" addons_list_str_yaml="" addons_list_yaml=() addons_list=""
-    local services_list_str_yaml="" services_list_yaml=() services_list=""
+    local services_list_str_yaml="" services_list_yaml=() services_list="" 
+    local vers=$DEFAULT_VERS domain=$DOMAIN
     for f in $yaml_cluster_addons_ ; do
         dir="${f}_dir"
         addons_list_str_yaml="${f}_list_"
@@ -179,6 +199,12 @@ yaml() {
             addons_list+="${ADDONS_DIR}/${!dir}/${!addon}"
         done 
     done
+    if [[ -v yaml_cluster_domain ]]; then
+        domain=$yaml_cluster_domain
+    fi
+    if [[ -v yaml_cluster_version_file ]]; then
+        vers=$yaml_cluster_version_file
+    fi
     if [[ -v yaml_cluster_node_size ]]; then
         nodes=$yaml_cluster_node_size
     fi
@@ -197,8 +223,9 @@ yaml() {
             schedulable_server=$yaml_cluster_cpl_schedulable
         fi
     fi
-    DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list"
-    jobico::new_cluster $nodes $cpl $lb $schedulable_server false "$addons_list"
+    DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list $domain $vers"
+    echo "Start processing $file_name"
+    jobico::new_cluster $nodes $cpl $lb $schedulable_server false "$addons_list" "$vers" "$domain"
     for f in $yaml_cluster_services_ ; do
         dir="${f}_dir"
         services_list_str_yaml="${f}_list_"
@@ -503,6 +530,7 @@ display_help() {
   echo "Commands:"
   echo "          help"
   echo "          new"
+  echo "          yaml"
   echo "          add"
   echo "          destroy"
   echo "          addons"
@@ -527,6 +555,9 @@ display_help_command() {
   case $1 in
   new)
     display_help_for_new
+    ;;
+  yaml)
+    display_help_for_yaml
     ;;
   add)
     display_help_for_add
@@ -565,6 +596,15 @@ display_help_command() {
 display_help_for_debug(){
     echo "Usage: $0 debug"
     echo "Prints the content of the internal databases using the dao scripts."
+}
+display_help_for_yaml(){
+    echo "Usage: $0 yaml FILE [arguments]"
+    echo "Creates a cluster using the provided YAML file as template."
+    echo "Arguments:"
+    echo "     --debug [ s | d ]"
+    echo "            Enable the debug mode."
+    echo "       s: displays basic information."
+    echo "       d: display advanced information."
 }
 display_help_for_ca(){
     echo "Usage: $0 ca <command>"
@@ -607,7 +647,7 @@ display_help_for_new() {
   echo "     --dry-run"
   echo "            Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging."
   echo "     --dir"
-  echo "            Directory to use for support files."
+  echo "            Directory where to store the support files."
   echo "     --domain"
   echo "            Cluster's domain. Default: jobico.local"
   echo "     --debug [ s | d ]"
@@ -654,7 +694,7 @@ main() {
     shift
     new "$@"
     ;;
-  yaml)
+  yaml) 
     shift
     yaml "$@"
     ;;
