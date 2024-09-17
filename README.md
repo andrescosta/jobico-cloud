@@ -77,7 +77,7 @@ To omit the deployment of an extension, when a cluster is built using command li
 
 ### DNS
 
-The cluster deploys CoreDNS for internal DNS resolution and [k8s_gateway](https://github.com/ori-edge/k8s_gateway) for external DNS resolution. It designates **jobico.local** as the primary domain for all subdomains corresponding to services that expose functionality externally.
+The script deploys CoreDNS for internal DNS resolution and [k8s_gateway](https://github.com/ori-edge/k8s_gateway) for external DNS resolution. It designates **jobico.local** as the primary domain for all subdomains corresponding to services that expose functionality externally. You can specify a different domain by using the **--domain** option with the **new** command.
 On local machines, you can configure the DNS server at **192.168.122.23** to handle all domains within jobico.local. One method to achieve this is by implementing Split DNS. Numerous tutorials are available [online](https://www.google.com/search?q=split+dns+linux) that can guide you through this setup.
 
 ### Certificate
@@ -340,7 +340,9 @@ The arguments that define how the cluster will be created:
      --dry-run
             Create the dabases, kubeconfigs, and certificates but does not create the actual cluster. This option is useful for debugging.
      --dir
-            Directory to use for support files.
+            Directory where to store the support files.
+     --domain
+            Cluster's domain. Default: jobico.local
      --debug [ s | d ]
             Enable the debug mode.
        s: displays basic information.
