@@ -3,6 +3,7 @@ status_file(){
 }
 jobico::local::init_fs() {
     mkdir -p $(work_dir)
+    mkdir -p "$(work_dir)/template"
     touch $(status_file)
 }
 jobico::local::download_deps() {

@@ -1,6 +1,9 @@
 cluster:
   node:
     size: 0
+  domain: jobico.com
+  version:
+    file: "extras/downloads_db/vers131.txt"
   cpl:
     schedulable: true
   addons:

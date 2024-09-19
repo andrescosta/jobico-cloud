@@ -35,11 +35,6 @@ jobico::dao::cpl::get() {
         echo "$e"
     done
 }
-jobico::dao::cpl::getby() {
-    local db=$(jobico::dao::cpl::curr_db)
-    local values=$(awk -v value="$1" '$2 == value {print $0}' ${db})
-    echo "$values"
-}
 jobico::dao::cpl::curr_db() {
     if [ -f $(work_dir)/db_patch.txt ]; then
         echo "$(work_dir)/db_patch.txt"
@@ -48,3 +43,8 @@ jobico::dao::cpl::curr_db() {
     echo "$(work_dir)/db.txt"
 }
 
+jobico::dao::cpl::get_domain() {
+    local ingress=$(jobico::dao::cpl::get "ingress")
+    local domain=$(awk -v str="$ingress" -v col="1" 'BEGIN { split(str, arr, " "); print arr[col] }')
+    echo $(echo "$ingress" | awk '{print $1}')
+}

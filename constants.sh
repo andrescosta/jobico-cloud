@@ -15,4 +15,5 @@ readonly DEFAULT_NODES=2
 readonly DEFAULT_NODES_ADD=1
 readonly DEFAULT_CPL=1
 readonly DEFAULT_LB=2
+readonly DOMAIN="jobico.local"
 readonly DEFAULT_VERS="$DIR/extras/downloads_db/vers.txt"

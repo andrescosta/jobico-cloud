@@ -29,6 +29,9 @@ jobico::tls::gen_ca_conf() {
     local vipname=$(jobico::dao::cluster::lb 2)
     sed -i "s/{LB_IP}/${vip}/g" "$(ca_conf_file)"
     sed -i "s/{LB_DNS}/${vipname}/g" "$(ca_conf_file)"
+
+    local domain=$(jobico::dao::cpl::get_domain)
+    sed -i "s/{DOMAIN}/$domain/g" "$(ca_conf_file)"
 }
 jobico::tls::add_nodes_to_ca_conf() {
     local workers=($(jobico::dao::cpl::get worker))
@@ -87,9 +90,7 @@ jobico::tls::deploy_to_server() {
     done
 }
 jobico::tls::create_tls_secret(){
-    local namespace="default"
-    if [[ $# > 0 ]]; then
-        namespace=$1
-    fi
-    kubectl create secret tls jobico.org-secret --cert=$(work_dir)/jobico.org.crt --key=$(work_dir)/jobico.org.key --namespace=$namespace
+    local namespace=$1
+    local domain=$(jobico::dao::cpl::get_domain)
+    kubectl create secret tls "$domain-secret" --cert="$(work_dir)/$domain.crt" --key="$(work_dir)/$domain.key" --namespace=$namespace
 }
