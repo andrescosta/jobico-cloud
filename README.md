@@ -64,7 +64,8 @@ Extensions are additional components installed in a cluster to enhance its capab
 
   Grafana can be accessed from here: [https://grafana.jobico.local/](https://grafana.jobico.local/)
 - [Dashboard](https://github.com/kubernetes/dashboard): A general purpose, web-based UI for Kubernetes clusters. It allows to manage applications running in the cluster. It can be accessed from here: [https://dashboard.jobico.local](https://dashboard.jobico.local)
-- [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg): CloudNativePG is an operator that covers the full lifecycle of a highly available PostgreSQL database cluster with a primary/standby architecture, using native streaming replication.
+- [CloudNativePG](https://github.com/cloudnative-pg/cloudnative-pg): CloudNativePG is an operator that covers the full lifecycle of a highly available PostgreSQL database cluster with a primary/standby architecture, using native streaming replication. 
+- [pgAdmin](https://www.pgadmin.org/): Feature rich administration and development platform for PostgreSQL. pgAdmin is accessible here: [http://pg.jobico.local/](http://pg.jobico.local/)
 - [ZITADEL](https://github.com/zitadel/zitadel): Identity management service that implements several standards like OpenID Connect and SAML. The dashboard is accessible here: [http://id.jobico.local/](http://id.jobico.local/)
 - [Tekton](https://tekton.dev/): It is an open-source framework for creating CI/CD systems, allowing developers to build, test, and deploy across cloud providers and on-premise systems. The dashboard is accessible here: [https://cd.jobico.local/](https://cd.jobico.local/)
 - [ArgoCD](https://argoproj.github.io/cd/): Declarative continuous delivery with a fully-loaded UI. The dashboard is accessible here: [https://argocd.jobico.local/](https://argocd.jobico.local/)
