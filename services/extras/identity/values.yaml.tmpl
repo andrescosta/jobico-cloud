@@ -4,7 +4,7 @@ zitadel:
     enabled: false 
   configmapConfig:
     ExternalSecure: true
-    ExternalDomain: id.jobico.org 
+    ExternalDomain: id.{DOMAIN} 
     ExternalPort: 443
     TLS:
       Enabled: false
@@ -35,7 +35,7 @@ zitadel:
 ingress:
   enabled: true
   hosts:
-    - host: id.jobico.org 
+    - host: id.{DOMAIN} 
       paths:
         - path: /
           pathType: Prefix

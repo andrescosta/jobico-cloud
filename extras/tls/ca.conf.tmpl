@@ -218,32 +218,31 @@ C  = CA
 ST = Quebec
 L  = Montreal
 
-# Jobico.org
+# {DOMAIN}
 
-[jobico.org]
-distinguished_name = jobico.org_distinguished_name
+[{DOMAIN}]
+distinguished_name = {DOMAIN}_distinguished_name
 prompt             = no
-req_extensions     = jobico.org_req_extensions
-x509_extensions    = jobico.org_x509_extensions
+req_extensions     = {DOMAIN}_req_extensions
+x509_extensions    = {DOMAIN}_x509_extensions
 
-[jobico.org_x509_extensions]
+[{DOMAIN}_x509_extensions]
 basicConstraints     = CA:FALSE
 extendedKeyUsage     = clientAuth, serverAuth
 keyUsage             = critical, digitalSignature, keyEncipherment
 nsCertType           = client
-nsComment            = "Jobico.org Certificate"
-subjectAltName       = @jobico.org_alt_names
+nsComment            = "{DOMAIN} Certificate"
+subjectAltName       = @{DOMAIN}_alt_names
 subjectKeyIdentifier = hash
 
-[jobico.org_req_extensions]
-subjectAltName       = @jobico.org_alt_names
+[{DOMAIN}_req_extensions]
+subjectAltName       = @{DOMAIN}_alt_names
 
-[jobico.org_alt_names]
-DNS.0 = *.jobico.org 
+[{DOMAIN}_alt_names]
+DNS.0 = *.{DOMAIN} 
 
-[jobico.org_distinguished_name]
-CN = *.jobico.org 
+[{DOMAIN}_distinguished_name]
+CN = *.{DOMAIN} 
 C  = CA
 ST = Quebec
 L  = Montreal
-

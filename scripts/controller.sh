@@ -22,6 +22,7 @@ jobico::new_cluster() {
     local skip_addons=$5
     local addons_list=$6
     local vers=$7
+    local domain=$8
     if [[ $(jobico::dao::cluster::is_locked) == true ]]; then
         echo "A cluster already exists."
         exit 1
@@ -36,7 +37,7 @@ jobico::new_cluster() {
         exit 1
     fi
     jobico::plugin::load ${PLUGINS_CONF_FILE}
-    jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server $vers
+    jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server $vers $domain
     DEBUG jobico::debug::print
     jobico::create_cluster
     if [ $skip_addons == false ]; then

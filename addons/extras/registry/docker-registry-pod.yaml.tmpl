@@ -36,7 +36,7 @@ spec:
         claimName: docker-repo-pvc
     - name: certs-vol
       secret:
-        secretName: jobico.org-secret
+        secretName: {DOMAIN}-secret
     - name: auth-vol
       secret:
         secretName: auth-secret
@@ -79,10 +79,10 @@ metadata:
 spec:
     tls:
     - hosts:
-      - reg.jobico.org
-      secretName: jobico.org-secret
+      - reg.{DOMAIN}
+      secretName: {DOMAIN}-secret
     rules:
-    - host: reg.jobico.org
+    - host: reg.{DOMAIN}
       http:
         paths:
         - path: /

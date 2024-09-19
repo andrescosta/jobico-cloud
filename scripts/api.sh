@@ -4,6 +4,7 @@ jobico::init() {
     local number_of_lbs=$3
     local schedulable_server=$4
     local vers=$5
+    local domain=$6
     jobico::local::init_fs
     if [ $(jobico::was_done "init") == false ]; then
         jobico::dao::gen_databases "$@"
@@ -87,7 +88,7 @@ jobico::create_cluster() {
     fi
     # TLS Secret
     if [ $(jobico::was_done "tls_secret") == false ]; then
-        NOT_DRY_RUN jobico::tls::create_tls_secret
+        NOT_DRY_RUN jobico::tls::create_tls_secret "default"
         jobico::set_done "tls_secret"
     fi
 }

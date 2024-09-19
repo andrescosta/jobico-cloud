@@ -1,1 +1,1 @@
-curl -ik --user jobico:jobico123 https://reg.jobico.org/v2/_catalog
+curl -ik --user jobico:jobico123 https://reg.jobico.local/v2/_catalog
