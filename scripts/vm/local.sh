@@ -31,7 +31,7 @@ jobico::local::download_local_deps() {
 jobico::local::install_kubectl() {
     dir=$1
     force=$2
-    if [[ force == true || ! -f /usr/local/bin/kubectl ]]; then
+    if [[ $force == true || ! -f /usr/local/bin/kubectl ]]; then
         sudo cp $1/kubectl /usr/local/bin &&
             sudo chmod +x /usr/local/bin/kubectl
     fi

@@ -1,4 +1,4 @@
-sudo apt install nfs-kernel-server
+sudo apt install -y nfs-kernel-server
 sudo systemctl start nfs-kernel-server.service
 sudo mkdir -p /srv/nfs
 sudo chown nobody:nogroup /srv/nfs
