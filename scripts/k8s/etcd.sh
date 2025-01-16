@@ -49,8 +49,9 @@ jobico::etcd::deploy(){
         SCP ${file} root@${host}:~/etcd.service 
         SCP $(downloads_dir)/etcd.tar.gz root@${host}:~/
         SSH root@$host << 'EOF'
+
 tar -xvf ~/etcd.tar.gz
-mv ~/etcd-v3.4.27-linux-amd64/etcd* /usr/local/bin
+mv ~/"$(tar -tf etcd.tar.gz | head -n 1)"/etc* /usr/local/bin/
 mkdir -p /etc/etcd /var/lib/etcd
 cp ca.crt \
 kube-api-server.key \
