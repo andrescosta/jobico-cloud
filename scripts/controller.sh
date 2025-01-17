@@ -1,6 +1,7 @@
 . ${SCRIPTS}/support/plugin.sh
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/debug.sh
+. ${SCRIPTS}/support/gates.sh
 . ${SCRIPTS}/dao/dao.sh
 . ${SCRIPTS}/dao/cpl.sh
 . ${SCRIPTS}/dao/cluster.sh

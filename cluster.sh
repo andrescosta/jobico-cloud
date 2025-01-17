@@ -67,6 +67,7 @@ new() {
       schedulable_server=true
       ;;
     --addons)
+      shift
       if [ -n "${1-}" ]; then
         addons_dir="$1"
         if [ ! -d "$addons_dir" ]; then
@@ -113,6 +114,20 @@ new() {
         domain=$1
       else
         echo "--domain requires a domain name"
+      fi
+      ;;
+    --gates)
+      shift
+      if [ -n "${1-}" ]; then
+        gates=$1
+        if [ -f "$gates" ]; then
+          set_gate_config_dir $gates
+        else
+          echo "The file $gates does not exist." >&2
+          exit 1
+        fi
+      else
+        echo "--gates requires a file name."
       fi
       ;;
     -*)
@@ -650,6 +665,8 @@ display_help_for_new() {
   echo "            Directory where to store the support files."
   echo "     --domain"
   echo "            Cluster's domain. Default: jobico.local"
+  echo "     --gates [dir]"
+  echo "            Directory with Feature Gates configurations. Default: <jobico dir>/extras/gates"
   echo "     --debug [ s | d ]"
   echo "            Enable the debug mode."
   echo "       s: displays basic information."

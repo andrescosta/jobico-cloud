@@ -9,6 +9,7 @@ ExecStart=/usr/local/bin/kubelet \
   --config=/var/lib/kubelet/kubelet-config.yaml \
   --kubeconfig=/var/lib/kubelet/kubeconfig \
   --register-node=true \
+  {GATES}
   --v=2
 Restart=on-failure
 RestartSec=5
