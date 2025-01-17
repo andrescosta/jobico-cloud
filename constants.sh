@@ -2,6 +2,7 @@ readonly SCRIPTS="${DIR}/scripts"
 readonly ADDONS_DIR="${DIR}/addons"
 readonly SERVICES_DIR="${DIR}/services"
 readonly EXTRAS_DIR="${DIR}/extras"
+readonly GATES_DIR="${EXTRAS_DIR}/gates"
 readonly MAKE=make
 readonly CLUSTER_NAME=jobico-cloud
 readonly WORKER_NAME=node

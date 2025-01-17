@@ -409,9 +409,20 @@ Commands:
           add - Add the CA to the local certificate repositories.
 ```
 
+# Feature Gates
+
+The Feature gates are controlled by configuration files placed in **extras/gates** or a custom directory specified by **--gates** at the moment of creation.
+The following files configure the gates for each component:
+
+- kube-apiserver.gt
+- kube-controller-manager.gt
+- kubelet.gt
+- kube-proxy.gt
+- kube-scheduler.gt
+
 # Prerequisites
 
-The following packages must be installed locally before creating a cluster::
+The following packages must be installed locally before creating a cluster:
 
 - SSH
 - OpenSSL

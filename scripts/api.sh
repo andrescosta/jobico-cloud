@@ -68,6 +68,10 @@ jobico::create_cluster() {
     # Control plane components
     if [ $(jobico::was_done "cpl") == false ]; then
         jobico::cpl::gen_kubeapiserver_service
+        jobico::cpl::gen_kube_controller_manager
+        jobico::cpl::gen_kube_proxy
+        jobico::cpl::gen_kube_scheduler
+        jobico::cpl::gen_kubelet
         jobico::set_done "cpl"
     fi
     # Control Plane deployment
