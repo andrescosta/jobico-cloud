@@ -2,7 +2,11 @@ declare -A lcl_dirs
 
 get_dir() {
     local key=$1
-    echo "${lcl_dirs[$key]}"
+    if [[ -v "lcl_dirs[$key]" ]]; then 
+        echo "${lcl_dirs[$key]}"
+    else
+        echo ""
+    fi
 }
 
 set_dir() {
@@ -64,4 +68,12 @@ downloads_local_dir(){
 
 set_downloads_local_dir(){
     set_dir "_downloads_local_dir" $1
+}
+
+gate_config_dir(){
+    get_dir "_gate_config_dir"
+}
+
+set_gate_config_dir(){
+    set_dir "_gate_config_dir" $1
 }

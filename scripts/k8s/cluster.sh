@@ -6,8 +6,8 @@ jobico::cluster::deploy_to_servers(){
         $(downloads_dir)/kube-scheduler \
         $(downloads_dir)/kubectl \
         $(work_dir)/kube-apiserver.service \
-        ${EXTRAS_DIR}/units/kube-controller-manager.service \
-        ${EXTRAS_DIR}/units/kube-scheduler.service \
+        $(work_dir)/kube-controller-manager.service \
+        $(work_dir)/kube-scheduler.service \
         ${EXTRAS_DIR}/configs/kube-scheduler.yaml \
         ${EXTRAS_DIR}/configs/kube-apiserver-to-kubelet.yaml root@$host:~/
     
@@ -91,8 +91,8 @@ jobico::cluster::deploy_to_nodes(){
         ${EXTRAS_DIR}/configs/containerd-config.toml \
         ${EXTRAS_DIR}/configs/kube-proxy-config.yaml \
         ${EXTRAS_DIR}/units/containerd.service \
-        ${EXTRAS_DIR}/units/kubelet.service \
-        ${EXTRAS_DIR}/units/kube-proxy.service root@${IP}:~/
+        $(work_dir)/kubelet.service \
+        $(work_dir)/kube-proxy.service root@${IP}:~/
     done
     
     jobico::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
