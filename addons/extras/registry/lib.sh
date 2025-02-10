@@ -25,11 +25,8 @@ deploy(){
         SSH root@${IP} \
 <<EOF
 echo  '
-[plugins."io.containerd.grpc.v1.cri".registry]
-  [plugins."io.containerd.grpc.v1.cri".registry.configs]
-    [plugins."io.containerd.grpc.v1.cri".registry.configs."$registry_name"]
-      [plugins."io.containerd.grpc.v1.cri".registry.configs."$registry_name".tls]
-        ca_file = "/etc/containerd/certs.d/$registry_name/ca.crt"
+[plugins."io.containerd.cri.v1.images".registry]
+  config_path = "/etc/containerd/certs.d"
 '>> /etc/containerd/config.toml
 sudo systemctl restart containerd
 EOF
