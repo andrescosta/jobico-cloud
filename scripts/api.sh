@@ -162,7 +162,10 @@ jobico::install_all_addons() {
 }
 jobico::install_addons(){
     local op=$1
-    local addons_list=$2
+    local addons_list=${2:-}
+     if [[ -z "$addons_list" ]]; then
+        return
+    fi
     local addons=() addon
     local SAVEIFS=$IFS
     IFS=';'
