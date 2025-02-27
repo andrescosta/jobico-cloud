@@ -19,7 +19,7 @@ set_trap_err
 # Cluster creation
 ## "new" command. It creates a new cluster using the provided commnad line flags.
 new() {
-  local do_install_svc_dir=false cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false 
+  local cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false 
   local vers=$DEFAULT_VERS domain=$DOMAIN
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -59,9 +59,6 @@ new() {
       ;;
     --no-addons)
       skip_addons=true
-      ;;
-    --services)
-      do_install_svc_dir=true
       ;;
     --schedulable-server)
       schedulable_server=true
@@ -167,7 +164,7 @@ new() {
   addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list"
   jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons "$addons_list" "$vers" "$domain"
-  if [ $do_install_svc_dir == true ]; then
+  if [ $skip_addons == false ]; then
     install_services_dir
   fi
   NOT_DRY_RUN echo "The K8s Cluster was created."
@@ -409,6 +406,9 @@ clocal() {
   jobico::gen_local_env $vers
 }
 ca(){
+  if [[ $# -eq 0 ]]; then
+    display_help_for_ca
+  fi
   while [[ $# -gt 0 ]]; do
     case "$1" in
       add)
@@ -429,6 +429,7 @@ ca(){
   done
 }
 add_ca(){
+  echo "Adding CA ..."
   local domain=$(jobico::dao::cpl::get_domain)
   certName="$domain-CA"
   certFile="$(work_dir)/ca.crt"
@@ -455,6 +456,7 @@ add_ca(){
       fi
       certutil -A -n "${certName}" -t "TCu,Cu,Tu" -i ${certFile} -d dbm:${certdir}
   done
+  echo "CA added."
 }
 
 cfg() {
@@ -653,8 +655,6 @@ display_help_for_new() {
   echo "            Specify a different directory name for the addons. Default: $ADDONS_DIR"
   echo "     --no-addons"
   echo "            Skip the instalation of addons"
-  echo "     --services"
-  echo "            Waits for the cluster to be created and then runs the scripts on the 'services' directory."
   echo "     --vers"
   echo "            File name with version numbers."
   echo "     --schedulable-server"
