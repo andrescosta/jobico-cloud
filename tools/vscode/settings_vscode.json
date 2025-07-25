@@ -1,0 +1,22 @@
+{
+    "sqltools.connections": [
+        {
+            "pgOptions": {
+                "ssl": {
+                    "rejectUnauthorized": false,
+                    "ca": "",
+                    "key": "",
+                    "cert": "/etc/ssl/certs/jobico.ca.pem"
+                }
+            },
+            "previewLimit": 50,
+            "server": "db.jobico.local",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "Lingv",
+            "database": "postgres",
+            "username": "postgres",
+            "password": "postgres"
+        }
+    ]
+}
