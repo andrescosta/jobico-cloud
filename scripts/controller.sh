@@ -74,19 +74,19 @@ jobico::exec_cmd() {
     jobico::plugin::load ${PLUGINS_CONF_FILE}
     ret=$(jobico::vm::cmd $1)
     if [[ $ret == false ]]; then
-        echo "Error: The cluster was not created."
+        echo "Error 1: The cluster was not created."
         exit 1
     fi
 }
 jobico::destroy_cluster() {
     if [[ $(jobico::dao::cluster::is_locked) == false ]]; then
         if [ ! -e $(machines_db) ]; then
-            echo "Error: The cluster was not created."
+            echo "Error 2: The cluster was not created."
             exit 1
         fi
     fi
     if [ ! -e $(work_dir)/db.txt ]; then
-        echo "Error: The cluster was not created."
+        echo "Error 3: The cluster was not created."
         exit 1
     fi
     jobico::plugin::load ${PLUGINS_CONF_FILE}
@@ -110,11 +110,11 @@ jobico::add_nodes() {
         exit 1
     fi
     if [ ! -e $(machines_db) ]; then
-        echo "Error: The cluster was not created."
+        echo "Error 4: The cluster was not created."
         exit 1
     fi
     if [ ! -e $(work_dir)/db.txt ]; then
-        echo "Error: The cluster was not created."
+        echo "Error 5: The cluster was not created."
         exit 1
     fi
     local number_of_nodes=$1
