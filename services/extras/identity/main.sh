@@ -12,4 +12,6 @@ install(){
     helm install my-zitadel zitadel/zitadel --values $values
 }
 
-install "$@"
+echo "# The complete username will be admin@zitadel.id.jobico.local"
+
+install "$@" 
