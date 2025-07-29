@@ -8,7 +8,7 @@
 jobico::vm::create() {
     jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH CGROUP; do
         DEBUG echo "Creating machine new-vm-${CGROUP}-${TYPE}"
-        make -f $SCRIPTS/Makefile.vm new-vm-${CGROUP}-${TYPE} VM_IP=${IP} VM_NAME=${HOST} -C ${DIR}
+        make -f $SCRIPTS/Makefile.vm new-vm-${CGROUP}-${TYPE} VM_IP=${IP} VM_NAME=${HOST} INFRA_DIR=$(infra_dir) -C ${DIR}
     done
 }
 

@@ -485,31 +485,35 @@ cfg() {
   local auth_key_root=$auth_key_deb
   read -p "Authorized key file for user root :" -e -i "$auth_key_def" auth_key_root
   local key_root="- $(escape "$(<"$auth_key_root")")"
+
+  local c_infra_dir=$(infra_dir)
+
+  mkdir -p ${c_infra_dir}/cfg
   
-  cp extras/cfg/cloud-init-lb.cfg.tmpl extras/cfg/cloud-init-lb.cfg
+  cp extras/cfg/cloud-init-lb.cfg.tmpl ${c_infra_dir}/cfg/cloud-init-lb.cfg
   
-  cp extras/cfg/cloud-init-node.cfg.tmpl extras/cfg/cloud-init-node.cfg
+  cp extras/cfg/cloud-init-node.cfg.tmpl ${c_infra_dir}/cfg/cloud-init-node.cfg
   
-  cp extras/cfg/cloud-init-node-cgroupv1.cfg.tmpl extras/cfg/cloud-init-node-cgroupv1.cfg
+  cp extras/cfg/cloud-init-node-cgroupv1.cfg.tmpl ${c_infra_dir}/cfg/cloud-init-node-cgroupv1.cfg
   
-  sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-lb.cfg
-  sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-lb.cfg
+  sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" ${c_infra_dir}/cfg/cloud-init-lb.cfg
+  sed -i "s/{PWD_ROOT}/${epass_root}/g" ${c_infra_dir}/cfg/cloud-init-lb.cfg
 
-  sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-node.cfg
-  sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-node.cfg
+  sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" ${c_infra_dir}/cfg/cloud-init-node.cfg
+  sed -i "s/{PWD_ROOT}/${epass_root}/g" ${c_infra_dir}/cfg/cloud-init-node.cfg
 
-  sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-node-cgroupv1.cfg
-  sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-node-cgroupv1.cfg
+  sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" ${c_infra_dir}/cfg/cloud-init-node-cgroupv1.cfg
+  sed -i "s/{PWD_ROOT}/${epass_root}/g" ${c_infra_dir}/cfg/cloud-init-node-cgroupv1.cfg
 
 
-  sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-node.cfg
-  sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-node.cfg
+  sed -i "s/{ROOT_KEYS}/${key_root}/g" ${c_infra_dir}/cfg/cloud-init-node.cfg
+  sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" ${c_infra_dir}/cfg/cloud-init-node.cfg
 
-  sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-lb.cfg
-  sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-lb.cfg
+  sed -i "s/{ROOT_KEYS}/${key_root}/g" ${c_infra_dir}/cfg/cloud-init-lb.cfg
+  sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" ${c_infra_dir}/cfg/cloud-init-lb.cfg
 
-  sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-node-cgroupv1.cfg
-  sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-node-cgroupv1.cfg
+  sed -i "s/{ROOT_KEYS}/${key_root}/g" ${c_infra_dir}/cfg/cloud-init-node-cgroupv1.cfg
+  sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" ${c_infra_dir}/cfg/cloud-init-node-cgroupv1.cfg
 
 }
 addons(){

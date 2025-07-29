@@ -29,7 +29,10 @@ jobico::new_cluster() {
         echo "A cluster already exists."
         exit 1
     fi
-    if [[ ! -f $EXTRAS_DIR/cfg/cloud-init-node.cfg || ! -f  $EXTRAS_DIR/cfg/cloud-init-lb.cfg || ! -f  $EXTRAS_DIR/cfg/cloud-init-node-cgroupv1.cfg ]]; then
+
+    local c_infra_dir=$(infra_dir)
+
+    if [[ ! -f ${c_infra_dir}/cfg/cloud-init-node.cfg || ! -f  ${c_infra_dir}/cfg/cloud-init-lb.cfg || ! -f ${c_infra_dir}/cfg/cloud-init-node-cgroupv1.cfg ]]; then
        echo "The cloud init config files were not generated."
        echo "Run $0 cfg to generate them"
        exit 1

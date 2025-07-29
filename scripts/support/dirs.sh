@@ -18,6 +18,7 @@ set_dir() {
 save_dirs() {
     cat > ${DIR}/dirs.conf <<EOF
 _work_dir=${lcl_dirs["_work_dir"]}
+_infra_dir=${lcl_dirs["_infra_dir"]}
 _downloads_dir=${lcl_dirs["_downloads_dir"]}
 _downloads_local_dir=${lcl_dirs["_downloads_local_dir"]}
 EOF
@@ -27,10 +28,12 @@ load_dirs() {
     if [[ -f "${DIR}/dirs.conf" ]]; then
         source ${DIR}/dirs.conf
         set_dir "_work_dir" $_work_dir
+        set_dir "_infra_dir" $_infra_dir
         set_dir "_downloads_dir" $_downloads_dir
         set_dir "_downloads_local_dir" $_downloads_local_dir
     else
         set_dir "_work_dir" "${HOME}/.jobico/work"
+        set_dir "_infra_dir" "${HOME}/.jobico/infra"
         set_dir "_downloads_dir" "${HOME}/.jobico/downloads"
         set_dir "_downloads_local_dir" "${HOME}/.jobico/downloads_local"
     fi
@@ -48,8 +51,18 @@ set_work_dir(){
     set_dir "_work_dir" $1
 }
 
+infra_dir(){
+    get_dir "_infra_dir"
+}
+
+set_infra_dir(){
+    set_dir "_infra_dir" $1
+}
+
+
 set_support_dir(){
     set_work_dir $1/work
+    set_infra_dir $1/infra
     set_downloads_dir $1/downloads
     set_downloads_local_dir $1/downloads_local
 }

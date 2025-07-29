@@ -2,123 +2,143 @@ VM_NAME=ikjumpbox
 VM_IP=192.168.122.6
 LARGE_SIZE=40G
 SMALL_SIZE=30G
+
+IMAGE := https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
+
+HOME_DIR := $(INFRA_DIR)
+VM_QCOW2_DIR := $(HOME_DIR)/vm
+VM_QCOW2 := $(VM_QCOW2_DIR)/debian-vm.qcow2
+VM_QCOW2_LARGE := $(VM_QCOW2_DIR)/debian-12-large.qcow2
+VM_QCOW2_SMALL := $(VM_QCOW2_DIR)/debian-12-small.qcow2
+VM_QCOW2_BOOT := /var/lib/libvirt/boot/debian-12-$(VM_NAME).qcow2
+
+CFG_CLOUD_INIT_DIR := $(HOME_DIR)/cfg
+CFG_CLOUD_INIT := $(CFG_CLOUD_INIT_DIR)/cloud-init-node.cfg
+CFG_CLOUD_INIT_CGROUPV1 := $(CFG_CLOUD_INIT_DIR)/cloud-init-node-cgroupv1.cfg
+CFG_CLOUD_INIT_LB := $(CFG_CLOUD_INIT_DIR)/cloud-init-lb.cfg
+
+CFG_CLOUD_ISO_DIR := $(HOME_DIR)/iso
+CFG_CLOUD_ISO := $(CFG_CLOUD_ISO_DIR)/cloud-init-node.iso
+CFG_CLOUD_ISO_LB := $(CFG_CLOUD_ISO_DIR)/cloud-init-lb.iso
+CFG_CLOUD_ISO_CGROUPV1 := $(CFG_CLOUD_ISO_DIR)/cloud-init-node-cgroupv1.iso
+CFG_CLOUD_ISO_BOOT := /var/lib/libvirt/boot/cloud-init-$(VM_NAME).iso
+
 CMD=start
-mac_vm:=$(shell bash -c 'printf "02:%02x:%02x:%02x:%02x:%02x" $$((RANDOM%256)) $$((RANDOM%256)) $$((RANDOM%256)) $$((RANDOM%256)) $$((RANDOM%256))')
-curr_mac=$(shell virsh -q domifaddr ${VM_NAME} --source arp | awk '{print $$2}')
+MAC_VM := $(shell bash -c 'printf "02:%02x:%02x:%02x:%02x:%02x" $$((RANDOM%256)) $$((RANDOM%256)) $$((RANDOM%256)) $$((RANDOM%256)) $$((RANDOM%256))')
+CURR_MAC := $(shell virsh -q domifaddr $(VM_NAME) --source arp | awk '{print $$2}')
 
 ## New VM
 
-new-vm-cgroupv2-node: iso vm deploy-cgroupv2-node mac virt-node 
+new-vm-cgroupv2-node: $(CFG_CLOUD_ISO_DIR) $(VM_QCOW2_DIR) deploy-cgroupv2-node mac virt-node 
 
-new-vm-cgroupv2-sm-node: iso vm deploy-cgroupv2-sm-node mac virt-2cpu-2gb-node
+new-vm-cgroupv2-sm-node: $(CFG_CLOUD_ISO_DIR) $(VM_QCOW2_DIR) deploy-cgroupv2-sm-node mac virt-2cpu-2gb-node
 
-new-vm-cgroupv1-node: iso vm deploy-cgroupv1-node mac virt-node
+new-vm-cgroupv1-node: $(CFG_CLOUD_ISO_DIR) $(VM_QCOW2_DIR) deploy-cgroupv1-node mac virt-node
 
-new-vm-cgroupv1-sm-node: iso vm deploy-cgroupv1-sm-node mac virt-2cpu-2gb-node
+new-vm-cgroupv1-sm-node: $(CFG_CLOUD_ISO_DIR) $(VM_QCOW2_DIR) deploy-cgroupv1-sm-node mac virt-2cpu-2gb-node
 
-new-vm-cgroupv2-server: iso vm deploy-server mac virt-node 
+new-vm-cgroupv2-server: $(CFG_CLOUD_ISO_DIR) $(VM_QCOW2_DIR) deploy-server mac virt-node 
 
-new-vm-cgroupv2-lb: iso vm deploy-lb mac virt-lb 
+new-vm-cgroupv2-lb: $(CFG_CLOUD_ISO_DIR) $(VM_QCOW2_DIR) deploy-lb mac virt-lb 
 
-iso: 
-	mkdir -p iso
-vm:
-	mkdir -p vm
+$(CFG_CLOUD_ISO_DIR): 
+	mkdir -p $@
+
+$(VM_QCOW2_DIR):
+	mkdir -p $@
+
+deploy-cgroupv2-node: $(VM_QCOW2) $(VM_QCOW2_LARGE) $(CFG_CLOUD_INIT) $(CFG_CLOUD_ISO)
+	sudo cp $(VM_QCOW2_LARGE) $(VM_QCOW2_BOOT)
+	sudo cp $(CFG_CLOUD_ISO) $(CFG_CLOUD_ISO_BOOT)
+
+deploy-cgroupv2-sm-node: $(VM_QCOW2) $(VM_QCOW2_SMALL) $(CFG_CLOUD_INIT) $(CFG_CLOUD_ISO)
+	sudo cp $(VM_QCOW2_SMALL) $(VM_QCOW2_BOOT)
+	sudo cp $(CFG_CLOUD_ISO) $(CFG_CLOUD_ISO_BOOT)
+
+deploy-cgroupv1-sm-node: $(VM_QCOW2) $(VM_QCOW2_SMALL) $(CFG_CLOUD_INIT_CGROUPV1) $(CFG_CLOUD_ISO_CGROUPV1)
+	sudo cp $(VM_QCOW2_SMALL) $(VM_QCOW2_BOOT)
+	sudo cp $(CFG_CLOUD_ISO_CGROUPV1)  $(CFG_CLOUD_ISO_BOOT) 
+
+deploy-cgroupv1-node: $(VM_QCOW2) $(VM_QCOW2_LARGE) $(CFG_CLOUD_INIT_CGROUPV1) $(CFG_CLOUD_ISO_CGROUPV1)
+	sudo cp $(VM_QCOW2_LARGE) $(VM_QCOW2_BOOT)
+	sudo cp $(CFG_CLOUD_ISO_CGROUPV1)  $(CFG_CLOUD_ISO_BOOT) 
 
 
+deploy-server: $(VM_QCOW2) $(VM_QCOW2_LARGE) $(CFG_CLOUD_INIT) $(CFG_CLOUD_ISO)
+	sudo cp $(VM_QCOW2_LARGE) $(VM_QCOW2_BOOT)
+	sudo cp $(CFG_CLOUD_ISO)  $(CFG_CLOUD_ISO_BOOT) 
 
-deploy-cgroupv2-node: vm/debian-vm.qcow2 vm/debian-12-large.qcow2 extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso
-	sudo cp vm/debian-12-large.qcow2 /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
-	sudo cp iso/cloud-init-node.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
-
-deploy-cgroupv2-sm-node: vm/debian-vm.qcow2 vm/debian-12-small.qcow2 extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso
-	sudo cp vm/debian-12-small.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
-	sudo cp iso/cloud-init-node.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso
-
-deploy-cgroupv1-sm-node: vm/debian-vm.qcow2 vm/debian-12-small.qcow2 extras/cfg/cloud-init-node-cgroupv1.cfg iso/cloud-init-node-cgroupv1.iso
-	sudo cp vm/debian-12-small.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
-	sudo cp iso/cloud-init-node-cgroupv1.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
-
-deploy-cgroupv1-node: vm/debian-vm.qcow2 vm/debian-12-large.qcow2 extras/cfg/cloud-init-node-cgroupv1.cfg iso/cloud-init-node-cgroupv1.iso
-	sudo cp vm/debian-12-large.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
-	sudo cp iso/cloud-init-node-cgroupv1.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
-
-
-deploy-server: vm/debian-vm.qcow2 vm/debian-12-large.qcow2 extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso
-	sudo cp vm/debian-12-large.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
-	sudo cp iso/cloud-init-node.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
-
-deploy-lb: vm/debian-vm.qcow2 vm/debian-12-small.qcow2 extras/cfg/cloud-init-lb.cfg iso/cloud-init-lb.iso
-	sudo cp vm/debian-12-small.qcow2  /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2 
-	sudo cp iso/cloud-init-lb.iso  /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso 
+deploy-lb: $(VM_QCOW2) $(VM_QCOW2_LARGE) $(CFG_CLOUD_INIT_LB) $(CFG_CLOUD_ISO_LB)
+	sudo cp $(VM_QCOW2_LARGE) $(VM_QCOW2_BOOT)
+	sudo cp $(CFG_CLOUD_ISO_LB)  $(CFG_CLOUD_ISO_BOOT) 
 
 mac:
 	-virsh net-update default add ip-dhcp-host \
-	  --xml '<host mac="${mac_vm}" name="${VM_NAME}" ip="${VM_IP}"/>' \
+	  --xml '<host mac="$(MAC_VM)" name="$(VM_NAME)" ip="$(VM_IP)" />' \
 	  --live --config
 
-vm/debian-vm.qcow2:
-	wget -O vm/debian-vm.qcow2 https://cloud.debian.org/images/cloud/bookworm/latest/debian-12-generic-amd64.qcow2
+$(VM_QCOW2):
+	wget -O $@.tmp $(IMAGE) && mv $@.tmp $@
 	
-vm/debian-12-large.qcow2:	
-	cp vm/debian-vm.qcow2 \
-  		vm/debian-12-large.qcow2
+$(VM_QCOW2_LARGE):	
+	cp $(VM_QCOW2) \
+  		$@
 	qemu-img resize \
-  		vm/debian-12-large.qcow2 \
-  		${LARGE_SIZE}
+  		$@ \
+  		$(LARGE_SIZE)
 
-vm/debian-12-small.qcow2:
-	cp vm/debian-vm.qcow2 \
-  		vm/debian-12-small.qcow2
+$(VM_QCOW2_SMALL):
+	cp $(VM_QCOW2) \
+  		$@
 	qemu-img resize \
-  		vm/debian-12-small.qcow2 \
-  		${SMALL_SIZE}
+  		$@ \
+  		$(SMALL_SIZE)
 
 cmd-vm:
-	-virsh ${CMD} ${VM_NAME}
+	-virsh $(CMD) $(VM_NAME)
 
 list:
 	-virsh list --all
 
-extras/cfg/cloud-init-lb.cfg iso/cloud-init-lb.iso: 
-	sudo cloud-localds iso/cloud-init-lb.iso extras/cfg/cloud-init-lb.cfg
+$(CFG_CLOUD_INIT_LB) $(CFG_CLOUD_ISO_LB): 
+	sudo cloud-localds $(CFG_CLOUD_ISO_LB) $(CFG_CLOUD_INIT_LB)
 
-extras/cfg/cloud-init-node.cfg iso/cloud-init-node.iso: 
-	sudo cloud-localds iso/cloud-init-node.iso extras/cfg/cloud-init-node.cfg
+$(CFG_CLOUD_INIT) $(CFG_CLOUD_ISO): 
+	sudo cloud-localds $(CFG_CLOUD_ISO) $(CFG_CLOUD_INIT)
 
-extras/cfg/cloud-init-node-cgroupv1.cfg iso/cloud-init-node-cgroupv1.iso: 
-	sudo cloud-localds iso/cloud-init-node-cgroupv1.iso extras/cfg/cloud-init-node-cgroupv1.cfg
+$(CFG_CLOUD_INIT_CGROUPV1) $(CFG_CLOUD_ISO_CGROUPV1): 
+	sudo cloud-localds $(CFG_CLOUD_ISO_CGROUPV1) $(CFG_CLOUD_INIT_CGROUPV1)
 
 
 virt-node:
 	sudo virt-install \
- 		--name ${VM_NAME} \
+ 		--name $(VM_NAME) \
  		--ram 4096 \
  		--vcpus=2 \
  		--cpu host \
- 		--disk /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2,device=disk,bus=virtio \
+ 		--disk $(VM_QCOW2_BOOT),device=disk,bus=virtio \
  		--hvm \
- 		--disk /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso,device=cdrom \
+ 		--disk $(CFG_CLOUD_ISO_BOOT),device=cdrom \
  		--os-variant debian10 \
  		--virt-type kvm \
  		--graphics none \
- 		--network network=default,model=virtio,mac=${mac_vm}\
+ 		--network network=default,model=virtio,mac=$(MAC_VM)\
  		--import \
  		--noautoconsole
 
 virt-node-cgroupv1:
 	sudo virt-install \
- 		--name ${VM_NAME} \
+ 		--name $(VM_NAME) \
  		--ram 4096 \
  		--vcpus=2 \
  		--cpu host \
- 		--disk /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2,device=disk,bus=virtio \
+ 		--disk $(VM_QCOW2_BOOT),device=disk,bus=virtio \
  		--hvm \
- 		--disk /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso,device=cdrom \
+ 		--disk $(CFG_CLOUD_ISO_BOOT),device=cdrom \
  		--os-variant debian10 \
  		--virt-type kvm \
  		--graphics none \
- 		--network network=default,model=virtio,mac=${mac_vm}\
+ 		--network network=default,model=virtio,mac=$(MAC_VM)\
 		--extra-args="systemd.unified_cgroup_hierarchy=0" \
  		--import \
  		--noautoconsole
@@ -126,65 +146,65 @@ virt-node-cgroupv1:
 
 virt-2cpu-2gb-node:
 	sudo virt-install \
- 		--name ${VM_NAME} \
+ 		--name $(VM_NAME) \
  		--ram 2048 \
  		--vcpus=2 \
  		--cpu host \
- 		--disk /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2,device=disk,bus=virtio \
+ 		--disk $(VM_QCOW2_BOOT),device=disk,bus=virtio \
  		--hvm \
- 		--disk /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso,device=cdrom \
+ 		--disk $(CFG_CLOUD_ISO_BOOT),device=cdrom \
  		--os-variant debian10 \
  		--virt-type kvm \
  		--graphics none \
- 		--network network=default,model=virtio,mac=${mac_vm}\
+ 		--network network=default,model=virtio,mac=$(MAC_VM)\
  		--import \
  		--noautoconsole
 
 virt-2cpu-2gb-node-cgroupv1:
 	sudo virt-install \
- 		--name ${VM_NAME} \
+ 		--name $(VM_NAME) \
  		--ram 2048 \
  		--vcpus=2 \
  		--cpu host \
- 		--disk /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2,device=disk,bus=virtio \
+ 		--disk $(VM_QCOW2_BOOT),device=disk,bus=virtio \
  		--hvm \
- 		--disk /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso,device=cdrom \
+ 		--disk $(CFG_CLOUD_ISO_BOOT),device=cdrom \
  		--os-variant debian10 \
  		--virt-type kvm \
  		--graphics none \
- 		--network network=default,model=virtio,mac=${mac_vm}\
+ 		--network network=default,model=virtio,mac=$(MAC_VM)\
 		--extra-args="systemd.unified_cgroup_hierarchy=0" \
  		--import \
  		--noautoconsole
 
 virt-lb:
 	sudo virt-install \
- 		--name ${VM_NAME} \
+ 		--name $(VM_NAME) \
  		--ram 2048 \
  		--vcpus=1 \
  		--cpu host \
- 		--disk /var/lib/libvirt/boot/debian-12-${VM_NAME}.qcow2,device=disk,bus=virtio \
+ 		--disk $(VM_QCOW2_BOOT),device=disk,bus=virtio \
  		--hvm \
- 		--disk /var/lib/libvirt/boot/cloud-init-${VM_NAME}.iso,device=cdrom \
+ 		--disk $(CFG_CLOUD_ISO_BOOT),device=cdrom \
  		--os-variant debian10 \
  		--virt-type kvm \
  		--graphics none \
- 		--network network=default,model=virtio,mac=${mac_vm}\
+ 		--network network=default,model=virtio,mac=$(MAC_VM)\
  		--import \
  		--noautoconsole
 ## Destroy the VM
 
 destroy-vm: delete-mac delete-key
-	-virsh destroy ${VM_NAME} 
-	-virsh undefine ${VM_NAME} --remove-all-storage
+	-virsh destroy $(VM_NAME) 
+	-virsh undefine $(VM_NAME) --remove-all-storage
 
 delete-mac:
 	-virsh net-update default delete ip-dhcp-host \
-	  '<host ip="${VM_IP}"/>' \
+	  '<host ip="$(VM_IP)"/>' \
 	  --live --config
 
 
 delete-key:
-	-ssh-keygen -f ~/.ssh/known_hosts -R ${VM_IP}
-	-ssh-keygen -f ~/.ssh/known_hosts -R ${VM_NAME}
+	-ssh-keygen -f ~/.ssh/known_hosts -R $(VM_IP)
+	-ssh-keygen -f ~/.ssh/known_hosts -R $(VM_NAME)
 
