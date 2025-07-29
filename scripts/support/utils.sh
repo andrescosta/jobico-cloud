@@ -34,6 +34,16 @@ NOT_DRY_RUN() {
 IS_DRY_RUN() {
     echo ${_DRY_RUN}
 }
+
+dump_array() {
+  local -n assoc_array="$1"
+  local result=""
+  for key in "${!assoc_array[@]}"; do
+    result+="${key}=${assoc_array[$key]};"
+  done
+  echo "${result%;}"  
+}
+
 escape() {
     escaped_result=$(printf '%s\n' "$1" | sed -e 's/[]\/$*.^[]/\\&/g')
     echo "${escaped_result}"
@@ -46,19 +56,28 @@ print_array_to_file() {
 }
 
 prepare_file() {
-    local filename=$1
-    local output_dir="$(work_dir)/template/$2"
-    local output_file="$output_dir/$(basename $filename)"
-    if [[ "$output_file" == *.tmpl ]]; then
-        output_file="${output_file%.tmpl}"
-    fi
-    mkdir -p "$output_dir"
+    local filename="$1"
+    local output_file="$(work_dir)/template/$2"
+    local temp_file
+
+    mkdir -p "$(dirname "$output_file")"
+
     cp "$filename" "$output_file"
-    shift
-    shift
+    shift 2
+    
     for pattern in "$@"; do
-        IFS="=" read -r key value <<< "$pattern"
-        sed -i "s/$key/$value/g" "$output_file"
+        key="${pattern%%=*}"
+        value="${pattern#*=}"
+        
+        temp_file="${output_file}.tmp.$$"
+        
+        if awk -v search_key="$key" -v repl="$value" '{gsub(search_key, repl); print}' "$output_file" > "$temp_file"; then
+            mv "$temp_file" "$output_file"
+        else
+            rm -f "$temp_file"
+            return 1
+        fi
     done
+    
     echo "$output_file"
 }

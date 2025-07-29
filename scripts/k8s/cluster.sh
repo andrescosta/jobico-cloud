@@ -62,24 +62,48 @@ EOF
 ## Nodes deployment
 
 jobico::cluster::deploy_to_nodes(){
-     jobico::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
+    DEBUG echo "Deploying to nodes...."
+     jobico::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH CGROUP; do
+        local kubelet_file="";
         sed "s|SUBNET|${SUBNET}|g" \
         ${EXTRAS_DIR}/configs/10-bridge.conf > $(work_dir)/10-bridge.conf
 
-        if [[ "$TYPE" == "server" && "$SCH" == "$TAINTED" ]]; then
-            cp ${EXTRAS_DIR}/configs/kubelet-config-tainted.yaml $(work_dir)/kubelet-config.yaml
+        if [[ "$TYPE" == "server" ]]; then
+            if [[ "$SCH" == \[*\] ]]; then
+              cp ${EXTRAS_DIR}/configs/kubelet-config-tainted.yaml $(work_dir)/kubelet-config.yaml
+            else
+              cp ${EXTRAS_DIR}/configs/kubelet-config.yaml $(work_dir)/kubelet-config.yaml
+            fi
+            kubelet_file="$(work_dir)/kubelet-config.yaml"
         else
+          if [[ "$SCH" =~ ^\[([^\]]*)\]$ ]]; then
+            local register_taints=""
+            local inner="${BASH_REMATCH[1]}"
+            IFS='&' read -ra keys <<< "$inner"
+            for key in "${keys[@]}"; do
+              register_taints+=$'\n'"  - key: \"${key}\""
+              register_taints+=$'\n'"    value: \"true\""
+              register_taints+=$'\n'"    effect: \"NoSchedule\""
+            done
+            register_taints="registerWithTaints:${register_taints}"
+            local values=$(prepare_file "${EXTRAS_DIR}/configs/kubelet-config-node-tainted.yaml.tmpl" "kubelet/kubelet-config.yaml" "{TAINTED_KEYS}=${register_taints}")
+            kubelet_file="$values"
+          else
             cp ${EXTRAS_DIR}/configs/kubelet-config.yaml $(work_dir)/kubelet-config.yaml
+            kubelet_file="$(work_dir)/kubelet-config.yaml"
+          fi
         fi
-
-        sed -i "s|SUBNET|${SUBNET}|g" $(work_dir)/kubelet-config.yaml
         
-        SCP $(work_dir)/10-bridge.conf \
-        $(work_dir)/kubelet-config.yaml \
-        root@${IP}:~/
+        sed -i "s|SUBNET|${SUBNET}|g" ${kubelet_file}
+        
+        DEBUG echo "The kubelet file is ${kubelet_file} for ${TYPE} and ${SCH}"
+
+        NOT_DRY_RUN SCP $(work_dir)/10-bridge.conf \
+                      ${kubelet_file} \
+                        root@${IP}:~/
     done
     
-     jobico::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
+     NOT_DRY_RUN jobico::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
         SCP $(downloads_dir)/runc.amd64 \
         $(downloads_dir)/crictl.tar.gz \
         $(downloads_dir)/cni-plugins.tgz \
@@ -95,7 +119,7 @@ jobico::cluster::deploy_to_nodes(){
         $(work_dir)/kube-proxy.service root@${IP}:~/
     done
     
-    jobico::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
+    NOT_DRY_RUN jobico::dao::cluster::members | while read IP FQDN HOST SUBNET TYPE SCH; do
         SSH root@${IP} \
 << 'EOF'
 

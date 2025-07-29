@@ -11,7 +11,7 @@ security(){
 
 manifests(){
     local domain=$(jobico::dao::cpl::get_domain)
-    local docker=$(prepare_file "$1/docker-registry-pod.yaml.tmpl" "registry" "{DOMAIN}=$domain")
+    local docker=$(prepare_file "$1/docker-registry-pod.yaml.tmpl" "registry/docker-registry-pod.yaml" "{DOMAIN}=$domain")
     kubectl apply -f $1/registry-volume.yaml
     kubectl apply -f $docker
 }

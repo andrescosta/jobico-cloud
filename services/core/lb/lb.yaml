@@ -1,16 +1,61 @@
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
-  name: ip-pool
+  name: dynamic-pool
   namespace: metallb-system
 spec:
   addresses:
-  - 192.168.122.20-192.168.122.99
+  - 192.168.122.25-192.168.122.99
+---
+
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: adv-dynamic-pool
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - dynamic-pool
+---
+
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: dns-static-ip-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.122.23-192.168.122.23
 
 ---
 
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
 metadata:
-  name: adv
+  name: adv-dns-static-ip
   namespace: metallb-system
+spec:
+  ipAddressPools:
+    - dns-static-ip-pool
+
+---
+
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: traefik-static-ip-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 192.168.122.24-192.168.122.24
+
+---
+
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: adv-traefik-static-ip
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+    - traefik-static-ip-pool

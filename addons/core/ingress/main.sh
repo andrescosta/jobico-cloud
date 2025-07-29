@@ -7,7 +7,7 @@ load_dirs
 
 install(){
     local domain=$(jobico::dao::cpl::get_domain)
-    local ingress=$(prepare_file "$1/ingress.yaml.tmpl" "ingress" "{DOMAIN}=$domain")
+    local ingress=$(prepare_file "$1/ingress.yaml.tmpl" "ingress/ingress.yaml" "{DOMAIN}=$domain")
     kubectl apply -f $ingress
 }
 

@@ -6,7 +6,7 @@ load_dirs
 . ${SCRIPTS}/support/utils.sh
 install(){
     local domain=$(jobico::dao::cpl::get_domain)
-    local pgadmin=$(prepare_file "$1/pgadmin.yaml.tmpl" "pgadmin" "{DOMAIN}=$domain")
+    local pgadmin=$(prepare_file "$1/pgadmin.yaml.tmpl" "pgadmin/pgadmin.yaml" "{DOMAIN}=$domain")
     kubectl apply -f $pgadmin
     if [ $? == 1 ]; then
         echo "Generated file $pgadmin"

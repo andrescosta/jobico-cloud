@@ -1,0 +1,12 @@
+taint: registerWithTaints:
+  - key: "judge0"
+    value: "true"
+    effect: "NoSchedule"
+taint: registerWithTaints:
+  - key: "judge0"
+    value: "true"
+    effect: "NoSchedule"
+taint: registerWithTaints:
+  - key: "judge0"
+    value: "true"
+    effect: "NoSchedule"

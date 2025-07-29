@@ -81,7 +81,7 @@ jobico::create_cluster() {
     fi
     # Nodes deployment
     if [ $(jobico::was_done "deploy_nodes") == false ]; then
-        NOT_DRY_RUN jobico::cluster::deploy_to_nodes
+        jobico::cluster::deploy_to_nodes
         jobico::set_done "deploy_nodes"
     fi
     # Routes

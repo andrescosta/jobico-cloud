@@ -8,7 +8,7 @@ load_dirs
 
 install(){
     local domain=$(jobico::dao::cpl::get_domain)
-    local ingress=$(prepare_file "$1/ingress.yaml.tmpl" "tektoncd" "{DOMAIN}=$domain")
+    local ingress=$(prepare_file "$1/ingress.yaml.tmpl" "tektoncd/ingress.yaml" "{DOMAIN}=$domain")
 
     kubectl apply -f https://storage.googleapis.com/tekton-releases/operator/latest/release.yaml
     kubectl apply -f https://raw.githubusercontent.com/tektoncd/operator/main/config/crs/kubernetes/config/all/operator_v1alpha1_config_cr.yaml

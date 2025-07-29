@@ -14,15 +14,22 @@ set_trap_err
 . ${SCRIPTS}/controller.sh
 . ${SCRIPTS}/support/utils.sh
 . ${SCRIPTS}/support/ssh.sh
+. ${SCRIPTS}/support/kv.sh
 . ${SCRIPTS}/dao/cpl.sh
 
 # Cluster creation
 ## "new" command. It creates a new cluster using the provided commnad line flags.
 new() {
-  local cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false 
+  local cpl lb nodes addons_dir="" skip_addons=false schedulable_server=false str_node_configs=""
   local vers=$DEFAULT_VERS domain=$DOMAIN
+  declare -A node_configs
   while [[ $# -gt 0 ]]; do
     case "$1" in
+    --node-[0-9])
+      node_index="${1/--/}"
+      shift
+      node_configs[$node_index]=$1
+      ;;
     --nodes)
       shift
       if [ -n "$1" ] && [[ "$1" =~ ^[0-9]+$ ]]; then
@@ -144,6 +151,8 @@ new() {
   cpl=${cpl:-$DEFAULT_CPL}
   lb=${lb:-$DEFAULT_LB}
   addons_dir=${addons_dir:-$ADDONS_DIR}
+  str_node_configs=$(kv::map::serialize node_configs)
+  DEBUG echo ">>>Custom node configs serialized: $str_node_configs"
   save_dirs
   echo $(work_dir)
   if [[ $nodes == 0 ]]; then
@@ -163,7 +172,7 @@ new() {
   local addons_list=$(find "$addons_dir/core" -mindepth 1 -maxdepth 1 -type d  ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list"
-  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons "$addons_list" "$vers" "$domain"
+  jobico::new_cluster $nodes $cpl $lb $schedulable_server $skip_addons "$addons_list" "$vers" "$domain" "$str_node_configs"
   if [ $skip_addons == false ]; then
     install_services_dir
   fi
@@ -237,7 +246,8 @@ yaml() {
     fi
     DEBUG echo "$nodes $cpl $lb $schedulable_server $addons_list $domain $vers"
     echo "Start processing $file_name"
-    jobico::new_cluster $nodes $cpl $lb $schedulable_server false "$addons_list" "$vers" "$domain"
+    local str_node_configs="empty"
+    jobico::new_cluster $nodes $cpl $lb $schedulable_server false "$addons_list" "$vers" "$domain" "$str_node_configs"
     for f in $yaml_cluster_services_ ; do
         dir="${f}_dir"
         services_list_str_yaml="${f}_list_"
@@ -475,16 +485,32 @@ cfg() {
   local auth_key_root=$auth_key_deb
   read -p "Authorized key file for user root :" -e -i "$auth_key_def" auth_key_root
   local key_root="- $(escape "$(<"$auth_key_root")")"
+  
   cp extras/cfg/cloud-init-lb.cfg.tmpl extras/cfg/cloud-init-lb.cfg
+  
   cp extras/cfg/cloud-init-node.cfg.tmpl extras/cfg/cloud-init-node.cfg
+  
+  cp extras/cfg/cloud-init-node-cgroupv1.cfg.tmpl extras/cfg/cloud-init-node-cgroupv1.cfg
+  
   sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-lb.cfg
   sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-lb.cfg
+
   sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-node.cfg
   sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-node.cfg
+
+  sed -i "s/{PWD_DEBIAN}/${epass_deb}/g" extras/cfg/cloud-init-node-cgroupv1.cfg
+  sed -i "s/{PWD_ROOT}/${epass_root}/g" extras/cfg/cloud-init-node-cgroupv1.cfg
+
+
   sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-node.cfg
   sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-node.cfg
+
   sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-lb.cfg
   sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-lb.cfg
+
+  sed -i "s/{ROOT_KEYS}/${key_root}/g" extras/cfg/cloud-init-node-cgroupv1.cfg
+  sed -i "s/{DEBIAN_KEYS}/${key_deb}/g" extras/cfg/cloud-init-node-cgroupv1.cfg
+
 }
 addons(){
   local addons_dir=$ADDONS_DIR
