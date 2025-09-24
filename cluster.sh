@@ -525,11 +525,29 @@ addons(){
   addons_list+=$(find "$addons_dir/extras" -mindepth 1 -maxdepth 1 -type d ! -exec test -e "{}/disabled" \; -print | tr '\n' ';')
   jobico::addons_post ${addons_list}
 }
-start_cluster() {
-  jobico::start_cluster
-}
 shutdown_cluster() {
   jobico::shutdown_cluster
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --wait)
+        virsh console server
+      ;;
+      -*)
+        echo "Unrecognized or incomplete option: $1" >&2
+        display_help
+        exit 1
+        ;;
+      *)
+        echo "Invalid argument: $1" >&2
+        display_help
+        exit 1
+        ;;
+    esac
+    shift
+  done
+}
+start_cluster() {
+  jobico::start_cluster
 }
 resume_cluster() {
   jobico::resume_cluster
@@ -768,7 +786,8 @@ main() {
     start_cluster
     ;;
   shutdown)
-    shutdown_cluster
+    shift
+    shutdown_cluster "$@"
     ;;
   suspend)
     suspend_cluster
