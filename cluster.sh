@@ -529,7 +529,7 @@ shutdown_cluster() {
   jobico::shutdown_cluster
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --wait)
+      --verbose)
         virsh console server
       ;;
       -*)
