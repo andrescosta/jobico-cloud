@@ -54,13 +54,25 @@ data:
         MyDBRouter0:
           service: MyDBService01
           rule: "HostSNI(`db.{DOMAIN}`)"
+          entryPoints:
+            - postgres
           tls:
             passthrough: true
+        MyRedisRouter0:
+          service: MyRedisService01
+          rule: "HostSNI(`*`)"
+          entryPoints:
+           - redis
       services:
         MyDBService01:
           loadBalancer:
             servers:
               - address: cluster-jobico-rw.default.svc.cluster.local:5432
+        MyRedisService01:
+          loadBalancer:
+            servers:
+              - address:  "redis.default.svc.cluster.local:6379"
+
 ---
 
 kind: ClusterRoleBinding
@@ -110,6 +122,7 @@ spec:
             - --entryPoints.websecure.address=:443
             - --entryPoints.web.address=:80
             - --entryPoints.postgres.address=:5432/tcp
+            - --entryPoints.redis.address=:6379/tcp
             - --entryPoints.websecure.http.tls=true
             - --serversTransport.insecureSkipVerify=true
             - --providers.kubernetesingress=true
@@ -124,6 +137,8 @@ spec:
               containerPort: 8080
             - name: pg
               containerPort: 5432
+            - name: redis
+              containerPort: 6379
       volumes:
         - name: certs-vol
           secret:
@@ -149,7 +164,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: traefik-web-service
-
 spec:
   type: LoadBalancer
   loadBalancerIP: 192.168.122.24
@@ -162,7 +176,6 @@ spec:
       port: 443
   selector:
     app: traefik
-
 
 ---
 
@@ -178,6 +191,23 @@ spec:
     - port: 5432
       protocol: TCP
       targetPort: pg 
+  selector:
+    app: traefik
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-redis-service 
+  annotations:
+    coredns.io/hostname: "redis.{DOMAIN}"
+spec:
+  type:  LoadBalancer
+  ports:
+    - port: 6379
+      protocol: TCP
+      targetPort: redis
   selector:
     app: traefik
 

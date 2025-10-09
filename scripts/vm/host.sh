@@ -20,20 +20,20 @@ jobico::host::restore_local_etc_hosts() {
     sudo bash -c "cp $(work_dir)/uhosts /etc/hosts"
 }
 jobico::host::update_local_known_hosts() {
-    jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
+    jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH CGROUP; do
         ssh-keyscan -H ${HOST} >>~/.ssh/known_hosts
         ssh-keyscan -H ${IP} >>~/.ssh/known_hosts
     done
 }
 jobico::host::set_machines_hostname() {
-    jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
+    jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH CGROUP; do
         cmd="sed -i 's/^127.0.0.1.*/127.0.1.1\t${FQDN} ${HOST}/' /etc/hosts"
         SSH -n root@${IP} "${cmd}"
         SSH -n root@${IP} hostnamectl hostname ${HOST}
     done
 }
 jobico::host::update_machines_etc_hosts() {
-    jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH; do
+    jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH CGROUP; do
         SCP $(hosts_file) root@${IP}:~/
         SSH -n \
             root@${IP} "cat hosts >> /etc/hosts"

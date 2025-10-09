@@ -7,7 +7,7 @@ load_dirs
 
 install(){
     local domain=$(jobico::dao::cpl::get_domain)
-    local values=$(prepare_file "$1/values.yaml.tmpl" "obs" "{DOMAIN}=$domain")
+    local values=$(prepare_file "$1/values.yaml.tmpl" "obs/values.yaml" "{DOMAIN}=$domain")
 
     helm repo add grafana https://grafana.github.io/helm-charts
     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts

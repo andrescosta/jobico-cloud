@@ -51,7 +51,9 @@ jobico::tls::gen_ca() {
 }
 jobico::tls::gen_certs() {
     local comps=($(jobico::dao::cpl::get gencert 3))
+    DEBUG echo "Comps: $(dump_array comps)"
     for component in ${comps[@]}; do
+        DEBUG echo "Cert for component $component"
         openssl genrsa -out "$(work_dir)/${component}.key" 4096
 
         openssl req -new -key "$(work_dir)/${component}.key" -sha256 \

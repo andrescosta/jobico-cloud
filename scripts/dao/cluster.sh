@@ -3,6 +3,7 @@ jobico::dao::cluster::machines() {
 }
 jobico::dao::cluster::nodes() {
     jobico::dao::cluster::get_type_is "node"
+    jobico::dao::cluster::get_type_is "sm-node"
 }
 jobico::dao::cluster::servers() {
     jobico::dao::cluster::get_type_is "server"
@@ -53,6 +54,10 @@ jobico::dao::cluster::get() {
 }
 jobico::dao::cluster::curr_nodes() {
     local result=$(awk '$5 == "node" {print $0}' $(machines_db))
+    if [[ ! -z "$result" ]]; then
+        echo "$result"
+    fi
+    local result=$(awk '$5 == "sm-node" {print $0}' $(machines_db))
     if [[ ! -z "$result" ]]; then
         echo "$result"
     fi

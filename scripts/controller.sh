@@ -24,11 +24,15 @@ jobico::new_cluster() {
     local addons_list=$6
     local vers=$7
     local domain=$8
+    local str_node_configs=$9
     if [[ $(jobico::dao::cluster::is_locked) == true ]]; then
         echo "A cluster already exists."
         exit 1
     fi
-    if [[ ! -f $EXTRAS_DIR/cfg/cloud-init-node.cfg || ! -f  $EXTRAS_DIR/cfg/cloud-init-lb.cfg ]]; then
+
+    local c_infra_dir=$(infra_dir)
+
+    if [[ ! -f ${c_infra_dir}/cfg/cloud-init-node.cfg || ! -f  ${c_infra_dir}/cfg/cloud-init-lb.cfg || ! -f ${c_infra_dir}/cfg/cloud-init-node-cgroupv1.cfg ]]; then
        echo "The cloud init config files were not generated."
        echo "Run $0 cfg to generate them"
        exit 1
@@ -38,13 +42,13 @@ jobico::new_cluster() {
         exit 1
     fi
     jobico::plugin::load ${PLUGINS_CONF_FILE}
-    jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server $vers $domain
+    jobico::init $number_of_nodes $number_of_cpl_nodes $number_of_lbs $schedulable_server $vers $domain $str_node_configs
     DEBUG jobico::debug::print
     jobico::create_cluster
     if [ $skip_addons == false ]; then
         NOT_DRY_RUN jobico::install_all_addons "new" ${addons_list}
     else
-        echo "Skipping adddons installation"
+        echo "Skipping addons installation"
     fi
     NOT_DRY_RUN jobico::dao::cluster::lock
 }
@@ -127,7 +131,7 @@ jobico::add_nodes() {
     if [ $skip_addons == false ]; then
         NOT_DRY_RUN jobico::install_all_addons "add" ${addons_list}
     else
-        echo "Skipping adddons installation"
+        echo "Skipping addons installation"
     fi
     NOT_DRY_RUN jobico::dao::merge_dbs
     NOT_DRY_RUN jobico::dao::cluster::lock

@@ -1,0 +1,42 @@
+#cloud-config
+preserve_hostname: false
+manage_etc_hosts: false
+ssh_pwauth: false
+disable_root: false
+users:
+- name: debian
+  hashed_passwd: {PWD_DEBIAN}
+  sudo: ALL=(ALL) NOPASSWD:ALL
+  shell: /bin/bash
+  lock-passwd: false
+  ssh_authorized_keys:
+  {DEBIAN_KEYS}
+- name: root
+  hashed_passwd: {PWD_ROOT}
+  sudo: ALL=(ALL) NOPASSWD:ALL
+  shell: /bin/bash
+  lock-passwd: false
+  ssh_authorized_keys:
+  {ROOT_KEYS}
+packages:
+  - wget
+  - curl
+  - openssl
+  - socat 
+  - conntrack 
+  - ipset
+write_files:
+ - path: /etc/modules-load.d/k8s.conf
+   content: |
+    br_netfilter
+bootcmd:
+  - sed -i 's/^GRUB_CMDLINE_LINUX="/GRUB_CMDLINE_LINUX="systemd.unified_cgroup_hierarchy=0 /' /etc/default/grub
+  - update-grub
+runcmd:
+ - modprobe br_netfilter
+ - systemctl restart systemd-resolved
+power_state:
+  delay: "+1"
+  mode: reboot
+  message: "Rebooting to apply cgroup v1 configuration"
+  condition: true

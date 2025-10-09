@@ -8,7 +8,7 @@ load_dirs
 
 install(){
     local domain=$(jobico::dao::cpl::get_domain)
-    local ingress=$(prepare_file "$1/ingress.yaml.tmpl" "argocd" "{DOMAIN}=$domain")
+    local ingress=$(prepare_file "$1/ingress.yaml.tmpl" "argocd/ingress.yaml" "{DOMAIN}=$domain")
 
     kubectl create namespace argocd
     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml

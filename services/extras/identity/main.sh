@@ -7,7 +7,7 @@ load_dirs
 
 install(){
     local domain=$(jobico::dao::cpl::get_domain)
-    local values=$(prepare_file "$1/values.yaml.tmpl" "identity" "{DOMAIN}=$domain")
+    local values=$(prepare_file "$1/values.yaml.tmpl" "identity/values.yaml" "{DOMAIN}=$domain")
     helm repo add zitadel https://charts.zitadel.com
     helm install my-zitadel zitadel/zitadel --values $values
 }

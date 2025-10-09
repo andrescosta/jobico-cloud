@@ -17,5 +17,7 @@ downloads_local/
 scripts/support/parse_yaml.sh
 **/cloud-init-lb.cfg
 **/cloud-init-node.cfg
+**/cloud-init-node-cgroupv1.cfg
 services/extras/jobicok8s/jobicok8s/ 
 *drawio.bkp
+*.qcow2

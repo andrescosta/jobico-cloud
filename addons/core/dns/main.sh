@@ -7,8 +7,8 @@ load_dirs
 
 install(){
     local domain=$(jobico::dao::cpl::get_domain)
-    local coredns=$(prepare_file "$1/coredns.yaml.tmpl" "dns" "{DOMAIN}=$domain")
-    local excoredns=$(prepare_file "$1/excoredns.yaml.tmpl" "dns" "{DOMAIN}=$domain")
+    local coredns=$(prepare_file "$1/coredns.yaml.tmpl" "dns/coredns.yaml" "{DOMAIN}=$domain")
+    local excoredns=$(prepare_file "$1/excoredns.yaml.tmpl" "dns/excoredns.yaml" "{DOMAIN}=$domain")
     kubectl apply -f $coredns
     kubectl apply -f $excoredns
 }

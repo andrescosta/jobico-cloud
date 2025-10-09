@@ -7,7 +7,7 @@ load_dirs
 
 install(){
     local domain=$(jobico::dao::cpl::get_domain)
-    local values=$(prepare_file "$1/values.yaml.tmpl" "dashboard" "{DOMAIN}=$domain")
+    local values=$(prepare_file "$1/values.yaml.tmpl" "dashboard/values.yaml" "{DOMAIN}=$domain")
     helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
     helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard --create-namespace --namespace kubernetes-dashboard -f $values
     kubectl apply -f $1/user.yaml
