@@ -5,7 +5,7 @@ print_array() {
     done
 }
 DEBUG() {
-    if [ "$_DEBUG" == true ]; then
+    if [ "${_DEBUG}" == true ]; then
         $@
     fi
 }

@@ -1,3 +1,14 @@
+# Serialize a Bash associative array (map) into a key:value string.
+# Each entry in the array can hold a simple value or a structured string.
+# Example when called as:
+#   ./script.sh --node-0 "ip=10.0.0.1,role=master,zone=us-east"
+# Internal structure:
+#   declare -A node_configs=(
+#     [node-0]="ip=10.0.0.1,role=master,zone=us-east"
+#   )
+# Output:
+#   node-0:ip=10.0.0.1,role=master,zone=us-east
+
 kv::map::serialize() {
   declare -n kv_map=$1
   local result=""

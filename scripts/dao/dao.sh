@@ -116,7 +116,7 @@ jobico::dao::gen_cluster_db() {
     # - cgroup: [v1|v2](v2 default)
     # - taints: +[keys](default, schedulable)
     # - size: [small|std] (std, default)
-    # ex: --node1=taints=judge0;cgroup=v1;size=small --node0=size=std
+    # ex: --node1 taints=judge0,cgroup=v1,size=small --node-0 size=std
     # if --node(n) is not defined, the defaults are used to create it: cgroup=v2, no tains and size standard.
     local taints=$SCHEDULABLE
     local size=""
