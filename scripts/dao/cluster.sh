@@ -81,6 +81,10 @@ jobico::dao::cluster::curr_db() {
         echo "$(machines_new_db)"
         return
     fi
+    if [ -f "$(machines_db_lock)" ]; then
+        echo "$(machines_db_lock)"
+        return
+    fi
     echo "$(machines_db)"
 }
 jobico::dao::cluster::lock() {

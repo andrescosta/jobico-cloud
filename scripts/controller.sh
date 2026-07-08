@@ -53,44 +53,52 @@ jobico::new_cluster() {
     NOT_DRY_RUN jobico::dao::cluster::lock
 }
 jobico::start_cluster() {
-    jobico::exec_cmd start
+    jobico::exec_cmd_nolock start
 }
 jobico::shutdown_cluster() {
-    jobico::exec_cmd shutdown
+    jobico::exec_cmd_nolock shutdown
 }
 jobico::resume_cluster() {
-    jobico::exec_cmd resume
+    jobico::exec_cmd_nolock resume
 }
 jobico::suspend_cluster() {
-    jobico::exec_cmd suspend
+    jobico::exec_cmd_nolock suspend
 }
 jobico::state_cluster() {
-    jobico::exec_cmd domstate
+    jobico::exec_cmd_nolock domstate
 }
 jobico::list_vms() {
     jobico::plugin::load ${PLUGINS_CONF_FILE}
     jobico::vm::list
 }
 jobico::info_cluster() {
-    jobico::exec_cmd dominfo
+    jobico::exec_cmd_nolock dominfo
 }
 jobico::exec_cmd() {
     jobico::plugin::load ${PLUGINS_CONF_FILE}
     ret=$(jobico::vm::cmd $1)
     if [[ $ret == false ]]; then
-        echo "Error 1: The cluster was not created."
+        echo "Error when $1: The cluster was not created."
+        exit 1
+    fi
+}
+jobico::exec_cmd_nolock() {
+    jobico::plugin::load ${PLUGINS_CONF_FILE}
+    ret=$(jobico::vm::cmd_nolock $1)
+    if [[ $ret == false ]]; then
+        echo "Error when $1: The cluster was not created."
         exit 1
     fi
 }
 jobico::destroy_cluster() {
     if [[ $(jobico::dao::cluster::is_locked) == false ]]; then
         if [ ! -e $(machines_db) ]; then
-            echo "Error 2: The cluster was not created."
+            echo "Error when destroy_cluster: The cluster was not created."
             exit 1
         fi
     fi
     if [ ! -e $(work_dir)/db.txt ]; then
-        echo "Error 3: The cluster was not created."
+        echo "Error db.txt does not exist."
         exit 1
     fi
     jobico::plugin::load ${PLUGINS_CONF_FILE}

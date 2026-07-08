@@ -29,6 +29,17 @@ jobico::vm::cmd() {
         echo false
     fi
 }
+jobico::vm::cmd_nolock() {
+    if [ $(jobico::dao::cluster::is_locked) == true ]; then
+        jobico::dao::cluster::machines | while read IP FQDN HOST SUBNET TYPE SCH CGROUP; do
+            make -f $SCRIPTS/Makefile.vm cmd-vm CMD=$1 VM_NAME=${HOST} -C ${DIR}
+        done
+        echo true
+    else
+        echo false
+    fi
+}
+
 jobico::vm::list() {
     make -f $SCRIPTS/Makefile.vm list -C ${DIR}
 }
