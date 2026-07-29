@@ -1,3 +1,10 @@
+image:
+  tag: "v4.11.0"
+setupJob:
+  machinekeyWriter:
+    image:
+      repository: alpine/k8s
+      tag: "1.36.2"
 replicaCount: 1
 zitadel:
   masterkey: x123456789012345678901234567891y
@@ -40,8 +47,21 @@ zitadel:
           Password: postgres
 ingress:
   enabled: true
+  # className: traefik
   hosts:
-    - host: id.{DOMAIN} 
+    - host: id.{DOMAIN}
       paths:
         - path: /
           pathType: Prefix
+
+login:
+  image:
+    tag: "v4.11.0"
+  ingress:
+    enabled: true
+    # className: traefik
+    hosts:
+      - host: id.{DOMAIN}
+        paths:
+          - path: /ui/v2/login
+            pathType: Prefix

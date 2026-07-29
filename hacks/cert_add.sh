@@ -1,5 +1,5 @@
 certName="Jobico.local-CA"
-certFile=~/.jobico/work/ca.crt
+certFile=/home/andres/.jobico/work/ca.crt
 certCRT=jobico.ca.crt
 certPEM=jobico.ca.pem
 sudo rm -r /usr/local/share/ca-certificates/$certCRT

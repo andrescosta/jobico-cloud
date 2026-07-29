@@ -1,3 +1,13 @@
+setupJob:
+  machinekeyWriter:
+    image:
+      repository: alpine/k8s
+      tag: "1.36.2"
+initJob:
+  machinekeyWriter:
+    image:
+      repository: alpine/k8s
+      tag: "1.36.2"
 zitadel:
   masterkey: x123456789012345678901234567891y
   configmapConfig:

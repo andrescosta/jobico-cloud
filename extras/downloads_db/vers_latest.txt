@@ -1,7 +1,7 @@
 platform=amd64
-rel-k8s=v1.32.0
-rel-cri=v1.32.0
-rel-runc=v1.2.4
-rel-cni=v1.6.2
-rel-containerd=2.0.2
-rel-etcd=v3.5.17
+rel-k8s=v1.36.3
+rel-cri=v1.36.0
+rel-runc=v1.5.1
+rel-cni=v1.9.1
+rel-containerd=2.3.3
+rel-etcd=v3.6.14
