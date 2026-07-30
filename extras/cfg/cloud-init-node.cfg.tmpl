@@ -18,6 +18,9 @@ users:
   lock-passwd: false
   ssh_authorized_keys:
   {ROOT_KEYS}
+
+package_update: true
+
 packages:
   - wget
   - curl
@@ -25,10 +28,50 @@ packages:
   - socat 
   - conntrack 
   - ipset
+  - qemu-guest-agent
+  - chrony
 write_files:
- - path: /etc/modules-load.d/k8s.conf
-   content: |
-    br_netfilter
+  - path: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+      kvm
+      vhost_net
+  - path: /etc/modules-load.d/tun.conf
+    content: |
+      tun
+  - path: /etc/systemd/resolved.conf.d/jobico.conf
+    content: |
+      [Resolve]
+      DNS=192.168.122.23
+      Domains=~jobico.local
+  - path: /etc/chrony/chrony.conf
+    content: |
+      pool 2.debian.pool.ntp.org iburst
+      driftfile /var/lib/chrony/drift
+      makestep 1.0 -1
+      rtcsync
+  - path: /etc/systemd/system/time-resync-on-resume.service
+    content: |
+      [Unit]
+      Description=Force NTP time step after VM resume
+      After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/chronyc makestep
+
+      [Install]
+      WantedBy=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target    
+
 runcmd:
+ - modprobe overlay
  - modprobe br_netfilter
+ - modprobe kvm
+ - modprobe tun
+ - modprobe vhost_net
  - systemctl restart systemd-resolved
+ - systemctl daemon-reload
+ - systemctl enable --now qemu-guest-agent
+ - systemctl enable --now chrony
+ - systemctl enable --now time-resync-on-resume.service

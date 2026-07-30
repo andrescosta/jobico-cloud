@@ -115,7 +115,7 @@ $(CFG_CLOUD_INIT_CGROUPV1) $(CFG_CLOUD_ISO_CGROUPV1):
 virt-node:
 	sudo virt-install \
 		--name $(VM_NAME) \
-		--ram 6144 \
+		--ram 8192 \
 		--vcpus=3 \
 		--cpu host \
 		--disk $(VM_QCOW2_BOOT),device=disk,bus=virtio \

@@ -1,5 +1,9 @@
 image:
   tag: "v4.11.0"
+tools:
+  kubectl:
+    image:
+      tag: "1.36.2"
 setupJob:
   machinekeyWriter:
     image:
@@ -57,9 +61,12 @@ ingress:
 login:
   image:
     tag: "v4.11.0"
+  customConfigmapConfig: |
+    ZITADEL_SERVICE_USER_TOKEN_FILE="/login-client/pat"
+    ZITADEL_API_URL="http://my-zitadel:8080"
+    CUSTOM_REQUEST_HEADERS="Host:id.{DOMAIN},x-zitadel-public-host:id.{DOMAIN}"
   ingress:
     enabled: true
-    # className: traefik
     hosts:
       - host: id.{DOMAIN}
         paths:

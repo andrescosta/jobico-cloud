@@ -75,7 +75,7 @@ data:
           response set ra
         }
         loop
-        forward . 192.168.122.1
+        forward . /etc/resolv.conf
         reload
         loadbalance
     }
