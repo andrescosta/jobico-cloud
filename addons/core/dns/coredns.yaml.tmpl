@@ -162,7 +162,7 @@ spec:
             path: /ready
             port: 8181
             scheme: HTTP
-      dnsPolicy: Default
+      dnsPolicy: Default # uses /etc/resolv.conf from the node.
       volumes:
         - name: config-volume
           configMap:

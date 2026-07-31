@@ -32,7 +32,7 @@ data:
         }
         ready
         prometheus 0.0.0.0:9153
-        forward . /etc/resolv.conf
+        forward . /etc/resolv.conf ## check if loop issues
         reload
         loadbalance
     }

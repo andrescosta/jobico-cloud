@@ -43,7 +43,7 @@ write_files:
   - path: /etc/systemd/resolved.conf.d/jobico.conf
     content: |
       [Resolve]
-      DNS=192.168.122.23
+      DNS=192.168.122.1 192.168.122.23
       Domains=~jobico.local
   - path: /etc/chrony/chrony.conf
     content: |
